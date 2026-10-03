@@ -313,3 +313,24 @@ O:RegisterModuleOptions("RuneforgeAlert", function(ctx, m, G)
 	return cards
 end)
 
+
+O:RegisterModuleOptions("Ironfur", function(ctx, m, G)
+	return {
+		Card("When", {
+			{ type = "slider", label = "Glow with seconds left (last stack)", path = "glowThreshold", min = 1, max = 7, step = 1 },
+			{ type = "slider", label = "Voice with seconds left (last stack)", path = "soundThreshold", min = 1, max = 7, step = 1 },
+			{ type = "toggle", label = "Only in combat", path = "soundInCombatOnly" },
+			{ type = "slider", label = "Seconds one Ironfur lasts (fallback)", path = "duration", min = 4, max = 15, step = 1,
+				tip = "Used where the game hides the aura (in keys); the real time takes over when it is readable." },
+			{ type = "description", width = "full", text = "Put Ironfur on a Cooldown Manager buff bar to get the glow there; or switch on the icon below." },
+		}, { previewState = true }),
+		Card("Glow", G.Glow("glow")),
+		Card("Voice or sound", G.Alert("alert", { fallbackText = "Ironfur" })),
+		Card("Icon of its own", Join({
+			{ type = "toggle", label = "Show an icon with the seconds left", path = "showIcon", width = "full" },
+		}, G.Icon("icon", { square = true }))),
+		Card("Border", G.Border("border")),
+		Card("Seconds", G.Font("timerText", { toggle = "Show seconds" })),
+		Card("Position", G.Position("position")),
+	}
+end)
