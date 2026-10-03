@@ -34,6 +34,8 @@ local M = XUI:NewModule("MeleeIndicator", {
 		text = "+",
 		color = { 1, 0, 0, 1 },
 		interval = 0.25,
+		pulse = false,
+		pulseSpeed = 0.45,
 		font = T.Font(28),
 		position = T.Position(0, -40),
 	},
@@ -48,6 +50,15 @@ local function Display()
 	if display then return display end
 	display = XUI.Widgets:CreateText("XUI_MeleeIndicator")
 	display:Hide()
+	-- the pulse is on the text, not the frame: the frame's alpha is the range
+	-- answer (possibly secret) and must stay out of the animation's way
+	local group = display.text:CreateAnimationGroup()
+	group:SetLooping("BOUNCE")
+	local a = group:CreateAnimation("Alpha")
+	a:SetFromAlpha(1)
+	a:SetToAlpha(0.2)
+	a:SetSmoothing("IN_OUT")
+	display.pulse, display.pulseAnim = group, a
 	XUI.Movers:Register(display, M, "position")
 	return display
 end
@@ -127,6 +138,13 @@ function M:OnRefresh()
 	d:ApplyStyle(db.font)
 	d:SetText(db.text)
 	d:SetTextColor(XUI.UnpackColor(db.color))
+	if db.pulse then
+		d.pulseAnim:SetDuration(math.max(0.1, db.pulseSpeed))
+		if not d.pulse:IsPlaying() then d.pulse:Play() end
+	else
+		d.pulse:Stop()
+		d.text:SetAlpha(1)
+	end
 	if self:IsPreview() then
 		d:SetAlpha(1)
 		d:Show()
