@@ -28,6 +28,7 @@ Core\Glow.lua
 Core\Style.lua
 Core\Audio.lua
 Core\Modules.lua
+Core\AutoProfile.lua
 Core\Widgets.lua
 Core\Movers.lua
 Core\Commands.lua

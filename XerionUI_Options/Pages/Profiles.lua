@@ -7,6 +7,7 @@ local O = XUI and XUI.Options
 if not O then return end
 
 local DB = XUI.DB
+local AutoItems
 
 -- Text typed into the page that is not a setting.
 local scratch = { newName = "", copyCurrent = true, copyFrom = "", delete = "", importText = "", importName = "" }
@@ -34,6 +35,45 @@ StaticPopupDialogs.XERIONUI_PROFILE_CONFIRM = {
 
 local function Confirm(text, fn)
 	StaticPopup_Show("XERIONUI_PROFILE_CONFIRM", text, nil, fn)
+end
+
+-- Rules for switching profile by context (Core/AutoProfile.lua).
+local NONE = "(no change)"
+local function RuleValues()
+	local out = { { value = "", text = NONE } }
+	for _, name in ipairs(DB:ListProfiles()) do out[#out + 1] = { value = name, text = name } end
+	return out
+end
+
+local function Rule(label, tableName, key)
+	return {
+		type = "dropdown", label = label, values = RuleValues,
+		disabled = function() return not DB.global.autoProfiles.enabled end,
+		get = function() return DB.global.autoProfiles[tableName][key] or "" end,
+		set = function(_, v)
+			DB.global.autoProfiles[tableName][key] = (v ~= "") and v or nil
+			XUI.ApplyAutoProfile()
+		end,
+	}
+end
+
+AutoItems = function()
+	local items = {
+		{ type = "description", width = "full", text = "Pick a profile for a kind of content or a specialization. The kind of content wins over the specialization; \"no change\" leaves the profile alone. Never switches in combat." },
+		{
+			type = "toggle", label = "Switch profiles automatically", width = "full",
+			get = function() return DB.global.autoProfiles.enabled end,
+			set = function(_, on) DB.global.autoProfiles.enabled = on and true or false XUI.ApplyAutoProfile() end,
+		},
+	}
+	for _, k in ipairs(XUI.INSTANCE_KINDS) do items[#items + 1] = Rule(k.text, "instance", k.value) end
+	local CSI = C_SpecializationInfo
+	local num = (CSI and CSI.GetNumSpecializations) and CSI.GetNumSpecializations() or 0
+	for i = 1, num do
+		local id, name = CSI.GetSpecializationInfo(i)
+		if id then items[#items + 1] = Rule("Spec: " .. tostring(name), "spec", id) end
+	end
+	return items
 end
 
 O:RegisterSystemPage({
@@ -100,6 +140,7 @@ O:RegisterSystemPage({
 					end,
 				},
 			}),
+			O.Card("Switch automatically", AutoItems()),
 			O.Card("Export", {
 				{
 					type = "description", width = "full",

@@ -51,6 +51,26 @@ local function BuildSample(parent)
 	return f
 end
 
+-- text typed into the themes card; not a setting
+local scratch = { name = "", pick = "" }
+
+local function ThemeValues()
+	local out = {}
+	for _, name in ipairs(XUI.DB:ListThemes()) do out[#out + 1] = { value = name, text = name } end
+	return out
+end
+
+StaticPopupDialogs.XERIONUI_THEME_CONFIRM = {
+	text = "%s",
+	button1 = YES,
+	button2 = NO,
+	OnAccept = function(_, fn) fn() end,
+	timeout = 0,
+	whileDead = true,
+	hideOnEscape = true,
+	preferredIndex = 3,
+}
+
 O:RegisterSystemPage({
 	key = "style",
 	title = "Global Style",
@@ -64,6 +84,45 @@ O:RegisterSystemPage({
 	build = function(ctx, G)
 		return {
 			O.Card("Sample", { { type = "custom", build = BuildSample, width = "full" } }),
+			O.Card("Themes", {
+				{ type = "description", width = "full", text = "Save the whole global style under a name and bring it back in any profile." },
+				{ type = "dropdown", label = "Saved themes", values = ThemeValues,
+					get = function() return scratch.pick end, set = function(_, v) scratch.pick = v end },
+				{
+					type = "button", text = "Apply",
+					disabled = function() return scratch.pick == "" or not XUI.DB.global.themes[scratch.pick] end,
+					onClick = function()
+						if XUI.DB:ApplyTheme(scratch.pick) then
+							XUI.Style:Invalidate()
+							XUI:Fire("StyleChanged")
+							if ctx.page then ctx.page:Refresh() end
+						end
+					end,
+				},
+				{
+					type = "button", text = "Delete",
+					disabled = function() return scratch.pick == "" or not XUI.DB.global.themes[scratch.pick] end,
+					onClick = function()
+						local name = scratch.pick
+						StaticPopup_Show("XERIONUI_THEME_CONFIRM", ("Delete the theme '%s'?"):format(name), nil, function()
+							XUI.DB:DeleteTheme(name)
+							scratch.pick = ""
+							if ctx.page then ctx.page:Refresh() end
+						end)
+					end,
+				},
+				{ type = "input", label = "Save the current style as", get = function() return scratch.name end, set = function(_, v) scratch.name = v end },
+				{
+					type = "button", text = "Save theme", primary = true,
+					disabled = function() return scratch.name == "" end,
+					onClick = function()
+						if XUI.DB:SaveTheme(scratch.name) then
+							scratch.pick, scratch.name = scratch.name, ""
+							if ctx.page then ctx.page:Refresh() end
+						end
+					end,
+				},
+			}),
 			O.Card("Font", G.Font("font", { global = true })),
 			O.Card("Border", G.Border("border", { global = true })),
 			O.Card("Glow", G.Glow("glow", { global = true })),

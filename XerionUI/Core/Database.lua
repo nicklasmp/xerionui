@@ -40,6 +40,10 @@ DB.GLOBAL_DEFAULTS = {
 		autoPreview = true,
 		dock = true,
 	},
+	-- named looks of the global style, shared by every profile
+	themes = {},
+	-- switch profile by instance type or specialization (Core/AutoProfile.lua)
+	autoProfiles = { enabled = false, spec = {}, instance = {} },
 	unlock = {
 		gridSize = 32,
 		snap = true,
@@ -149,6 +153,13 @@ local function Strip(dst, defaults)
 	end
 end
 DB.Strip = Strip
+
+-- A copy of the style with every default value removed.
+local function StrippedStyle(style)
+	local copy = CopyTable(style)
+	Strip(copy, DB.STYLE_DEFAULTS)
+	return copy
+end
 
 -- A copy of `profile` with every default value removed.
 local function StrippedCopy(profile)
@@ -355,4 +366,74 @@ function DB:ImportProfile(str, name)
 	self.sv.profiles[name] = payload.profile
 	self:SetProfile(name)
 	return true, name
+end
+
+--------------------------------------------------------------------------------
+-- Style themes: the global style saved under a name, usable from any profile
+--------------------------------------------------------------------------------
+function DB:ListThemes()
+	local out = {}
+	for name in pairs(self.global.themes) do out[#out + 1] = name end
+	table.sort(out, function(a, b) return a:lower() < b:lower() end)
+	return out
+end
+
+function DB:SaveTheme(name)
+	if not name or name == "" then return false end
+	self.global.themes[name] = StrippedStyle(self.style)
+	return true
+end
+
+function DB:ApplyTheme(name)
+	local theme = self.global.themes[name]
+	if type(theme) ~= "table" then return false end
+	wipe(self.style)
+	for k, v in pairs(CopyTable(theme)) do self.style[k] = v end
+	Inflate(self.style, self.STYLE_DEFAULTS)
+	return true
+end
+
+function DB:DeleteTheme(name)
+	self.global.themes[name] = nil
+end
+
+--------------------------------------------------------------------------------
+-- One module's settings, as a string of its own
+--------------------------------------------------------------------------------
+local MODULE_PREFIX = "!XUIM1!"
+
+function DB:ExportModule(key)
+	local LS, LD = Libs()
+	if not (LS and LD) then return nil, "serializer missing" end
+	local t = self.profile.modules[key]
+	if not t then return nil, "no such module" end
+	local data = CopyTable(t)
+	data.enabled = nil
+	Strip(data, self.moduleDefaults[key] or {})
+	local payload = { addon = XUI.ADDON_NAME, schema = SCHEMA_VERSION, kind = "module", key = key, data = data }
+	local compressed = LD:CompressDeflate(LS:Serialize(payload), { level = 9 })
+	return MODULE_PREFIX .. LD:EncodeForPrint(compressed)
+end
+
+-- Replaces the settings of module `key` (not whether it is enabled) with those
+-- in `str`, which must have been exported from the same module.
+function DB:ImportModule(str, key)
+	local LS, LD = Libs()
+	if not (LS and LD) then return false, "serializer missing" end
+	if type(str) ~= "string" then return false, "nothing to import" end
+	str = str:gsub("%s", "")
+	if str:sub(1, #MODULE_PREFIX) ~= MODULE_PREFIX then return false, "not a XerionUI module string" end
+	local decoded = LD:DecodeForPrint(str:sub(#MODULE_PREFIX + 1))
+	local inflated = decoded and LD:DecompressDeflate(decoded)
+	local ok, payload = false, nil
+	if inflated then ok, payload = LS:Deserialize(inflated) end
+	if not ok or type(payload) ~= "table" or type(payload.data) ~= "table" then return false, "the string is damaged" end
+	if payload.key ~= key then return false, ("that string is for %s"):format(tostring(payload.key)) end
+	local t = self.profile.modules[key]
+	local enabled = t.enabled
+	wipe(t)
+	for k, v in pairs(payload.data) do t[k] = v end
+	Inflate(t, self.moduleDefaults[key] or {})
+	t.enabled = enabled
+	return true
 end
