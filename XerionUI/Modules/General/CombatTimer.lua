@@ -17,7 +17,7 @@ local M = XUI:NewModule("CombatTimer", {
 		format = "CLOCK",
 		linger = 0,
 		text = T.Font(16, { color = { 1, 1, 1, 1 } }),
-		position = T.Position(0, 110),
+		position = T.Position(0, -220),
 	},
 })
 
@@ -46,7 +46,7 @@ local display, ticker, startTime, lastShown
 
 local function Display()
 	if display then return display end
-	display = XUI.Widgets:CreateText("XerionUICombatTimer")
+	display = XUI.Widgets:CreateText("XUI_CombatTimer")
 	display:Hide()
 	XUI.Movers:Register(display, M, "position")
 	return display

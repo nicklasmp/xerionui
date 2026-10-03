@@ -19,6 +19,16 @@ lua.lua_register(L, to_luastring('readfile'), (L) => {
   return 1;
 });
 
+const emit = require('./snapshot');
+lua.lua_register(L, to_luastring('emitsnapshot'), (L) => {
+  const name = to_jsstring(lauxlib.luaL_checkstring(L, 1));
+  const json = to_jsstring(lauxlib.luaL_checkstring(L, 2));
+  const w = lua.lua_tonumber(L, 3), h = lua.lua_tonumber(L, 4);
+  const crop = lua.lua_isnumber(L, 5) ? [5, 6, 7, 8].map((i) => lua.lua_tonumber(L, i)) : null;
+  console.log('snapshot: ' + emit(name, json, w, h, crop));
+  return 0;
+});
+
 function runFile(file) {
   const src = fs.readFileSync(path.join(__dirname, file));
   if (lauxlib.luaL_loadbuffer(L, src, null, to_luastring('@' + file)) !== lua.LUA_OK ||
@@ -29,5 +39,6 @@ function runFile(file) {
 }
 
 runFile('wowmock.lua');
+runFile('render.lua');
 runFile('loader.lua');
 runFile(process.argv[2] || 'scenario.lua');

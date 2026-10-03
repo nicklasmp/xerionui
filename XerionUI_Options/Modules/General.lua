@@ -19,8 +19,12 @@ O:RegisterModuleOptions("CombatAlert", function(ctx, m, G)
 			{ type = "slider", label = "Fade out (seconds)", path = "fade", min = 0, max = 3, step = 0.1 },
 		}),
 		Card("Text", G.Font("text")),
-		Card("Alert on entering combat", G.Alert("enterAlert", { fallbackText = m.db.enterText })),
-		Card("Alert on leaving combat", G.Alert("leaveAlert", { fallbackText = m.db.leaveText })),
+		Card("Alert on entering combat", G.Alert("enterAlert", {
+			test = function() XUI.Audio:Play(m.db.enterAlert, m.db.enterText, true) end,
+		})),
+		Card("Alert on leaving combat", G.Alert("leaveAlert", {
+			test = function() XUI.Audio:Play(m.db.leaveAlert, m.db.leaveText, true) end,
+		})),
 		Card("Position", G.Position("position")),
 	}
 end)

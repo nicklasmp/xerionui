@@ -163,7 +163,7 @@ local function ShadowObject(f)
 	local obj = shadowObjects[key]
 	if obj then return obj, key end
 	shadowCount = shadowCount + 1
-	obj = CreateFont("XerionUIShadowFont" .. shadowCount)
+	obj = CreateFont("XUI_ShadowFont" .. shadowCount)
 	obj:SetFont([[Fonts\ARIALN.TTF]], 12, "")
 	if f.shadow then
 		obj:SetShadowColor(UnpackColor(f.shadowColor, 0, 0, 0, 1))

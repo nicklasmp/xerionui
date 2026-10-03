@@ -23,7 +23,7 @@ local M = XUI:NewModule("CombatAlert", {
 		text = T.Font(22),
 		enterAlert = T.Alert(),
 		leaveAlert = T.Alert(),
-		position = T.Position(0, 140),
+		position = T.Position(0, 220),
 	},
 })
 
@@ -31,7 +31,7 @@ local display
 
 local function Display()
 	if display then return display end
-	display = XUI.Widgets:CreateText("XerionUICombatAlert")
+	display = XUI.Widgets:CreateText("XUI_CombatAlert")
 	display:Hide()
 	local anim = display:CreateAnimationGroup()
 	display.fadeOut = anim:CreateAnimation("Alpha")

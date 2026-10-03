@@ -5,6 +5,7 @@
   "scripts": {
     "lint": "node lint.js ../XerionUI --skip=Libs --globals && node lint.js ../XerionUI_Options --globals",
     "test": "node harness/run.js",
+    "shots": "node harness/run.js shots.lua",
     "media": "node gen-media.js"
   },
   "dependencies": {

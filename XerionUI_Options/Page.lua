@@ -195,30 +195,43 @@ function Page:Layout()
 			local cellW = (inner - COL_GAP * (cols - 1)) / cols
 			local top = spec.title and (CARD_PAD + TITLE_H - 8) or CARD_PAD
 			local rowY, rowH, col = top, 0, 0
+			local row = {}
+			-- Controls in a row share its bottom edge, so a button lines up
+			-- with the field of the labelled dropdown beside it.
+			local function Flush()
+				for _, it in ipairs(row) do
+					local y = it.alignTop and rowY or (rowY + rowH - it.h)
+					it.control:ClearAllPoints()
+					it.control:SetPoint("TOPLEFT", f, "TOPLEFT", it.x, -y)
+				end
+				wipe(row)
+				rowY = rowY + rowH + ROW_GAP
+				rowH, col = 0, 0
+			end
 			for _, control in ipairs(card.items) do
 				local desc = control.desc
 				if Hidden(desc, self.ctx) then
 					control:Hide()
 				else
 					local span = desc.width == "full" and cols or math.min(cols, desc.span or 1)
-					if col > 0 and (col + span > cols or desc.newRow) then
-						rowY = rowY + rowH + ROW_GAP
-						rowH, col = 0, 0
-					end
-					local w = cellW * span + COL_GAP * (span - 1)
-					control:ClearAllPoints()
-					control:SetPoint("TOPLEFT", f, "TOPLEFT", CARD_PAD + col * (cellW + COL_GAP), -rowY)
-					control:SetWidth(w)
+					if col > 0 and (col + span > cols or desc.newRow) then Flush() end
+					control:SetWidth(cellW * span + COL_GAP * (span - 1))
 					if control.Measure then control:Measure() end
 					control:Show()
-					rowH = max(rowH, control.height or control:GetHeight())
+					local h = control.height or control:GetHeight()
+					row[#row + 1] = {
+						control = control, h = h, alignTop = desc.alignTop or desc.type == "description",
+						x = CARD_PAD + col * (cellW + COL_GAP),
+					}
+					rowH = max(rowH, h)
 					col = col + span
-					if col >= cols then
-						rowY = rowY + rowH + ROW_GAP
-						rowH, col = 0, 0
-					end
+					if col >= cols then Flush() end
 				end
 			end
+			if col > 0 then
+				Flush()
+			end
+			col = 0
 			local h = rowY + rowH + CARD_PAD - (col == 0 and ROW_GAP or 0)
 			f:ClearAllPoints()
 			f:SetPoint("TOPLEFT", self.child, "TOPLEFT", PAGE_PAD, -y)

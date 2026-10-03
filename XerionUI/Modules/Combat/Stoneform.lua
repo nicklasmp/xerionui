@@ -24,7 +24,7 @@ local M = XUI:NewModule("Stoneform", {
 		border = T.Border(),
 		glow = T.Glow(false),
 		alert = T.Alert("TTS", { text = "Bleed detected" }),
-		position = T.Position(0, 160, "HIGH"),
+		position = T.Position(0, 140, "HIGH"),
 	},
 })
 
@@ -44,7 +44,7 @@ local bleeding, shown = false, false
 
 local function Display()
 	if display then return display end
-	display = XUI.Widgets:CreateIcon("XerionUIStoneform")
+	display = XUI.Widgets:CreateIcon("XUI_Stoneform")
 	display:SetIcon(XUI.GetSpellIcon(STONEFORM, FALLBACK_ICON))
 	display:Hide()
 	XUI.Movers:Register(display, M, "position")

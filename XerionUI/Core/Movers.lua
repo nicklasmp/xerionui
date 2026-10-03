@@ -152,6 +152,9 @@ local function CreateOverlay(entry)
 	ov:SetScript("OnMouseUp", function(self, button)
 		if button == "LeftButton" and Movers.dragging == self then
 			self.entry.frame:StopMovingOrSizing()
+			-- a moved named frame is otherwise saved in layout-local.txt by
+			-- the client and put back there at login, fighting our position
+			self.entry.frame:SetUserPlaced(false)
 			Movers:SaveFromFrame(self.entry)
 			Movers.dragging = nil
 			self:SetScript("OnUpdate", nil)

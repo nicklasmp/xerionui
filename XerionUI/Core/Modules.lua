@@ -350,6 +350,7 @@ end)
 local function EvaluateAll()
 	for _, m in ipairs(XUI.modules) do XUI:UpdateModuleState(m) end
 end
+local EvaluateSoon = XUI.Coalesce(EvaluateAll)
 
 --------------------------------------------------------------------------------
 -- Bootstrap
@@ -371,8 +372,11 @@ boot:SetScript("OnEvent", function(self, event, arg1)
 		self:UnregisterEvent("PLAYER_LOGIN")
 		XUI.loggedIn = true
 		EvaluateAll()
-		-- Specialization and addon-dependent modules re-check their conditions.
+		-- Specialization, spell and addon-dependent modules re-check their
+		-- conditions (a talent or racial may only be known once the spellbook
+		-- has loaded, which can be after login).
 		self:RegisterUnitEvent("PLAYER_SPECIALIZATION_CHANGED", "player")
+		self:RegisterEvent("SPELLS_CHANGED")
 		for _, m in ipairs(XUI.modules) do
 			if m.requires and not XUI.IsAddOnLoaded(m.requires) then
 				XUI.OnAddOnLoaded(m.requires, function() XUI:UpdateModuleState(m) end)
@@ -382,7 +386,7 @@ boot:SetScript("OnEvent", function(self, event, arg1)
 		if DB.global.loginMessage then
 			XUI.Printf("%s loaded. Type |cffffffff/xui|r for options.", XUI.version)
 		end
-	elseif event == "PLAYER_SPECIALIZATION_CHANGED" then
-		EvaluateAll()
+	elseif event == "PLAYER_SPECIALIZATION_CHANGED" or event == "SPELLS_CHANGED" then
+		EvaluateSoon()
 	end
 end)

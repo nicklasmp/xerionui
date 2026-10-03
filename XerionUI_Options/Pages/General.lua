@@ -19,7 +19,7 @@ O:RegisterSystemPage({
 	root = function() return XUI.DB.global end,
 	onChange = function(path)
 		if path == "panel.scale" then
-			local f = _G.XerionUIOptionsFrame
+			local f = _G.XUI_OptionsFrame
 			if f then f:SetScale(XUI.DB.global.panel.scale) end
 		elseif path == "accent" then
 			O:RefreshSidebar()

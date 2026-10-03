@@ -374,15 +374,17 @@ local function SavePosition()
 end
 
 local function CreateWindow()
-	frame = CreateFrame("Frame", "XerionUIOptionsFrame", UIParent)
+	frame = CreateFrame("Frame", "XUI_OptionsFrame", UIParent)
 	frame:SetSize(W, H)
 	frame:SetFrameStrata("HIGH")
 	frame:SetToplevel(true)
 	frame:SetClampedToScreen(true)
 	frame:SetMovable(true)
 	frame:EnableMouse(true)
+	-- scale first: borders are sized in physical pixels of the final scale
+	frame:SetScale(XUI.DB.global.panel.scale or 1)
 	O:Skin(frame, "window", "line")
-	tinsert(UISpecialFrames, "XerionUIOptionsFrame")
+	tinsert(UISpecialFrames, "XUI_OptionsFrame")
 
 	local p = XUI.DB.global.panel.point
 	if type(p) == "table" and p[1] then
@@ -390,7 +392,6 @@ local function CreateWindow()
 	else
 		frame:SetPoint("CENTER")
 	end
-	frame:SetScale(XUI.DB.global.panel.scale or 1)
 
 	-- header
 	local header = CreateFrame("Frame", nil, frame)

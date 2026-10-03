@@ -167,10 +167,11 @@ local ObjectMeta = {
 }
 
 local nameCount = 0
+MOCK.Object = Object
 local function New(kind, name, parent)
 	local o = setmetatable({
 		_kind = kind, _name = name, _parent = parent, _w = 0, _h = 0, _shown = true, _scripts = {},
-		_points = {}, _level = parent and (parent._level or 0) + 1 or 0, _strata = "MEDIUM", _scale = 1,
+		_points = {}, _level = parent and (parent._level or 0) + 1 or 0, _strata = nil, _scale = 1,
 		_alpha = 1, _text = nil, _children = {},
 	}, ObjectMeta)
 	if parent and parent._children then table.insert(parent._children, o) end
@@ -222,7 +223,11 @@ function Object:GetEffectiveScale() return self._scale end
 function Object:SetFrameLevel(l) self._level = l end
 function Object:GetFrameLevel() return self._level end
 function Object:SetFrameStrata(s) self._strata = s end
-function Object:GetFrameStrata() return self._strata end
+function Object:GetFrameStrata()
+	local o = self
+	while o do if o._strata then return o._strata end o = o._parent end
+	return "MEDIUM"
+end
 function Object:IsForbidden() return false end
 function Object:IsProtected() return false end
 function Object:IsMouseOver() return false end
@@ -242,12 +247,14 @@ function Object:IsEventRegistered(e) return MOCK.events[e] and MOCK.events[e][se
 function Object:GetChildren() return table.unpack(self._children) end
 function Object:GetRegions() return end
 -- textures / font strings
-local function Region(self, kind, layer)
+local function Region(self, kind, layer, sub)
 	local r = New(kind, nil, self)
 	r._layer = layer
+	r._sub = sub
+	r._region = true
 	return r
 end
-function Object:CreateTexture(name, layer) return Region(self, "Texture", layer) end
+function Object:CreateTexture(name, layer, template, sub) return Region(self, "Texture", layer, sub) end
 function Object:CreateMaskTexture() return Region(self, "MaskTexture") end
 function Object:CreateLine() return Region(self, "Line") end
 function Object:CreateFontString(name, layer, template)
