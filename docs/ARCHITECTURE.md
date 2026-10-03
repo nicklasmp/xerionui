@@ -16,8 +16,11 @@ Load order matters; each file builds on the ones above it.
 | File | Provides |
 |---|---|
 | `Init.lua` | `XUI` table, printing, secret-value helpers (`IsSecret`, `Readable`, `Probe`), `SafeCall`, table/path/colour helpers, `Coalesce`, the internal message bus (`XUI:On/Off/Fire`), addon-load and player-info helpers |
+| `Midnight.lua` | secret-safe questions (`Ask`), `AuraPayloadChurns`, `Restricted`/`AuraSoundsBlocked`, AuraContainer helpers, duration text formatters, `PlayerIsTank`, `KeyActive`, `ClassColor` |
+| `Data.lua` | shared game data (interrupt spells, `Data.PlayerKick()`) |
 | `Database.lua` | `XUI.DB`: saved variables, profiles, defaults (inflate on activate, strip on logout), import/export |
 | `Media.lua` | `XUI.Media`: LibSharedMedia lookups with caching and fallbacks, sorted lists |
+| `Glow.lua` | script-free glows (ants, pulse): AnimationGroups only, safe on engine aura buttons |
 | `Style.lua` | `XUI.Style`: resolves style blocks and applies fonts, borders, backgrounds, bars, icon crops and glows |
 | `Audio.lua` | `XUI.Audio`: sound / text-to-speech alert blocks |
 | `Modules.lua` | `XUI:NewModule`, the module lifecycle, load conditions, bootstrap |
@@ -146,6 +149,8 @@ A module element stores small **style blocks**; `XUI.Style:Resolve(kind, block)`
 | `bar` | texture, bgColor | width, height, color |
 | `icon` | zoom (crop %) | width, height, size |
 
+Glow types: PIXEL and PULSE are our own C-animated glows; AUTOCAST, BUTTON and PROC come from LibCustomGlow (OnUpdate scripts) and fall back to PIXEL when `ShowGlow(frame, block, true)` is asked for an engine button.
+
 Apply functions: `Style:ApplyFont(fs, block, size)`, `Style:Border(frame):Apply(block)`, `Style:Background(frame)` + `ApplyBackground`, `Style:ApplyBar(bar, block)`, `Style:IconTexCoord(tex, w, h, zoom)`, `Style:ShowGlow / HideGlow / SetGlow`. They are idempotent and cheap to call on every refresh (fonts and glows skip work when nothing changed).
 
 Borders are drawn **inside** the frame in physical pixels; content is inset by `border:GetInset()`. Drop shadows come from shared FontObjects (runtime `SetShadowOffset` does not draw on 12.x). `slug` adds Midnight's crisp `SLUG` outline flag.
@@ -196,7 +201,7 @@ Descriptor fields: `type`, `label`, `tip`, `path` (dotted, relative to the modul
 
 ```
 cd tools && npm install
-npm test          # loads both addons in a mocked client and drives every control
+npm test          # loads both addons in a mocked client (12.0 and 12.1 mode) and drives every control
 npm run shots     # renders each options page to tools/harness/out/*.html
 npm run lint      # Lua 5.1 syntax + accidental global writes
 npm run media     # regenerates the UI textures in XerionUI/Media

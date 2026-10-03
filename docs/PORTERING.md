@@ -13,6 +13,14 @@ Hvert legacy-feature flyttes ind i den nye kerne som ét modul: én fil i `Xerio
 | Combat Timer | I | ✅ | Tikker kun i kamp (legacy kørte `OnUpdate` hver frame) |
 | Stoneform Bleed Alert | X | ✅ | Unit-filtreret aura-event, cooldown-event kun mens man bløder |
 
+## Fase 1b — gruppe, kamp og EllesmereUI (færdig, oktober 2026)
+
+Melee Indicator, Death Alert, Externals, Party Interrupts, Co-Tank, Shroud/Mass Invis, CC Tracker, Aggro Check, Bloodlust Ready og de fem EllesmereUI-tweaks er porteret (se tabellerne). CC Cast Notices udgik.
+
+## Næste runde — klasser
+
+Fase 4 (klasser og specs) er næste runde.
+
 ## Fase 2 — generelle QoL-indikatorer (simple, mest tekst)
 
 | Feature | Kilde | Status | Note |
@@ -22,10 +30,10 @@ Hvert legacy-feature flyttes ind i den nye kerne som ét modul: én fil i `Xerio
 | Stance Alert | I | ⏳ | Druid-form / warrior-stance |
 | Repair Indicator | I | ⏳ | |
 | Pet Missing / Pet Passive | I | ⏳ | Kan samles i ét "Pet"-modul |
-| Melee Indicator | I | ⏳ | |
+| Melee Indicator | I | ✅ | |
 | Character Indicator | I | ⏳ | |
 | Potion Alert | I | ⏳ | |
-| Death Alert | I | ⏳ | |
+| Death Alert | I | ✅ | |
 | Prevent Release | I | ⏳ | |
 | Cursor Circle | I | ❓ | EllesmereUI har selv cursor-features |
 | Misc (AH-filtre m.m.) | I | ⏳ | AH-filteret skriver Blizzards globale `AUCTION_HOUSE_DEFAULT_FILTERS` — tjek for taint |
@@ -35,14 +43,14 @@ Hvert legacy-feature flyttes ind i den nye kerne som ét modul: én fil i `Xerio
 
 | Feature | Kilde | Status | Note |
 |---|---|---|---|
-| Externals | K | ⏳ | Ikon-række: oplagt test af `CreateIcon` + glow |
-| Party Interrupts | K | ⏳ | Stor (1.600 linjer); bar- og ikon-layout |
-| Co-Tank | K | ⏳ | Bar + debuff-ikoner |
-| Shroud / Mass Invis bar | K | ⏳ | Bar-modul: første rigtige bruger af `CreateBar` |
-| CC Tracker (bars) | K | ⏳ | Midnight AuraContainer-baseret |
+| Externals | K | ✅ | Ikon-række: oplagt test af `CreateIcon` + glow |
+| Party Interrupts | K | ✅ | Stor (1.600 linjer); bar- og ikon-layout |
+| Co-Tank | K | ✅ | Bar + debuff-ikoner |
+| Shroud / Mass Invis bar | K | ✅ | Bar-modul: første rigtige bruger af `CreateBar` |
+| CC Tracker (bars) | K | ✅ | Midnight AuraContainer-baseret |
 | CC Cast Notices | K | ✖ | Virker ikke i Midnight (cast-ID'er er redigerede) — jf. legacy README |
-| Aggro Check | K | ⏳ | |
-| Bloodlust ready (lyd/TTS) | K | ⏳ | Kan bruge `G.Alert` direkte |
+| Aggro Check | K | ✅ | |
+| Bloodlust ready (lyd/TTS) | K | ✅ | Kan bruge `G.Alert` direkte |
 | Focus Interrupt Indicator | I | ⏳ | Overlapper med EUI FocusKick Sound — vælg én |
 | Focus Target Marker | I | ⏳ | |
 | Healer Mana Indicator | I | ⏳ | |
@@ -85,11 +93,11 @@ Alle får `requires = "EllesmereUI…"`, så de kun kører med det relevante Ell
 
 | Feature | Kilde | Status | Note |
 |---|---|---|---|
-| Nameplates (dispel-glow uden purge, shield amount) | K | ⏳ | Hooker EllesmereUI-internals — skrøbeligt ved EUI-opdateringer |
-| FocusKick Sound | K | ⏳ | |
-| Focus Cast Bar (M+ Tools) | K | ⏳ | Finder EUI's bar via gemt position — skrøbeligt |
-| Targeted Spell Bars | K | ⏳ | |
-| Party Frames (health-tekst, debuff-stack placering) | K | ⏳ | |
+| Nameplates (dispel-glow uden purge, shield amount) | K | ✅ | Hooker EllesmereUI-internals — skrøbeligt ved EUI-opdateringer |
+| FocusKick Sound | K | ✅ | Ringede aldrig i legacy (slettede hjælpefunktioner) - rettet |
+| Focus Cast Bar (M+ Tools) | K | ✅ | Finder EUI's bar via gemt position — skrøbeligt |
+| Targeted Spell Bars | K | ✅ | |
+| Party Frames (health-tekst, debuff-stack placering) | K | ✅ | Health-teksten lyttede på alle units - nu unit-filtreret |
 | Damage Meter item level | K | ⏳ | |
 | Cooldown Manager anchor / `/cdm` | K/I | ❓ | |
 
