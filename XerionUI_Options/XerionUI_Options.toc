@@ -25,4 +25,5 @@ Pages\Profiles.lua
 # Module options
 Modules\Combat.lua
 Modules\Group.lua
+Modules\Class.lua
 Modules\Tweaks.lua
