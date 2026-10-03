@@ -56,8 +56,7 @@ DB.GLOBAL_DEFAULTS = {
 DB.STYLE_DEFAULTS = {
 	font = {
 		face = "GothamNarrowBlack",
-		outline = "OUTLINE",
-		slug = true,
+		outline = "SLUGOUTLINE",
 		shadow = false,
 		shadowColor = { 0, 0, 0, 1 },
 		shadowX = 1,
@@ -169,6 +168,43 @@ local function StrippedCopy(profile)
 end
 
 --------------------------------------------------------------------------------
+-- Font migration: "outline" and a separate "slug" switch became one outline
+-- choice with slug variants (SLUGOUTLINE is the default, like EllesmereUI).
+--------------------------------------------------------------------------------
+local function MigrateFontBlock(t, isGlobal)
+	if t.slug == nil and t.outline == nil then return end
+	if t.slug == true then
+		if t.outline == nil or t.outline == "OUTLINE" then t.outline = "SLUGOUTLINE"
+		elseif t.outline == "THICKOUTLINE" then t.outline = "SLUGTHICKOUTLINE" end
+	elseif t.slug == false and (t.outline == nil or t.outline == "OUTLINE") then
+		t.outline = "OUTLINE"
+	elseif t.slug == nil and isGlobal and t.outline == "THICKOUTLINE" then
+		-- the old global default had slug on
+		t.outline = "SLUGTHICKOUTLINE"
+	end
+	t.slug = nil
+end
+
+local function WalkFonts(t, depth)
+	if depth > 4 then return end
+	for _, v in pairs(t) do
+		if type(v) == "table" then
+			MigrateFontBlock(v, false)
+			WalkFonts(v, depth + 1)
+		end
+	end
+end
+
+local function MigrateFonts(profile)
+	if profile.fontsMigrated then return end
+	if type(profile.style) == "table" and type(profile.style.font) == "table" then
+		MigrateFontBlock(profile.style.font, true)
+	end
+	if type(profile.modules) == "table" then WalkFonts(profile.modules, 0) end
+	profile.fontsMigrated = 1
+end
+
+--------------------------------------------------------------------------------
 -- Lifecycle
 --------------------------------------------------------------------------------
 function DB:RegisterModuleDefaults(key, defaults)
@@ -222,6 +258,7 @@ function DB:Activate(name)
 		profile = {}
 		sv.profiles[name] = profile
 	end
+	MigrateFonts(profile)
 	Inflate(profile, profileDefaults)
 	self.profile = profile
 	self.profileName = name
@@ -290,6 +327,7 @@ function DB:CopyProfile(source)
 	local data = CopyTable(src)
 	wipe(self.profile)
 	for k, v in pairs(data) do self.profile[k] = v end
+	MigrateFonts(self.profile)
 	Inflate(self.profile, profileDefaults)
 	self.style, self.general = self.profile.style, self.profile.general
 	Changed()

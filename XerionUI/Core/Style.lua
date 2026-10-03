@@ -31,14 +31,22 @@ XUI.Style = Style
 --------------------------------------------------------------------------------
 -- Choice lists (shared with the options panel)
 --------------------------------------------------------------------------------
+-- SLUG is Midnight's sharper text rendering, the one EllesmereUI uses: the
+-- slug variants are the default and what you want unless you need the old look.
 Style.OUTLINES = {
-	{ value = "NONE", text = "None" },
-	{ value = "OUTLINE", text = "Outline" },
-	{ value = "THICKOUTLINE", text = "Thick outline" },
+	{ value = "SLUGOUTLINE", text = "Outline (slug, like EllesmereUI)" },
+	{ value = "SLUGTHICKOUTLINE", text = "Thick outline (slug)" },
+	{ value = "SLUG", text = "No outline (slug)" },
+	{ value = "NONE", text = "None (classic)" },
+	{ value = "OUTLINE", text = "Outline (classic)" },
+	{ value = "THICKOUTLINE", text = "Thick outline (classic)" },
 	{ value = "MONOCHROME", text = "Monochrome" },
 }
 
 local OUTLINE_FLAGS = {
+	SLUGOUTLINE = "OUTLINE, SLUG",
+	SLUGTHICKOUTLINE = "THICKOUTLINE, SLUG",
+	SLUG = "SLUG",
 	NONE = "",
 	OUTLINE = "OUTLINE",
 	THICKOUTLINE = "THICKOUTLINE",
@@ -178,11 +186,7 @@ local function ShadowObject(f)
 end
 
 function Style:FontFlags(f)
-	local flags = OUTLINE_FLAGS[f.outline] or ""
-	if f.slug and (f.outline == "OUTLINE" or f.outline == "THICKOUTLINE") then
-		flags = flags .. ", SLUG"
-	end
-	return flags
+	return OUTLINE_FLAGS[f.outline] or OUTLINE_FLAGS.SLUGOUTLINE
 end
 
 -- Applies a font block to a FontString. `size` overrides the block's size

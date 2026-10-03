@@ -126,13 +126,10 @@ function G.Font(path, opts)
 	})
 	items[#items + 1] = StyleField("font", path, "outline", opts, {
 		type = "dropdown", label = "Outline", values = Style.OUTLINES,
+		tip = "The slug variants use Midnight's sharper text rendering, the same as EllesmereUI. The classic ones are the old look.",
 	})
 	items[#items + 1] = StyleField("font", path, "shadow", opts, {
 		type = "toggle", label = "Drop shadow",
-	})
-	items[#items + 1] = StyleField("font", path, "slug", opts, {
-		type = "toggle", label = "Crisp outline",
-		tip = "Midnight's sharper outline rendering (SLUG). Only affects outlined text.",
 	})
 	if opts.global then
 		items[#items + 1] = StyleField("font", path, "shadowColor", opts, {

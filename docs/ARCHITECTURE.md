@@ -144,7 +144,7 @@ A module element stores small **style blocks**; `XUI.Style:Resolve(kind, block)`
 
 | Kind | Global fields | Local fields (always per element) |
 |---|---|---|
-| `font` | face, outline, slug, shadow, shadowColor, shadowX/Y | size, color, justify |
+| `font` | face, outline (slug variants by default, like EllesmereUI), shadow, shadowColor, shadowX/Y | size, color, justify |
 | `border` | style (NONE/SOLID/DOUBLE/LSM border), size (px), color | enabled |
 | `glow` | type (PIXEL/AUTOCAST/BUTTON/PROC), color, lines, frequency, length, thickness, particles, scale, offset | enabled |
 | `background` | texture, color | enabled |
