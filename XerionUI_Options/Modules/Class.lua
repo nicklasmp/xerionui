@@ -196,3 +196,16 @@ O:RegisterModuleOptions("AlterTime", function(ctx, m, G)
 		Card("Position (when not on the icon)", G.Position("position")),
 	}
 end)
+
+O:RegisterModuleOptions("FieryBrand", function(ctx, m, G)
+	return {
+		Card("Icon", Join(G.Icon("icon", { square = true }), {
+			{ type = "toggle", label = "Cooldown swipe", path = "showSwipe" },
+			{ type = "toggle", label = "Grey out the target debuff", path = "desatDebuff" },
+		})),
+		Card("Border on you (buff)", G.Border("buffBorder")),
+		Card("Border on the target (debuff)", G.Border("debuffBorder")),
+		Card("Seconds", G.Font("timerText", { toggle = "Show seconds", anchor = true })),
+		Card("Position", G.Position("position")),
+	}
+end)
