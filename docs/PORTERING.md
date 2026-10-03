@@ -84,11 +84,9 @@ Alle porteret og markeret `untested` i optionspanelet, indtil de er set i spille
 | Well-Honed Instincts-lyd | K | Druid | WellHoned | ✅ |
 | Bear Form-påmindelse | K | Druid (Guardian) | BearForm | ✅ |
 | Spell Reflect-skade | K | Warrior | SpellReflect | ✅ |
-| Defensive Indicator | I | alle | DefensiveIndicator | ✅ |
-| Self Dispel Alert | I | alle | SelfDispelAlert | ✅ |
-| Movement Alert | I | alle | MovementAlert | ✅ |
+| Defensive Indicator, Self Dispel Alert, Movement Alert | I | alle | – | ✖ porteret, men fjernet igen efter ønske (oktober 2026) |
 
-Afvigelser fra legacy: de egne træk-/lås-/CDM-anker-indstillinger er erstattet af movers (`/xui unlock`); farver, fonte, rammer, glow og lyd går gennem de fælles blokke. Ring-teksturen til Defensive Indicator er genereret (`tools/gen-media.js`) i stedet for Itrulias.
+Afvigelser fra legacy: de egne træk-/lås-/CDM-anker-indstillinger er erstattet af movers (`/xui unlock`); farver, fonte, rammer, glow og lyd går gennem de fælles blokke.
 
 ## Fase 5 — EllesmereUI Tweaks
 

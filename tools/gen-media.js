@@ -171,5 +171,3 @@ function writeTGA(name, c, color) {
   writeTGA('layers', c);
 }
 
-// ring: the circular swipe of the Defensive Indicator (a cooldown swipe texture)
-{ const c = canvas(128); fill(c, ring(64, 64, 57, 14)); writeTGA('ring', c); }
