@@ -398,7 +398,44 @@ function M:OnDisable()
 	if sample then sample:Hide() end
 end
 
+-- The sample: the number in each colour step, so the thresholds and colours
+-- can be judged without a party in combat.
+local numbers
+local function PreviewNumbers()
+	if numbers then return numbers end
+	numbers = CreateFrame("Frame", "XUI_PartyHealthSample", UIParent)
+	numbers:SetSize(260, 40)
+	numbers:SetFrameStrata("HIGH")
+	numbers.fs = {}
+	for i = 1, 4 do
+		numbers.fs[i] = numbers:CreateFontString(nil, "OVERLAY")
+		Style:ApplyFont(numbers.fs[i], nil, 12)
+		numbers.fs[i]:SetPoint("LEFT", numbers, "LEFT", (i - 1) * 64, 0)
+	end
+	numbers:Hide()
+	return numbers
+end
+
+local function PaintNumbers()
+	local n = PreviewNumbers()
+	local h = M.db.health
+	local steps = { h.t1, h.t2, h.t3 }
+	table.sort(steps)
+	-- one value inside each colour band
+	local values = { math.max(1, steps[1] - 10), math.floor((steps[1] + steps[2]) / 2), math.floor((steps[2] + steps[3]) / 2), steps[3] + 15 }
+	n:ClearAllPoints()
+	n:SetPoint("CENTER", UIParent, "CENTER", 0, -200)
+	for i, fs in ipairs(n.fs) do
+		Style:ApplyFont(fs, M.db.healthText)
+		fs:SetText(("%d"):format(values[i]))
+		fs:SetTextColor(XUI.UnpackColor(h.byValue and h["c" .. i] or h.color))
+		fs:SetShown(h.byValue or i == 1)
+	end
+	n:Show()
+end
+
 function M:OnRefresh()
+	if self:IsPreview() and self.db.health.enabled then PaintNumbers() elseif numbers then numbers:Hide() end
 	gen = gen + 1
 	if self.running and self.db.health.enabled then PaintAll() else HideAll() end
 	if self.running then RestyleStacks() end

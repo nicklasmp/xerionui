@@ -101,8 +101,42 @@ function M:OnDisable()
 	Paint(false)
 end
 
+-- The sample: a bar of our own in the middle of the screen with the chosen
+-- background, because EllesmereUI's real bar only exists with a focus.
+local sample
+local function Sample()
+	if sample then return sample end
+	sample = CreateFrame("Frame", "XUI_FocusCastbarSample", UIParent)
+	sample:SetFrameStrata("HIGH")
+	sample.bg = sample:CreateTexture(nil, "BACKGROUND")
+	sample.bg:SetAllPoints()
+	sample.bar = CreateFrame("StatusBar", nil, sample)
+	sample.bar:SetStatusBarTexture([[Interface\Buttons\WHITE8X8]])
+	sample.bar:SetStatusBarColor(0.85, 0.85, 0.2, 1)
+	sample.bar:SetMinMaxValues(0, 1)
+	sample.bar:SetValue(0.6)
+	sample.bar:SetAllPoints()
+	sample.border = XUI.Style:Border(sample.bar)
+	sample.text = sample.bar:CreateFontString(nil, "OVERLAY")
+	XUI.Style:ApplyFont(sample.text, nil, 12)
+	sample.text:SetPoint("LEFT", 6, 0)
+	sample.text:SetText("Polymorph")
+	sample:Hide()
+	return sample
+end
+
 function M:OnRefresh()
 	if self.running then Paint(true) end
+	if not (sample or self:IsPreview()) then return end
+	local s = Sample()
+	local focus = FocusSettings()
+	local w, h = focus and focus.width or 260, focus and focus.height or 22
+	s:SetSize(w, h)
+	s:ClearAllPoints()
+	s:SetPoint("CENTER", UIParent, "CENTER", 0, -250)
+	s.bg:SetColorTexture(XUI.UnpackColor(self.db.color))
+	s.border:Apply({ useGlobal = false, style = "SOLID", size = 1, color = { 0, 0, 0, 1 } })
+	s:SetShown(self:IsPreview())
 end
 
 function M:DebugInfo()

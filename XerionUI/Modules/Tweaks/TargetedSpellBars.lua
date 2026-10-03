@@ -287,7 +287,23 @@ function M:OnDisable()
 	for holder in pairs(sparks) do StyleSpark(holder) end
 end
 
+-- EllesmereUI's own preview follows ours, so the spark can be judged on its bars
+local euiPreview = false
+local function SyncEUIPreview(want)
+	local emt = EMT()
+	if not (emt and type(emt.TSB_SetPreview) == "function" and TSBEnabled()) then return end
+	local on = type(emt.TSB_IsPreview) == "function" and select(2, pcall(emt.TSB_IsPreview))
+	if want and not on then
+		pcall(emt.TSB_SetPreview, true)
+		euiPreview = true
+	elseif not want and euiPreview then
+		if on then pcall(emt.TSB_SetPreview, false) end
+		euiPreview = false
+	end
+end
+
 function M:OnRefresh()
+	SyncEUIPreview(self:IsPreview())
 	if not self.running then return end
 	if self.db.hideBossCasts then Install(true) end
 	Resync()
