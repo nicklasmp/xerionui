@@ -139,13 +139,14 @@ end
 -- Damage meter
 --------------------------------------------------------------------------------
 -- Your Overall damage done as { [spellID] = amount }; nil while the meter is
--- secret (in combat) or missing, {} when it simply has nothing.
-function Kit.ReadSpells()
+-- secret (in combat) or missing, {} when it simply has nothing. kind is
+-- "DamageDone" (default) or "DamageTaken".
+function Kit.ReadSpells(kind)
 	local DM, E = _G.C_DamageMeter, _G.Enum
 	if not (DM and DM.GetCombatSessionSourceFromType and E and E.DamageMeterSessionType and E.DamageMeterType) then return nil end
 	local guid = UnitGUID("player")
 	if not guid or IsSecret(guid) then return nil end
-	local ok, src = pcall(DM.GetCombatSessionSourceFromType, E.DamageMeterSessionType.Overall, E.DamageMeterType.DamageDone, guid, nil)
+	local ok, src = pcall(DM.GetCombatSessionSourceFromType, E.DamageMeterSessionType.Overall, E.DamageMeterType[kind or "DamageDone"], guid, nil)
 	if not ok then return nil end
 	if src == nil then return {} end
 	if type(src) ~= "table" then return nil end
@@ -170,7 +171,8 @@ end
 -- up.
 -- opts: frame, label, count (function(spellID) -> bool, the lines to sum),
 --       isTrigger (function(spellID) -> bool), settle (s after the last cast),
---       showFor, preview (number)
+--       showFor, preview (number), onSpell (function(self, spellID) for every
+--       cast of yours, secret IDs included), onFightEnd (function(self))
 -- Settings it reads: font, labelColor, valueColor, position.
 -- Adds M:StartMeterEvents(), M:Hide() and an OnRefresh.
 --------------------------------------------------------------------------------
@@ -278,10 +280,14 @@ function Kit.Meter(M, opts)
 
 	function M:StartMeterEvents()
 		self:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", "player", function(self, _, _, _, spellID)
+			if opts.onSpell then opts.onSpell(self, spellID) end
 			if IsSecret(spellID) then return end
 			if opts.isTrigger(spellID) then self:OnCast() end
 		end)
-		self:RegisterEvent("PLAYER_REGEN_ENABLED", "Nudge")
+		self:RegisterEvent("PLAYER_REGEN_ENABLED", function(self)
+			self:Nudge()
+			if opts.onFightEnd then opts.onFightEnd(self) end
+		end)
 		pcall(self.RegisterEvent, self, "ADDON_RESTRICTION_STATE_CHANGED", "Nudge")
 		pcall(self.RegisterEvent, self, "DAMAGE_METER_RESET", "ResetMeter")
 		self:RegisterEvent("PLAYER_ENTERING_WORLD", function(self)

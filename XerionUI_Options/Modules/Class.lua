@@ -142,3 +142,33 @@ O:RegisterModuleOptions("BearForm", function(ctx, m, G)
 		Card("Position", G.Position("position")),
 	}
 end)
+
+O:RegisterModuleOptions("SpellReflect", function(ctx, m, G)
+	return {
+		Card("Text", Join(G.Font("font"), {
+			{ type = "color", label = "Label colour", path = "labelColor" },
+			{ type = "color", label = "Value colour", path = "valueColor" },
+		})),
+		Card("Learned spells", {
+			{ type = "description", width = "full", text = "Which damage lines are yours is learned after fights without a reflect, per character." },
+			{ type = "button", text = "Forget learned spells", onClick = function() m:Forget() end },
+		}),
+		Card("Position", G.Position("position")),
+	}
+end)
+
+O:RegisterModuleOptions("PaladinAura", function(ctx, m, G)
+	return {
+		Card("When", {
+			{ type = "toggle", label = "Only in Mythic+", path = "mplusOnly", width = "full" },
+		}),
+		Card("Icon", G.Icon("icon", { square = true })),
+		Card("Border", G.Border("border")),
+		Card("Text", Join(G.Font("text", { color = true }), {
+			{ type = "dropdown", label = "Placed", path = "textSide", values = m.SIDES },
+			{ type = "slider", label = "Offset X", path = "textX", min = -60, max = 60, step = 1 },
+			{ type = "slider", label = "Offset Y", path = "textY", min = -60, max = 60, step = 1 },
+		})),
+		Card("Position", G.Position("position")),
+	}
+end)
