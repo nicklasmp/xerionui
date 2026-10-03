@@ -464,9 +464,18 @@ function Style:ShowGlow(frame, block, engineSafe)
 	elseif kind == "PULSE" then
 		XUI.Glow.StartPulse(frame, { color = color, frequency = g.frequency, thickness = g.thickness })
 	elseif kind == "SHINE" then
-		XUI.Glow.StartShine(frame, {
+		local ok, err = pcall(XUI.Glow.StartShine, frame, {
 			color = color, particles = g.particles, frequency = g.frequency, scale = g.scale, offset = offset,
 		})
+		if not ok then
+			-- never leave the frame without a glow: say why, and use the pixel one
+			XUI.glowError = tostring(err)
+			XUI.Glow.StartAnts(frame, {
+				color = color, lines = g.lines, frequency = g.frequency, offset = offset,
+				length = g.length, thickness = self:Pixels(frame, max(1, g.thickness or 2)),
+			})
+			kind = "PIXEL"
+		end
 	elseif kind == "AUTOCAST" then
 		LCG.AutoCastGlow_Start(frame, color, floor(g.particles or 4), g.frequency or 0.25,
 			g.scale or 1, offset, offset, GLOW_KEY)

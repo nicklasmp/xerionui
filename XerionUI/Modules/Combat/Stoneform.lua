@@ -58,6 +58,7 @@ local GetSpellCooldown = C_Spell and C_Spell.GetSpellCooldown
 local host, sample, container, live
 local bleeding = false
 local showEvents, lastSound = 0, 0
+local glowState, styleError = "not applied yet", nil
 local stylePending = false
 
 --------------------------------------------------------------------------------
@@ -153,6 +154,7 @@ local function StyleLive()
 	live:SetAllPoints(host)
 	-- the engine's buttons only take the scriptless glows
 	Style:SetGlow(live, M.db.glow, true, true)
+	glowState = ("%s (set %s)"):format(tostring(live.__xuiGlow), tostring(M.db.glow.type))
 end
 
 local function InitButton(b)
@@ -254,7 +256,8 @@ function M:OnRefresh()
 	if self.running then
 		EnsureContainer()
 		-- a restyle the client refuses (in combat) waits for the fight to end
-		stylePending = not pcall(StyleLive)
+		local ok, err = pcall(StyleLive)
+		stylePending, styleError = not ok, not ok and tostring(err) or nil
 		container:SetShown(not preview)
 	end
 	h:SetShown(preview or self.running)
@@ -278,6 +281,8 @@ function M:DebugInfo()
 	else
 		out[#out + 1] = "cooldown record: unreadable"
 	end
+	out[#out + 1] = ("glow on the engine icon: %s, glow error: %s, restyle error: %s"):format(
+		glowState, tostring(XUI.glowError), tostring(styleError))
 	-- what the harmful auras on you look like to this addon
 	for i = 1, 12 do
 		local ok, aura = pcall(GetAuraDataByIndex, "player", i, "HARMFUL")
