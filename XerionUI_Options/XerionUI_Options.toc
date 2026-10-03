@@ -15,6 +15,7 @@ Controls.lua
 Dropdown.lua
 Page.lua
 Groups.lua
+Extras.lua
 Panel.lua
 
 # System pages, in sidebar order
