@@ -220,7 +220,6 @@ The harness (fengari, Lua 5.3) mocks the WoW API closely enough to load the TOCs
 | Preview looks and card eye buttons | `module.PREVIEW_STATES`, `Module:SetPreviewState`, card option `previewState` |
 | Test button | optional `module:Test()` (use `self:RequireRunning()`) |
 | Reset mark on changed controls | `O:AttachReset` in `Page.lua` |
-| Copy styling, share one module, visibility rules | `XerionUI_Options/Extras.lua`, `DB:ExportModule/ImportModule`, `Module:CanRun` (`db.visibility`) |
 | Style themes | Global Style page, `DB:SaveTheme/ApplyTheme` (account-wide) |
 | Automatic profile by content or spec | `Core/AutoProfile.lua`, Profiles page |
 | Attach a position to another frame | `position.attach` (+ `point`/`relPoint`), `Movers:Apply`, `G.Position` |

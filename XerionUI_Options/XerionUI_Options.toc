@@ -15,7 +15,6 @@ Controls.lua
 Dropdown.lua
 Page.lua
 Groups.lua
-Extras.lua
 Classes.lua
 Panel.lua
 

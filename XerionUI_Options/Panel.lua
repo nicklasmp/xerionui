@@ -58,14 +58,8 @@ local function GetPage(key)
 		spec = {
 			ctx = ModuleContext(m),
 			build = function(ctx)
-				local cards
-				if build then
-					cards = build(ctx, m, O.Groups)
-				else
-					cards = { O.Card(nil, { { type = "description", text = "This module has no settings yet.", width = "full" } }) }
-				end
-				for _, extra in ipairs(O:ModuleExtras(m, ctx)) do cards[#cards + 1] = extra end
-				return cards
+				if build then return build(ctx, m, O.Groups) end
+				return { O.Card(nil, { { type = "description", text = "This module has no settings yet.", width = "full" } }) }
 			end,
 		}
 	else
