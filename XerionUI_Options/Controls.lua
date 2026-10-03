@@ -283,11 +283,14 @@ function O:DropdownValues(desc, ctx)
 	return Resolve(desc.values, ctx) or {}
 end
 
-local function TextFor(values, value)
+-- The label of `value`; a media name that is not registered (an uninstalled
+-- SharedMedia pack) says so instead of silently showing the fallback.
+local function TextFor(values, value, isMedia)
 	for _, v in ipairs(values) do
 		if v.value == value then return v.text end
 	end
 	if value == nil or value == "" then return "None" end
+	if isMedia then return tostring(value) .. "  |cff888888(not installed)|r" end
 	return tostring(value)
 end
 
@@ -309,7 +312,7 @@ function Controls.dropdown(parent, desc, ctx)
 	function f:Refresh()
 		self.value = O:GetValue(desc, ctx)
 		self.disabled = IsDisabled(desc, ctx)
-		local text = TextFor(O:DropdownValues(desc, ctx), self.value)
+		local text = TextFor(O:DropdownValues(desc, ctx), self.value, desc.media ~= nil)
 		self.field.text:SetText(text)
 		if desc.media == "font" and self.value then
 			self.field.text:SetFont(XUI.Media:Fetch("font", self.value), O.SIZE.text, "")
