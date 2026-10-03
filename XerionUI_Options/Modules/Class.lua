@@ -92,3 +92,53 @@ O:RegisterModuleOptions("ControlUndead", function(ctx, m, G)
 		}),
 	})
 end)
+
+O:RegisterModuleOptions("Blightfall", function(ctx, m, G)
+	return {
+		Card("Timings", {
+			{ type = "slider", label = "Dark Transformation to Soul Reaper (s)", path = "delaySR", min = 0, max = 30, step = 0.5 },
+			{ type = "slider", label = "Soul Reaper to Blightfall (s)", path = "delayBF", min = 0, max = 30, step = 0.5 },
+			{ type = "dropdown", label = "Decimals", path = "decimals", values = { { value = 1, text = "One" }, { value = 0, text = "None" } } },
+		}),
+		Card("Voice", {
+			{ type = "toggle", label = "Count out loud", path = "voice", width = "full",
+				tip = "Says the spell five seconds out, then 3, 2, 1 and Now, with the game's text-to-speech voice." },
+			{ type = "button", text = "Test", onClick = function() m:TestVoice() end },
+			{ type = "description", width = "full", text = "An extra alert can play when the countdown reaches Now." },
+		}),
+		Card("Alert at Now", G.Alert("alert")),
+		Card("Grow", {
+			{ type = "toggle", label = "Grow the icon as the countdown ends", path = "growPulse", width = "full" },
+			{ type = "slider", label = "Start growing at (s)", path = "growStart", min = 1, max = 10, step = 0.5 },
+			{ type = "slider", label = "Largest scale", path = "growMax", min = 1, max = 3, step = 0.1 },
+		}),
+		Card("Icon", G.Icon("icon", { square = true })),
+		Card("Border", G.Border("border")),
+		Card("Glow in the last seconds", G.Glow("glow")),
+		Card("Countdown text", G.Font("timerText", { toggle = "Show countdown", anchor = true })),
+		Card("Position", G.Position("position")),
+	}
+end)
+
+O:RegisterModuleOptions("WellHoned", function(ctx, m, G)
+	return {
+		Card("Sounds", {
+			{ type = "dropdown", label = "When the lockout lands", path = "sound", media = "sound", filesOnly = true },
+			{ type = "button", text = "Test", onClick = function() m:Test("sound") end },
+			{ type = "dropdown", label = "When it ends", path = "endSound", media = "sound", filesOnly = true },
+			{ type = "button", text = "Test", onClick = function() m:Test("endSound") end },
+			{ type = "dropdown", label = "Channel", path = "channel", values = XUI.Audio.CHANNELS },
+			{ type = "description", width = "full", text = "Played by the game itself, so it works in keys and raid encounters. A new sound is registered when the fight or the encounter ends." },
+		}),
+	}
+end)
+
+O:RegisterModuleOptions("BearForm", function(ctx, m, G)
+	return {
+		Card("Text", Join({
+			{ type = "input", label = "Text", path = "text" },
+			{ type = "color", label = "Color", path = "color" },
+		}, G.Font("font"))),
+		Card("Position", G.Position("position")),
+	}
+end)

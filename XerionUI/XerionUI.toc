@@ -53,6 +53,9 @@ Modules\Class\DeathKnight\BoilingPoint.lua
 Modules\Class\DeathKnight\BloodIsLife.lua
 Modules\Class\DeathKnight\BloodBeast.lua
 Modules\Class\DeathKnight\ControlUndead.lua
+Modules\Class\DeathKnight\Blightfall.lua
+Modules\Class\Druid\WellHoned.lua
+Modules\Class\Druid\BearForm.lua
 Modules\Tweaks\Nameplates.lua
 Modules\Tweaks\FocusKick.lua
 Modules\Tweaks\FocusCastbar.lua
