@@ -465,7 +465,8 @@ function O:RefreshSidebar()
 					if Matches(ModuleWords(m) .. " " .. c.name:lower()) then matching[#matching + 1] = m end
 				end
 				local classMatches = Matches(c.name:lower())
-				if searchText == "" or classMatches or #matching > 0 then
+				-- a class nothing has been made for yet stays out of the list
+				if #mods > 0 and (searchText == "" or classMatches or #matching > 0) then
 					-- the class you play starts unfolded
 					if expandedClass[c.token] == nil then expandedClass[c.token] = (c.token == XUI.playerClass) end
 					AddItem("class:" .. c.token, c.name, c.icon, nil, false, 0, c.token)
