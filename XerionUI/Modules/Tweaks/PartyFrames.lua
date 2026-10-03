@@ -219,9 +219,9 @@ local function Read(w)
 	local n = 1
 	if w.byValue then
 		n = BANDS
-		pcall(w.ref.SetFormattedText, w.ref, "%.0f", width)
+		pcall(w.ref.SetFormattedText, w.ref, "%.0f%%", width)
 	end
-	for i = 1, n do pcall(w.text[i].SetFormattedText, w.text[i], "%.0f", width) end
+	for i = 1, n do pcall(w.text[i].SetFormattedText, w.text[i], "%.0f%%", width) end
 end
 
 -- the fills settle on the next layout pass: read once, one frame later
@@ -542,7 +542,7 @@ local function PaintNumbers()
 	n:SetPoint("CENTER", UIParent, "CENTER", 0, -200)
 	for i, fs in ipairs(n.fs) do
 		Style:ApplyFont(fs, M.db.healthText)
-		fs:SetText(("%d"):format(values[i]))
+		fs:SetText(("%d%%"):format(values[i]))
 		fs:SetTextColor(XUI.UnpackColor(h.byValue and h["c" .. i] or h.color))
 		fs:SetShown(h.byValue or i == 1)
 	end
@@ -579,7 +579,7 @@ local function PreviewParty()
 				w.pv:SetPoint(a, w.host, a, h.x, h.y)
 				w.pv:SetJustifyH(JUSTIFY[a])
 				local band = (used - 1) % 4 + 1
-				w.pv:SetText(("%d"):format(values[band]))
+				w.pv:SetText(("%d%%"):format(values[band]))
 				w.pv:SetTextColor(XUI.UnpackColor(h.byValue and h["c" .. band] or h.color))
 				w.pv:Show()
 			end
