@@ -17,10 +17,6 @@ Hvert legacy-feature flyttes ind i den nye kerne som ét modul: én fil i `Xerio
 
 Melee Indicator, Death Alert, Externals, Party Interrupts, Co-Tank, Shroud/Mass Invis, CC Tracker, Aggro Check, Bloodlust Ready og de fem EllesmereUI-tweaks er porteret (se tabellerne). CC Cast Notices udgik.
 
-## Næste runde — klasser
-
-Fase 4 (klasser og specs) er næste runde.
-
 ## Fase 2 — generelle QoL-indikatorer (simple, mest tekst)
 
 | Feature | Kilde | Status | Note |
@@ -62,30 +58,37 @@ Fase 4 (klasser og specs) er næste runde.
 | Key Vendor | K | ⏳ | |
 | Macro Factory | I | ❓ | |
 
-## Fase 4 — klasser og specs
+## Fase 4 — klasser og specs (færdig, oktober 2026)
 
-| Feature | Kilde | Klasse | Status |
-|---|---|---|---|
-| Bone Shield (glow, lyd, stack-advarsel) | K | Death Knight (Blood) | ⏳ |
-| Dancing Rune Weapon ikon + lyd | K | Death Knight (Blood) | ⏳ |
-| Boiling Point | K | Death Knight | ⏳ |
-| The Blood is Life / Blood Beast | K | Death Knight (San'layn) | ⏳ |
-| Reaper's Mark | K | Death Knight (Deathbringer) | ⏳ |
-| Blightfall-kæde, Putrefy / Forbidden Sacrifice | K | Death Knight (Unholy) | ⏳ |
-| Control Undead | K | Death Knight | ⏳ |
-| Fiery Brand | K | Demon Hunter (Vengeance) | ⏳ |
-| Brewmaster (orbs, dodge, elixir) | K | Monk | ⏳ |
-| Shining Light, Paladin Aura | K | Paladin | ⏳ |
-| Mage-features | K | Mage | ⏳ |
-| Elemental Blast-buffs | K | Shaman | ⏳ |
-| Well-Honed Instincts, Bear Form-reminder | K | Druid | ⏳ |
-| Spell Reflect-skade | K | Warrior | ⏳ |
-| Defensive Indicator | I | alle | ⏳ |
-| Self Dispel Alert | I | alle | ⏳ |
-| Movement Alert | I | alle | ⏳ |
-| Runeforge Alert | I | Death Knight | ⏳ |
+Alle porteret og markeret `untested` i optionspanelet, indtil de er set i spillet. De delte byggeklodser (timer-ikon, damage-meter-tekst) ligger i `Modules/Class/Kit.lua`.
 
-Klassemoduler får `classes = { ... }` og vises kun på den klasse. Kun de specs/talenter, du faktisk spiller, bør porteres — sig til, hvilke du bruger.
+| Feature | Kilde | Klasse | Modul | Status |
+|---|---|---|---|---|
+| Bone Shield (glow, lyd, stack-advarsel, eget ikon) | K | Death Knight (Blood) | BoneShield | ✅ |
+| Dancing Rune Weapon lyd | K | Death Knight (Blood) | DRWSound | ✅ |
+| DRW-ikonbytte (Bone Shield-art i Cooldown Manager) | K | Death Knight (Blood) | BoneShield (`customArt`) | ✅ |
+| Boiling Point | K | Death Knight (Blood) | BoilingPoint | ✅ |
+| The Blood is Life | K | Death Knight (San'layn) | BloodIsLife | ✅ |
+| Blood Beast-skade | K | Death Knight (San'layn) | BloodBeast | ✅ |
+| Reaper's Mark | K | Death Knight (Deathbringer) | ReapersMark | ✅ |
+| Blightfall-kæde | K | Death Knight (Unholy) | Blightfall | ✅ |
+| Putrefy / Forbidden Sacrifice | K | Death Knight (Unholy) | ForbiddenSacrifice | ✅ |
+| Control Undead | K | Death Knight | ControlUndead | ✅ |
+| Runeforge Alert | I | Death Knight | RuneforgeAlert | ✅ |
+| Fiery Brand | K | Demon Hunter (Vengeance) | FieryBrand | ✅ |
+| Brewmaster (orbs, dodge, elixir) | K | Monk | ExpelHarmOrbs, BrewDodge, ElixirProc | ✅ |
+| Shining Light | K | Paladin (Protection) | ShiningLight | ✅ |
+| Paladin Aura | K | Paladin | PaladinAura | ✅ |
+| Alter Time-helbred | K | Mage | AlterTime | ✅ |
+| Elemental Blast-bogstaver | K | Shaman | ElementalBlast | ✅ |
+| Well-Honed Instincts-lyd | K | Druid | WellHoned | ✅ |
+| Bear Form-påmindelse | K | Druid (Guardian) | BearForm | ✅ |
+| Spell Reflect-skade | K | Warrior | SpellReflect | ✅ |
+| Defensive Indicator | I | alle | DefensiveIndicator | ✅ |
+| Self Dispel Alert | I | alle | SelfDispelAlert | ✅ |
+| Movement Alert | I | alle | MovementAlert | ✅ |
+
+Afvigelser fra legacy: de egne træk-/lås-/CDM-anker-indstillinger er erstattet af movers (`/xui unlock`); farver, fonte, rammer, glow og lyd går gennem de fælles blokke. Ring-teksturen til Defensive Indicator er genereret (`tools/gen-media.js`) i stedet for Itrulias.
 
 ## Fase 5 — EllesmereUI Tweaks
 

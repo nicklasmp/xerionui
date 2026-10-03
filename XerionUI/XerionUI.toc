@@ -68,6 +68,8 @@ Modules\Class\DeathKnight\ForbiddenSacrifice.lua
 Modules\Class\DeathKnight\RuneforgeAlert.lua
 Modules\Class\MovementAlert.lua
 Modules\Class\SelfDispelAlert.lua
+Modules\Class\DefensiveData.lua
+Modules\Class\DefensiveIndicator.lua
 Modules\Tweaks\Nameplates.lua
 Modules\Tweaks\FocusKick.lua
 Modules\Tweaks\FocusCastbar.lua

@@ -387,3 +387,51 @@ O:RegisterModuleOptions("SelfDispelAlert", function(ctx, m, G)
 		Card("Position", G.Position("position")),
 	}
 end)
+
+O:RegisterModuleOptions("DefensiveIndicator", function(ctx, m, G)
+	local function Toggles(entries)
+		local items = {}
+		for _, e in ipairs(entries) do
+			items[#items + 1] = {
+				type = "toggle", width = "full",
+				label = function() return XUI.GetSpellName(e.spellId or e.auraId) end,
+				get = function() return m:IsTracked(e.auraId) end,
+				set = function(_, on) m:SetTracked(e.auraId, on) end,
+			}
+		end
+		return items
+	end
+	local mine, external = {}, {}
+	for _, e in ipairs(m:Entries()) do
+		if m.CATEGORY[e.auraId] == "EXTERNAL" then external[#external + 1] = e else mine[#mine + 1] = e end
+	end
+	local notBar = function() return m.db.display ~= "BAR" end
+	local notCircle = function() return m.db.display ~= "CIRCLE" end
+	local noText = function() return not (m.db.showName or m.db.showDuration) end
+	return {
+		Card("Display", {
+			{ type = "dropdown", label = "Show as", path = "display", values = m.DISPLAYS },
+			{ type = "slider", label = "Ring size", path = "size", min = 20, max = 200, step = 1, hidden = notCircle },
+			{ type = "color", label = "Ring background", path = "backgroundColor", hidden = notCircle },
+		}),
+		Card("Bar", G.Bar("bar"), { hidden = notBar }),
+		Card("Border", G.Border("border"), { hidden = notBar }),
+		Card("Colours by size", {
+			{ type = "color", label = "Massive", path = "colors.MASSIVE" },
+			{ type = "color", label = "Major", path = "colors.MAJOR" },
+			{ type = "color", label = "Minor", path = "colors.MINOR" },
+			{ type = "color", label = "External (from others)", path = "colors.EXTERNAL" },
+		}),
+		Card("Text", Join({
+			{ type = "toggle", label = "Spell name", path = "showName" },
+			{ type = "toggle", label = "Seconds", path = "showDuration" },
+			{ type = "dropdown", label = "Decimals", path = "precision", values = { { value = 0, text = "None" }, { value = 1, text = "One" } } },
+			{ type = "color", label = "Color", path = "textColor" },
+			{ type = "slider", label = "Offset X", path = "textX", min = -100, max = 100, step = 1 },
+			{ type = "slider", label = "Offset Y", path = "textY", min = -100, max = 100, step = 1 },
+		}, G.Font("font"))),
+		Card("Your defensives", Toggles(mine), { hidden = function() return #mine == 0 end }),
+		Card("Externals from other players", Toggles(external)),
+		Card("Position", G.Position("position")),
+	}
+end)

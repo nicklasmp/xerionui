@@ -30,6 +30,8 @@ Load order matters; each file builds on the ones above it.
 
 `Integrations/EllesmereUI.lua` holds `XUI.EUI`, helpers for reading EllesmereUI modules (used by the EllesmereUI Tweaks).
 
+`Modules/Class/Kit.lua` (`XUI.ClassKit`) holds what the class modules share: `Kit.TimedIcon(M, opts)` (an icon counting down after a cast), `Kit.Meter(M, opts)` (damage-meter text for what a trigger caused), `Kit.ReadSpells`, `Kit.IsSanlaynTrigger` and the number formatters.
+
 ### Messages (`XUI:On(message, owner, fn)`)
 
 | Message | When |
