@@ -6,7 +6,7 @@ local XUI = _G.XerionUI
 local O = XUI and XUI.Options
 if not O then return end
 
-local Card = O.Card
+local Card, Join = O.Card, O.Join
 
 O:RegisterModuleOptions("Stoneform", function(ctx, m, G)
 	return {
@@ -32,6 +32,11 @@ O:RegisterModuleOptions("MeleeIndicator", function(ctx, m, G)
 				disabled = function() return not m.db.pulse end },
 		}),
 		Card("Text", G.Font("font")),
+		Card("Voice or sound", Join(G.Alert("alert", { fallbackText = "Out of range" }), {
+			{ type = "slider", label = "Repeat every (seconds, 0 = once)", path = "repeatEvery", min = 0, max = 10, step = 1,
+				disabled = function() return m.db.alert.mode == "NONE" end },
+			{ type = "description", width = "full", text = "Plays when you step out of melee range of your target. Where the game hides the range answer (inside a key or a boss fight) the marker still works, but only the game can tell, so no sound plays there." },
+		})),
 		Card("Position", G.Position("position")),
 	}
 end)

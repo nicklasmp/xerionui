@@ -34,6 +34,8 @@ local M = XUI:NewModule("MeleeIndicator", {
 		text = "+",
 		color = { 1, 0, 0, 1 },
 		interval = 0.25,
+		alert = T.Alert("NONE", { text = "Out of range" }),
+		repeatEvery = 0,
 		pulse = false,
 		pulseSpeed = 0.45,
 		font = T.Font(28),
@@ -84,12 +86,27 @@ local function FormReady()
 	return (usable or noMana) and true or false
 end
 
+-- The sound or voice: when you step out of range, and again every
+-- `repeatEvery` seconds while you stay out (0 = once). It needs the answer in
+-- the clear: where range is secret the client decides, and Lua cannot tell.
+local wasOut, lastAlertAt = false, 0
+local function Alert(out)
+	if not out then wasOut = false return end
+	local now = GetTime()
+	local every = M.db.repeatEvery
+	if not wasOut or (every > 0 and now - lastAlertAt >= every) then
+		wasOut, lastAlertAt = true, now
+		XUI.Audio:Play(M.db.alert, M.db.text ~= "" and "Out of range" or nil, true)
+	end
+end
+
 local function Check()
 	local d = display
 	if not d then return end
 	if not spellID or not UnitExists("target") or XUI.Ask(UnitCanAttack, "player", "target") == false or not FormReady() then
 		last = "no attackable target (or wrong form)"
 		d:Hide()
+		Alert(false)
 		return
 	end
 	local inRange = C_Spell.IsSpellInRange(spellID, "target")
@@ -103,6 +120,7 @@ local function Check()
 	d:SetAlpha(1)
 	-- nil means the client could not tell (no valid target for the spell)
 	d:SetShown(inRange == false)
+	Alert(inRange == false)
 end
 
 function M:StartChecking()
@@ -112,6 +130,7 @@ function M:StartChecking()
 end
 
 function M:StopChecking()
+	wasOut = false
 	self:CancelTicker(ticker)
 	ticker = nil
 	if display and not self:IsPreview() then display:Hide() end
@@ -162,6 +181,7 @@ function M:Test()
 	self:Refresh()
 	d:SetAlpha(1)
 	d:Show()
+	XUI.Audio:Play(self.db.alert, "Out of range", true)
 	self:After(3, function() if not ticker and not self:IsPreview() then d:Hide() end end)
 end
 
