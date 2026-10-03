@@ -10,7 +10,8 @@
 --
 -- Unlock mode (/xui unlock) previews every enabled module and lays a mover over
 -- each registered frame: drag with the left button, nudge with the arrow keys
--- (Shift = 10px), right-click to reset.
+-- (Shift = 10px). The grid is on by default and can be switched off with the
+-- Grid button (remembered).
 --------------------------------------------------------------------------------
 local XUI = select(2, ...).XUI
 local Style = XUI.Style
@@ -157,9 +158,6 @@ local function CreateOverlay(entry)
 			Movers.dragging = nil
 			self:SetScript("OnUpdate", nil)
 			UpdateLabel(self)
-		elseif button == "RightButton" then
-			Movers:Reset(self.entry)
-			UpdateLabel(self)
 		end
 	end)
 	ov:SetScript("OnEnter", function(self)
@@ -170,7 +168,6 @@ local function CreateOverlay(entry)
 		GameTooltip:SetOwner(self, "ANCHOR_TOP")
 		GameTooltip:AddLine(self.entry.label, 1, 1, 1)
 		GameTooltip:AddLine("Drag to move. Arrow keys nudge (Shift: 10).", 0.7, 0.7, 0.7)
-		GameTooltip:AddLine("Right-click to reset.", 0.7, 0.7, 0.7)
 		GameTooltip:Show()
 	end)
 	ov:SetScript("OnLeave", function(self)
@@ -300,7 +297,9 @@ local function CreateToolbar()
 	local done = Button("Done", function() XUI:SetUnlocked(false) end)
 	done:SetPoint("RIGHT", -7, 0)
 	local gridBtn = Button("Grid", function()
-		if grid:IsShown() then grid:Hide() else grid:Build() grid:Show() end
+		local on = not grid:IsShown()
+		XUI.DB.global.unlock.showGrid = on
+		if on then grid:Build() grid:Show() else grid:Hide() end
 	end)
 	gridBtn:SetPoint("RIGHT", done, "LEFT", -6, 0)
 	return f
@@ -320,6 +319,7 @@ function XUI:SetUnlocked(on)
 		toolbar = toolbar or CreateToolbar()
 		grid = grid or CreateGrid()
 		toolbar:Show()
+		if XUI.DB.global.unlock.showGrid ~= false then grid:Build() grid:Show() end
 		for _, entry in ipairs(Movers.list) do Movers:ShowOverlay(entry) end
 	else
 		if toolbar then toolbar:Hide() end

@@ -43,6 +43,7 @@ DB.GLOBAL_DEFAULTS = {
 	unlock = {
 		gridSize = 32,
 		snap = true,
+		showGrid = true,
 	},
 }
 

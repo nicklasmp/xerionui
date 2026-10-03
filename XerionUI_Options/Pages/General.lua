@@ -37,6 +37,7 @@ O:RegisterSystemPage({
 					tip = "If the window would cover the preview, it slides to the side until the preview ends." },
 			}),
 			O.Card("Unlock mode", {
+				{ type = "toggle", label = "Show the grid", path = "unlock.showGrid", tip = "On by default; the Grid button in unlock mode switches it too." },
 				{ type = "toggle", label = "Snap to grid while dragging", path = "unlock.snap" },
 				{ type = "slider", label = "Grid size", path = "unlock.gridSize", min = 8, max = 128, step = 4 },
 				{ type = "button", text = "Unlock frames", onClick = function() XUI:SetUnlocked(true) end },
