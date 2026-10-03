@@ -95,7 +95,7 @@ local LOCAL_FIELDS = {
 	border = { enabled = true },
 	glow = { enabled = true },
 	background = { enabled = true },
-	bar = { color = true, width = true, height = true },
+	bar = { color = true, bgColor = true, width = true, height = true },
 	icon = { width = true, height = true, size = true },
 }
 Style.LOCAL_FIELDS = LOCAL_FIELDS

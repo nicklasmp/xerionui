@@ -311,9 +311,20 @@ function G.Bar(path, opts)
 	items[#items + 1] = StyleField("bar", path, "texture", opts, {
 		type = "dropdown", label = "Texture", media = "statusbar",
 	})
-	items[#items + 1] = StyleField("bar", path, "bgColor", opts, {
-		type = "color", label = "Background color",
-	})
+	if opts.global then
+		items[#items + 1] = StyleField("bar", path, "bgColor", opts, {
+			type = "color", label = "Background color",
+		})
+	else
+		-- an element's own field (like the fill colour): it works without
+		-- leaving the global style, and shows the global one until set
+		items[#items + 1] = {
+			type = "color", label = "Background color", path = path .. ".bgColor",
+			get = function(ctx)
+				return Block(ctx, path).bgColor or XUI.DB.style.bar.bgColor
+			end,
+		}
+	end
 	return items
 end
 

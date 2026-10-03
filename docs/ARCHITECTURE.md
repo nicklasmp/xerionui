@@ -146,7 +146,7 @@ A module element stores small **style blocks**; `XUI.Style:Resolve(kind, block)`
 | `border` | style (NONE/SOLID/DOUBLE/LSM border), size (px), color | enabled |
 | `glow` | type (PIXEL/AUTOCAST/BUTTON/PROC), color, lines, frequency, length, thickness, particles, scale, offset | enabled |
 | `background` | texture, color | enabled |
-| `bar` | texture, bgColor | width, height, color |
+| `bar` | texture | width, height, color, bgColor |
 | `icon` | zoom (crop %) | width, height, size |
 
 Glow types: PIXEL and PULSE are our own C-animated glows; AUTOCAST, BUTTON and PROC come from LibCustomGlow (OnUpdate scripts) and fall back to PIXEL when `ShowGlow(frame, block, true)` is asked for an engine button.

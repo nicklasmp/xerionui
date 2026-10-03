@@ -83,7 +83,12 @@ end
 -- rest of the addon down with it. Errors still reach the error handler
 -- (BugSack etc.) with a full stack.
 --------------------------------------------------------------------------------
+XUI.errors = {} -- the last few caught errors, shown by /xui debug
+
 local function ErrorHandler(err)
+	local list = XUI.errors
+	list[#list + 1] = tostring(err):sub(1, 300)
+	if #list > 20 then table.remove(list, 1) end
 	return geterrorhandler()(err)
 end
 

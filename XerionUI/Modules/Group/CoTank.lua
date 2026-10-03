@@ -30,7 +30,6 @@ local M = XUI:NewModule("CoTank", {
 		pinName = "",
 		bar = T.Bar(200, 22),
 		border = T.Border(),
-		bgAlpha = 0.25,
 		nameText = T.Font(12, { anchor = "LEFT", x = 4, y = 0 }),
 		healthText = T.Font(12, { anchor = "RIGHT", x = -4, y = 0 }),
 		debuffs = {
@@ -160,11 +159,9 @@ end
 local function PaintIdentity(unit)
 	local _, class = UnitClass(unit)
 	local r, g, b = XUI.ClassColor(class)
-	local a = M.db.bgAlpha
-	if r ~= painted.r or g ~= painted.g or b ~= painted.b or a ~= painted.a then
-		painted.r, painted.g, painted.b, painted.a = r, g, b, a
+	if r ~= painted.r or g ~= painted.g or b ~= painted.b then
+		painted.r, painted.g, painted.b = r, g, b
 		frame:SetColor(r, g, b, 1)
-		if frame.bar.__xuiBarBg then frame.bar.__xuiBarBg:SetVertexColor(r * 0.35, g * 0.35, b * 0.35, a) end
 	end
 	local name = UnitName(unit)
 	if IsSecret(name) then

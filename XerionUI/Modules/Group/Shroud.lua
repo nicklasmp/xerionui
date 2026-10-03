@@ -31,9 +31,6 @@ local M = XUI:NewModule("Shroud", {
 		gap = 2,
 		iconGap = 2,
 		showIcon = true,
-		bgAlpha = 0.6,
-		customBgColor = false,
-		bgColor = { 0.087, 0.054, 0.129, 1 },
 		nameText = T.Font(14, { enabled = true }),
 		timerText = T.Font(14, { enabled = true }),
 		showShroud = true,
@@ -116,7 +113,6 @@ local function MakeBar(parent)
 	p.icon = p.iconBox:CreateTexture(nil, "ARTWORK")
 	p.iconBorder = Style:Border(p.iconBox)
 	p.barBox = CreateFrame("Frame", nil, parent)
-	p.bg = p.barBox:CreateTexture(nil, "BACKGROUND")
 	p.bar = CreateFrame("StatusBar", nil, p.barBox)
 	p.barBorder = Style:Border(p.barBox)
 	p.text = CreateFrame("Frame", nil, parent)
@@ -156,16 +152,9 @@ local function StyleBar(p, parent, t)
 	p.barBox:SetSize(math.max(1, w - left), h)
 	local inset = p.barBorder:Apply(db.border)
 	Inset(p.bar, p.barBox, inset)
-	Inset(p.bg, p.barBox, inset)
+	-- the bar's own background (Bar > Background color) sits under the fill
 	Style:ApplyBar(p.bar, db.bar)
 	p.bar:SetStatusBarColor(r, g, b)
-	if p.bar.__xuiBarBg then p.bar.__xuiBarBg:Hide() end
-	if db.customBgColor then
-		local c = db.bgColor
-		p.bg:SetColorTexture(c[1], c[2], c[3], db.bgAlpha)
-	else
-		p.bg:SetColorTexture(r * 0.15, g * 0.15, b * 0.15, db.bgAlpha)
-	end
 	Style:ApplyFont(p.timer, db.timerText)
 	p.timer:ClearAllPoints()
 	p.timer:SetPoint("RIGHT", p.bar, "RIGHT", -4, 0)

@@ -52,7 +52,6 @@ local M = XUI:NewModule("Interrupts", {
 		growth = "DOWN",
 		spacing = 2,
 		iconGap = 2,
-		bgAlpha = 0.6,
 		observe = true,
 		meterConfirm = true,
 		partyCd = 15,
@@ -300,8 +299,6 @@ local function StyleRow(row)
 	Inset(row.bar, row.barBox, inset)
 	Style:ApplyBar(row.bar, db.bar)
 	row.bar:SetStatusBarColor(r, g, bl)
-	-- the bar's background is the member's class colour, dimmed
-	if row.bar.__xuiBarBg then row.bar.__xuiBarBg:SetVertexColor(r * 0.15, g * 0.15, bl * 0.15, db.bgAlpha) end
 	row.bg:Hide()
 	row.mark:ClearAllPoints()
 	row.mark:SetPoint("RIGHT", row, "LEFT", -3, 0)

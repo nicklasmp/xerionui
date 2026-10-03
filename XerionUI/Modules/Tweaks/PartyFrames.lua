@@ -404,3 +404,23 @@ function M:OnRefresh()
 	if self.running then RestyleStacks() end
 	UpdateSample()
 end
+
+function M:DebugInfo()
+	local rf = RF()
+	local out = {
+		("EllesmereUIRaidFrames namespace: %s, GetFFD: %s"):format(tostring(rf ~= nil), tostring(rf and type(rf.GetFFD))),
+		("health text on: %s, in combat: %s"):format(tostring(self.db.health.enabled), tostring(InCombatLockdown())),
+	}
+	local list = rf and rf._partyAllButtons
+	out[#out + 1] = ("party buttons: %s, unit map: %s"):format(list and tostring(#list) or "none", tostring(rf and rf._partyUnitToButton ~= nil))
+	for i, btn in ipairs(list or {}) do
+		local ok, unit = pcall(btn.GetAttribute, btn, "unit")
+		local w = widgets[btn]
+		local width = w and select(2, pcall(w.span.GetWidth, w.span))
+		out[#out + 1] = ("  button %d: unit %s, visible %s, widget %s, live %s, span width %s%s"):format(
+			i, tostring(ok and unit or "?"), tostring(btn:IsVisible()), tostring(w ~= nil), tostring(w and w.live),
+			width ~= nil and (IsSecret(width) and "secret" or tostring(width)) or "-",
+			w and w.host:IsShown() and "" or " (host hidden)")
+	end
+	return out
+end

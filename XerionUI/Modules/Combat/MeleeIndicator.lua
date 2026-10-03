@@ -42,6 +42,7 @@ local M = XUI:NewModule("MeleeIndicator", {
 local IsSecret = XUI.IsSecret
 local display, ticker
 local spellID
+local last = "not checked yet" -- what the last check saw, for /xui debug
 
 local function Display()
 	if display then return display end
@@ -76,17 +77,21 @@ local function Check()
 	local d = display
 	if not d then return end
 	if not spellID or not UnitExists("target") or XUI.Ask(UnitCanAttack, "player", "target") == false or not FormReady() then
+		last = "no attackable target (or wrong form)"
 		d:Hide()
 		return
 	end
 	local inRange = C_Spell.IsSpellInRange(spellID, "target")
 	if IsSecret(inRange) then
+		last = "secret answer: alpha follows it"
 		d:Show()
 		d:SetAlphaFromBoolean(inRange, 0, 1)
 		return
 	end
+	last = "answer " .. tostring(inRange)
 	d:SetAlpha(1)
-	d:SetShown(not inRange)
+	-- nil means the client could not tell (no valid target for the spell)
+	d:SetShown(inRange == false)
 end
 
 function M:StartChecking()
@@ -130,4 +135,14 @@ function M:OnRefresh()
 	else
 		d:Hide()
 	end
+end
+
+function M:DebugInfo()
+	local d = display
+	return {
+		("probe spell: %s (%s)"):format(tostring(spellID), spellID and (C_Spell.GetSpellName(spellID) or "?") or "none for this spec"),
+		("in combat: %s, checking: %s"):format(tostring(InCombatLockdown()), tostring(ticker ~= nil)),
+		("last check: %s"):format(last),
+		("marker: shown %s, alpha %s"):format(tostring(d and d:IsShown()), d and tostring(d:GetAlpha()) or "-"),
+	}
 end

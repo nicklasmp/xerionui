@@ -89,7 +89,6 @@ O:RegisterModuleOptions("Interrupts", function(ctx, m, G)
 			{ type = "dropdown", label = "Grow", path = "growth", values = m.GROWTH },
 			{ type = "slider", label = "Spacing", path = "spacing", min = 0, max = 20, step = 1 },
 			{ type = "slider", label = "Gap between icon and bar", path = "iconGap", min = 0, max = 10, step = 1 },
-			{ type = "slider", label = "Background opacity", path = "bgAlpha", min = 0, max = 1, step = 0.05 },
 		}), { hidden = barMode }),
 		Card("Icons on party frames", Join(G.Icon("icon", { square = true }), {
 			{ type = "dropdown", label = "Side", path = "partySide", values = m.SIDES },
@@ -126,9 +125,7 @@ O:RegisterModuleOptions("CoTank", function(ctx, m, G)
 				disabled = function() return not m.running end,
 			},
 		}),
-		Card("Bar", Join(G.Bar("bar"), {
-			{ type = "slider", label = "Background opacity", path = "bgAlpha", min = 0, max = 1, step = 0.05 },
-		})),
+		Card("Bar", G.Bar("bar")),
 		Card("Border", G.Border("border")),
 		Card("Name text", G.Font("nameText", { toggle = "Show name", anchor = true })),
 		Card("Health text", G.Font("healthText", { toggle = "Show health %", anchor = true })),
@@ -166,9 +163,6 @@ O:RegisterModuleOptions("Shroud", function(ctx, m, G)
 			{ type = "toggle", label = "Icon", path = "showIcon" },
 			{ type = "slider", label = "Gap between icon and bar", path = "iconGap", min = 0, max = 10, step = 1 },
 			{ type = "slider", label = "Gap between bars", path = "gap", min = 0, max = 20, step = 1 },
-			{ type = "slider", label = "Background opacity", path = "bgAlpha", min = 0, max = 1, step = 0.05 },
-			{ type = "toggle", label = "Own background colour", path = "customBgColor" },
-			{ type = "color", label = "Background colour", path = "bgColor", disabled = function() return not m.db.customBgColor end },
 		})),
 		Card("Border", G.Border("border")),
 		Card("Name text", G.Font("nameText", { toggle = "Show name" })),

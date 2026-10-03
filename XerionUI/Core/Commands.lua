@@ -52,7 +52,34 @@ local HELP = {
 	{ "/xui profile <name>", "switch to a profile" },
 	{ "/xui preview off", "end every module preview" },
 	{ "/xui version", "show the installed version" },
+	{ "/xui debug [module]", "why modules are or are not running, plus their live state" },
 }
+
+-- /xui debug: one line per module (enabled, running, why not), and with a
+-- module key its own DebugInfo lines. Meant for in-game bug reports.
+local function Debug(name)
+	name = (name or ""):lower()
+	for _, m in ipairs(XUI.modules) do
+		if name == "" or m.key:lower() == name or m.name:lower() == name then
+			local ok, why = m:CanRun()
+			local state = m.running and "|cff55ff55running|r"
+				or (not m.db.enabled and "|cffaaaaaaoff|r")
+				or ("|cffff5555not running|r: " .. tostring(why))
+			print(("  |cffffffff%s|r  %s"):format(m.key, state))
+			if name ~= "" and m.DebugInfo then
+				local good, lines = pcall(m.DebugInfo, m)
+				if good and type(lines) == "table" then
+					for _, line in ipairs(lines) do print("    " .. tostring(line)) end
+				elseif not good then
+					print("    DebugInfo failed: " .. tostring(lines))
+				end
+			end
+		end
+	end
+	if XUI.errors and #XUI.errors > 0 then
+		print(("  |cffff5555%d Lua error(s) caught so far, last:|r %s"):format(#XUI.errors, tostring(XUI.errors[#XUI.errors])))
+	end
+end
 
 local function Handle(msg)
 	local cmd, rest = (msg or ""):match("^%s*(%S*)%s*(.-)%s*$")
@@ -72,6 +99,8 @@ local function Handle(msg)
 		end
 	elseif cmd == "preview" then
 		for _, m in ipairs(XUI.modules) do m:SetPreview(false) end
+	elseif cmd == "debug" then
+		Debug(rest)
 	elseif cmd == "version" or cmd == "ver" then
 		XUI.Printf("version |cffffffff%s|r", XUI.version)
 	else

@@ -5,6 +5,10 @@
 -- private, so the holder is found by its saved position and size and its
 -- StatusBar child, and its first region (the background) is recoloured after
 -- every refresh of that module.
+--
+-- EllesmereUI recolours the background itself whenever the bar is rebuilt or
+-- starts a cast, so the tint is also re-applied a moment after the focus
+-- changes or casts.
 --------------------------------------------------------------------------------
 local XUI = select(2, ...).XUI
 
@@ -27,30 +31,44 @@ local function FocusSettings()
 	return tfb and tfb.focus
 end
 
+local found -- why FindBar last failed, for /xui debug
+
+local function Matches(frame, width, height, x, y)
+	if not (frame and frame.GetWidth) then return false end
+	if math.abs((frame:GetWidth() or 0) - width) >= 0.5 or math.abs((frame:GetHeight() or 0) - height) >= 0.5 then return false end
+	local point, relative, relativePoint, fx, fy = frame:GetPoint(1)
+	if not (point == "CENTER" and relative == UIParent and relativePoint == "CENTER") then return false end
+	if math.abs((fx or 0) - x) >= 0.5 or math.abs((fy or 0) - y) >= 0.5 then return false end
+	for _, child in ipairs({ frame:GetChildren() }) do
+		if child.GetObjectType and child:GetObjectType() == "StatusBar" then return true end
+	end
+	return false
+end
+
+local bar
 local function FindBar()
 	local focus = FocusSettings()
-	if not (focus and focus.enabled == true) then return nil end
+	if not focus then found = "EllesmereUI Mythic+ Tools has no focus cast bar settings" return nil end
+	if focus.enabled ~= true then found = "the focus cast bar is switched off in EllesmereUI" return nil end
 	local pos = focus.pos
 	local x, y = pos and pos.centerX or 0, pos and pos.centerY or -310
 	local width, height = focus.width or 260, focus.height or 22
+	if bar and Matches(bar, width, height, x, y) then return bar end
+	bar = nil
 	for _, frame in ipairs({ UIParent:GetChildren() }) do
-		if frame and frame.GetWidth and math.abs((frame:GetWidth() or 0) - width) < 0.1
-			and math.abs((frame:GetHeight() or 0) - height) < 0.1 then
-			local point, relative, relativePoint, fx, fy = frame:GetPoint(1)
-			if point == "CENTER" and relative == UIParent and relativePoint == "CENTER"
-				and math.abs((fx or 0) - x) < 0.1 and math.abs((fy or 0) - y) < 0.1 then
-				for _, child in ipairs({ frame:GetChildren() }) do
-					if child.GetObjectType and child:GetObjectType() == "StatusBar" then return frame end
-				end
-			end
+		if Matches(frame, width, height, x, y) then
+			bar = frame
+			found = "found"
+			return bar
 		end
 	end
+	found = ("no frame of %dx%d at %d,%d"):format(width, height, x, y)
 	return nil
 end
 
 local function Paint(on)
-	local bar = FindBar()
-	local bg = bar and bar:GetRegions()
+	local holder = FindBar()
+	local bg = holder and holder:GetRegions()
 	if not (bg and bg.SetColorTexture) then return end
 	if on then
 		bg:SetColorTexture(XUI.UnpackColor(M.db.color))
@@ -59,13 +77,24 @@ local function Paint(on)
 	end
 end
 
+-- EllesmereUI repaints on its own schedule; look again right after and once
+-- more a moment later
+local function PaintSoon(self)
+	self:After(0, function() Paint(true) end)
+	self:After(0.3, function() Paint(true) end)
+end
+
 function M:OnEnable()
 	local mod = XUI.EUI and XUI.EUI.Module("EllesmereUIMythicTimer")
 	if mod and type(mod.TFB_Refresh) == "function" then
-		self:SecureHook(mod, "TFB_Refresh", function(self) self:After(0, function() Paint(true) end) end)
+		self:SecureHook(mod, "TFB_Refresh", PaintSoon)
 	end
 	-- the bar may only be built a moment after login
 	self:RegisterEvent("PLAYER_ENTERING_WORLD", function(self) self:After(1, function() Paint(true) end) end)
+	self:RegisterEvent("PLAYER_FOCUS_CHANGED", PaintSoon)
+	self:RegisterUnitEvent("UNIT_SPELLCAST_START", "focus", PaintSoon)
+	self:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_START", "focus", PaintSoon)
+	Paint(true)
 end
 
 function M:OnDisable()
@@ -74,4 +103,13 @@ end
 
 function M:OnRefresh()
 	if self.running then Paint(true) end
+end
+
+function M:DebugInfo()
+	local mod = XUI.EUI and XUI.EUI.Module("EllesmereUIMythicTimer")
+	FindBar()
+	return {
+		("EllesmereUIMythicTimer namespace: %s, TFB_Refresh: %s"):format(tostring(mod ~= nil), tostring(mod and type(mod.TFB_Refresh))),
+		("focus bar: %s"):format(tostring(found)),
+	}
 end
