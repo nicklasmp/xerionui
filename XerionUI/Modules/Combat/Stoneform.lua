@@ -18,6 +18,7 @@ local M = XUI:NewModule("Stoneform", {
 	desc = "Shows Stoneform when you have a bleed and Stoneform is ready.",
 	category = "combat",
 	icon = FALLBACK_ICON,
+	iconSpell = STONEFORM, -- the dwarf racial's own icon in the options
 	order = 50,
 	defaults = {
 		icon = T.Icon(48),

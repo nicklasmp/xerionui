@@ -214,7 +214,7 @@ function O:RefreshPageHead()
 	end
 	f.status:SetText("")
 	if m then
-		f.icon:SetTexture(m.icon or 134400)
+		f.icon:SetTexture(XUI.ModuleIcon(m))
 		f.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
 		f.icon:SetVertexColor(1, 1, 1)
 		f.iconBorder:Apply({ useGlobal = false, style = "SOLID", size = 1, color = { 0, 0, 0, 1 } })
@@ -429,7 +429,7 @@ function O:RefreshSidebar()
 		end
 		if #list > 0 then
 			AddHead(cat.name)
-			for _, m in ipairs(list) do AddItem(m.key, m.name, m.icon, m) end
+			for _, m in ipairs(list) do AddItem(m.key, m.name, XUI.ModuleIcon(m), m) end
 		end
 	end
 	for i = ni + 1, #itemPool do itemPool[i]:Hide() end

@@ -5,6 +5,7 @@
 --   local M = XUI:NewModule("DeathAlert", {
 --       name = "Death Alert", desc = "...", category = "group",
 --       icon = 132147,              -- texture/fileID shown in the options sidebar
+--       iconSpell = 20594,          -- optional: use this spell's icon instead (icon is the fallback)
 --       classes = { "WARRIOR" },    -- optional: only load for these classes
 --       specs = { 73 },             -- optional: only run in these specializations
 --       requires = "EllesmereUI",   -- optional: only run when this addon is loaded
@@ -57,6 +58,8 @@ function XUI:NewModule(key, info)
 	m.desc = info.desc
 	m.category = info.category or "general"
 	m.icon = info.icon
+	-- a spell whose icon the options show (the game's own art, whatever the build)
+	m.iconSpell = info.iconSpell
 	m.order = info.order or 100
 	m.classes = info.classes
 	m.specs = info.specs
@@ -76,6 +79,12 @@ function XUI:NewModule(key, info)
 	tinsert(self.modules, m)
 	self.moduleByKey[key] = m
 	return m
+end
+
+-- The texture the options show for a module.
+function XUI.ModuleIcon(m)
+	if m.iconSpell then return XUI.GetSpellIcon(m.iconSpell, m.icon) end
+	return m.icon or 134400
 end
 
 function XUI:GetModule(key)

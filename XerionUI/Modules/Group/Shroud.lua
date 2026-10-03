@@ -24,6 +24,7 @@ local M = XUI:NewModule("Shroud", {
 	desc = "Time left on Shroud of Concealment and Mass Invisibility.",
 	category = "group",
 	icon = [[Interface\Icons\Ability_Rogue_EnvelopingShadows]],
+	iconSpell = SHROUD, -- Shroud of Concealment's own icon in the options
 	order = 50,
 	defaults = {
 		bar = T.Bar(220, 22),
