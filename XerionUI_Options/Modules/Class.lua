@@ -221,3 +221,18 @@ O:RegisterModuleOptions("ReapersMark", function(ctx, m, G)
 		Card("Position", G.Position("position")),
 	}
 end)
+
+O:RegisterModuleOptions("ForbiddenSacrifice", function(ctx, m, G)
+	return {
+		Card("Bars", {
+			{ type = "dropdown", label = "Grow", path = "grow", values = m.GROW },
+			{ type = "slider", label = "Spacing", path = "spacing", min = 0, max = 20, step = 1 },
+			{ type = "toggle", label = "Icon", path = "showIcon" },
+		}),
+		Card("Bar", G.Bar("bar", { color = true })),
+		Card("Border", G.Border("border")),
+		Card("Timer text", G.Font("timerText", { toggle = "Show timer" })),
+		Card("Stack text", G.Font("stackText", { toggle = "Show stacks" })),
+		Card("Position", G.Position("position")),
+	}
+end)
