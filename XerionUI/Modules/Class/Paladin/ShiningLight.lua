@@ -42,6 +42,12 @@ local M = XUI:NewModule("ShiningLight", {
 	},
 })
 
+M.PREVIEW_STATES = {
+	{ value = "procs", text = "Procs and charges" },
+	{ value = "empty", text = "Empty" },
+	{ value = "full", text = "Full" },
+}
+
 local frame, segs, ticks, textFree, textCharge
 local charge, freeN, chargeExpire = 0, 0, 0
 local bigBuff, bigBuffCdID
@@ -224,9 +230,20 @@ function M:OnRefresh()
 	XUI.Movers:Apply(f)
 	Layout()
 	if self:IsPreview() then
-		charge, freeN, chargeExpire = 2, 1, 29
-		textFree:SetText("12")
-		textCharge:SetText("26")
+		local state = self.previewState
+		if state == "empty" then
+			charge, freeN, chargeExpire = 0, 0, 0
+			textFree:SetText("")
+			textCharge:SetText("")
+		elseif state == "full" then
+			charge, freeN, chargeExpire = 2, 2, 29
+			textFree:SetText("12")
+			textCharge:SetText("26")
+		else
+			charge, freeN, chargeExpire = 2, 1, 29
+			textFree:SetText("12")
+			textCharge:SetText("26")
+		end
 	elseif not self.running then
 		charge, freeN, chargeExpire = 0, 0, 0
 		textFree:SetText("")

@@ -155,6 +155,15 @@ local function BuildCard(page, spec)
 		f.title:SetPoint("TOPLEFT", CARD_PAD, -CARD_PAD + 2)
 		f.title:SetText(spec.title:upper())
 	end
+	-- an eye on the card's corner puts the preview in the look this card edits
+	if spec.previewState and page.ctx.module then
+		local m = page.ctx.module
+		local b = O:IconButton(f, "eye", 22, "Show this in the preview", function()
+			if spec.previewState == true then m:SetPreview(true) else m:SetPreviewState(spec.previewState) end
+		end)
+		b:SetPoint("TOPRIGHT", f, "TOPRIGHT", -CARD_PAD + 4, -CARD_PAD + 6)
+		card.previewButton = b
+	end
 	for _, desc in ipairs(spec.items or {}) do
 		local make = O.Controls[desc.type]
 		assert(make, "XerionUI options: unknown control type " .. tostring(desc.type))

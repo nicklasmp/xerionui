@@ -293,8 +293,32 @@ function Module:SetPreview(on)
 	on = on and true or false
 	if self.preview == on then return end
 	self.preview = on
+	if not on then self.previewState = nil end
 	self:Refresh()
 	XUI:Fire("PreviewChanged", self)
+end
+
+-- A module may list the looks its preview can take (PREVIEW_STATES, a list of
+-- { value, text }); OnRefresh reads self.previewState. Setting one also starts
+-- the preview.
+function Module:SetPreviewState(value)
+	self.previewState = value
+	if not self.preview then self.preview = true end
+	self:Refresh()
+	XUI:Fire("PreviewChanged", self)
+end
+
+-- For Test buttons: a test goes through the module's real code, which only
+-- listens while it runs.
+function Module:RequireRunning()
+	if self.running then return true end
+	self:Print("switch the module on first - a test runs through its real code.")
+	return false
+end
+
+-- True while previewing in this state (or in no particular state).
+function Module:PreviewIs(value)
+	return self:IsPreview() and (self.previewState == nil or self.previewState == value)
 end
 
 -- Restores defaults but keeps the module's enabled state.

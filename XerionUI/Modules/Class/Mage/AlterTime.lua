@@ -180,6 +180,10 @@ function M:OnRefresh()
 	end
 end
 
+function M:Test()
+	if self:RequireRunning() then StartSnapshot() end
+end
+
 function M:DebugInfo()
 	local p = BuffPresent()
 	return {

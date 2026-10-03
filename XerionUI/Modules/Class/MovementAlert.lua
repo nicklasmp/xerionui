@@ -268,6 +268,14 @@ function M:OnRefresh()
 	end
 end
 
+-- a Time Spiral, as if the glow had just lit
+function M:Test()
+	if not self:RequireRunning() then return end
+	timeSpiralOn = GetTime()
+	XUI.Audio:Play(self.db.timeSpiralAlert, self.db.timeSpiralText, true)
+	Tick()
+end
+
 function M:DebugInfo()
 	local names = {}
 	for _, s in ipairs(spells) do names[#names + 1] = s.name .. " (" .. s.id .. ")" end

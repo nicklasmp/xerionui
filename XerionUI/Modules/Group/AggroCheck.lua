@@ -83,6 +83,17 @@ function M:Update()
 	end
 end
 
+-- the warning and its alert for three seconds
+function M:Test()
+	if not self:RequireRunning() then return end
+	local d = Display()
+	self:Refresh()
+	d:Show()
+	XUI.Audio:Play(self.db.alert, self.db.text, true)
+	if self.db.pulse then d.pulse:Play() end
+	self:After(3, function() if not self:IsPreview() then self:Update() end end)
+end
+
 function M:OnEnable()
 	Display()
 	inCombat = XUI.Ask(UnitAffectingCombat, "player") == true

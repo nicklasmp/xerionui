@@ -37,6 +37,8 @@ DB.GLOBAL_DEFAULTS = {
 	panel = {
 		scale = 1,
 		font = "Arial Narrow",
+		autoPreview = true,
+		dock = true,
 	},
 	unlock = {
 		gridSize = 32,

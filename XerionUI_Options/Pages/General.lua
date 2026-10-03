@@ -31,6 +31,10 @@ O:RegisterSystemPage({
 					type = "dropdown", label = "Font", path = "panel.font", media = "font",
 					tip = "Applies the next time you log in or /reload.",
 				},
+				{ type = "toggle", label = "Preview the module whose page is open", path = "panel.autoPreview", width = "full",
+					tip = "Starts the preview when you open a module's page and ends it when you leave." },
+				{ type = "toggle", label = "Move the window away from what you preview", path = "panel.dock", width = "full",
+					tip = "If the window would cover the preview, it slides to the side until the preview ends." },
 			}),
 			O.Card("Unlock mode", {
 				{ type = "toggle", label = "Snap to grid while dragging", path = "unlock.snap" },

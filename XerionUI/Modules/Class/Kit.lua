@@ -94,6 +94,10 @@ function Kit.TimedIcon(M, opts)
 		self:Refresh()
 	end
 
+	function M:Test()
+		if self:RequireRunning() then self:Start(math.min(opts.duration, 8)) end
+	end
+
 	function M:OnDisable()
 		expires = 0
 		ticker = nil
@@ -208,6 +212,10 @@ function Kit.Meter(M, opts)
 			if opts.count(id, spells) then sum = sum + amt end
 		end
 		return sum
+	end
+
+	function M:Test()
+		if self:RequireRunning() then self:ShowValue(opts.preview or 12500000) end
 	end
 
 	function M:Hide()

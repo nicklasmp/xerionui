@@ -137,6 +137,16 @@ function M:OnRefresh()
 	end
 end
 
+-- the marker for three seconds, whatever the target
+function M:Test()
+	if not self:RequireRunning() then return end
+	local d = Display()
+	self:Refresh()
+	d:SetAlpha(1)
+	d:Show()
+	self:After(3, function() if not ticker and not self:IsPreview() then d:Hide() end end)
+end
+
 function M:DebugInfo()
 	local d = display
 	return {

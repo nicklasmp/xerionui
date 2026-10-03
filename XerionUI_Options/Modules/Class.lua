@@ -111,11 +111,11 @@ O:RegisterModuleOptions("Blightfall", function(ctx, m, G)
 			{ type = "toggle", label = "Grow the icon as the countdown ends", path = "growPulse", width = "full" },
 			{ type = "slider", label = "Start growing at (s)", path = "growStart", min = 1, max = 10, step = 0.5 },
 			{ type = "slider", label = "Largest scale", path = "growMax", min = 1, max = 3, step = 0.1 },
-		}),
+		}, { previewState = "now" }),
 		Card("Icon", G.Icon("icon", { square = true })),
 		Card("Border", G.Border("border")),
-		Card("Glow in the last seconds", G.Glow("glow")),
-		Card("Countdown text", G.Font("timerText", { toggle = "Show countdown", anchor = true })),
+		Card("Glow in the last seconds", G.Glow("glow"), { previewState = "now" }),
+		Card("Countdown text", G.Font("timerText", { toggle = "Show countdown", anchor = true }), { previewState = "sr" }),
 		Card("Position", G.Position("position")),
 	}
 end)
@@ -245,7 +245,7 @@ O:RegisterModuleOptions("ShiningLight", function(ctx, m, G)
 			{ type = "color", label = "Shield of the Righteous charges", path = "chargeColor" },
 		})),
 		Card("Border", G.Border("border")),
-		Card("Seconds", Join({ { type = "toggle", label = "Show seconds", path = "showTimers", width = "full" } }, G.Font("timerText"))),
+		Card("Seconds", Join({ { type = "toggle", label = "Show seconds", path = "showTimers", width = "full" } }, G.Font("timerText")), { previewState = "full" }),
 		Card("Position", G.Position("position")),
 	}
 end)

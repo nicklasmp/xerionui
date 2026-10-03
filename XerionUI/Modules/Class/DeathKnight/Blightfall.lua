@@ -47,6 +47,13 @@ local M = XUI:NewModule("Blightfall", {
 	},
 })
 
+M.PREVIEW_STATES = {
+	{ value = "loop", text = "Looping chain" },
+	{ value = "sr", text = "Soul Reaper" },
+	{ value = "bf", text = "Blightfall" },
+	{ value = "now", text = "NOW" },
+}
+
 local IsSecret = XUI.IsSecret
 local display, ticker
 local step, armedAt, armedDelay = nil, 0, 0
@@ -75,6 +82,10 @@ end
 -- the spell being counted to and the seconds left, or nil
 local function Current()
 	if M:IsPreview() then
+		local state = M.previewState
+		if state == "sr" then return SOUL_REAPER, M.db.delaySR end
+		if state == "bf" then return BLIGHTFALL, M.db.delayBF end
+		if state == "now" then return BLIGHTFALL, 0 end
 		local a, b = M.db.delaySR, M.db.delayBF
 		local total = a + b
 		if total <= 0 then return SOUL_REAPER, 0 end
@@ -177,3 +188,10 @@ function M:OnRefresh()
 end
 
 function M:TestVoice() XUI.Audio:Speak("Soul Reaper in") end
+
+-- as if Dark Transformation had just been cast
+function M:Test()
+	if not self:RequireRunning() then return end
+	Arm(SOUL_REAPER, self.db.delaySR)
+	Render()
+end

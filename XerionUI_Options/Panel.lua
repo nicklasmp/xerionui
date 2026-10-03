@@ -32,6 +32,7 @@ local frame, sidebar, content, pageHead
 local entries = {}       -- sidebar entries in display order
 local pages = {}         -- [key] = Page
 local currentKey
+local autoStarted, docked, UpdateDockSoon = {}, false, nil
 local searchText = ""
 
 --------------------------------------------------------------------------------
@@ -139,6 +140,46 @@ local function CreatePageHead(parent)
 	f.preview:SetScript("OnLeave", function(self) O:SetSkinColor(self, "control") end)
 	O:Tooltip(f.preview, "Preview", "Shows the module with sample content so you can see your changes. Ends when the window closes.")
 
+	local function HeadButton(icon, text, width, tip, onClick)
+		local b = CreateFrame("Button", nil, f)
+		b:SetSize(width, 28)
+		O:Skin(b, "control", "controlLine")
+		b.icon = O:Icon(b, icon, 16, "muted")
+		b.icon:SetPoint("LEFT", 10, 0)
+		b.text = O:Text(b, O.SIZE.text, "label")
+		b.text:SetPoint("LEFT", b.icon, "RIGHT", 8, 0)
+		b.text:SetText(text)
+		b:SetScript("OnClick", onClick)
+		b:SetScript("OnEnter", function(self) O:SetSkinColor(self, "controlHover") end)
+		b:SetScript("OnLeave", function(self) O:SetSkinColor(self, "control") end)
+		if tip then O:Tooltip(b, text, tip) end
+		return b
+	end
+
+	-- plays a short sample through the module's real code
+	f.test = HeadButton("play", "Test", 76, "Runs a short sample through the real code, as if it had been triggered in the game.", function()
+		local m = f.module
+		if m and m.Test then
+			-- a test goes through the real code, not the sample
+			if m.preview then autoStarted[m] = nil m:SetPreview(false) end
+			XUI.SafeCallFor(m, m.Test, m)
+			O:RefreshPageHead()
+		end
+	end)
+	f.test:SetPoint("RIGHT", f.preview, "LEFT", -8, 0)
+
+	-- cycles the looks the preview can take
+	f.state = HeadButton("layers", "", 150, "Switch which look the preview shows.", function()
+		local m = f.module
+		local list = m and m.PREVIEW_STATES
+		if not list then return end
+		local index = 0
+		for i, s in ipairs(list) do if s.value == m.previewState then index = i end end
+		m:SetPreviewState(list[index % #list + 1].value)
+		O:RefreshPageHead()
+	end)
+	f.state:SetPoint("RIGHT", f.test, "LEFT", -8, 0)
+
 	f.line = O:Rect(f, "line", "ARTWORK")
 	f.line:SetHeight(1)
 	f.line:SetPoint("BOTTOMLEFT")
@@ -155,6 +196,16 @@ function O:RefreshPageHead()
 	f.enable:SetShown(showModule)
 	f.reset:SetShown(showModule)
 	f.preview:SetShown(showModule)
+	f.test:SetShown(showModule and m.Test ~= nil)
+	local states = showModule and m.PREVIEW_STATES
+	f.state:SetShown(states and true or false)
+	if states then
+		local label = states[1].text
+		for _, st in ipairs(states) do if st.value == m.previewState then label = st.text end end
+		f.state.text:SetText(label)
+		f.state:ClearAllPoints()
+		f.state:SetPoint("RIGHT", m.Test and f.test or f.preview, "LEFT", -8, 0)
+	end
 	f.status:SetText("")
 	if m then
 		f.icon:SetTexture(m.icon or 134400)
@@ -499,6 +550,8 @@ local function CreateWindow()
 	frame:SetScript("OnHide", function()
 		O.CloseDropdown()
 		for _, m in ipairs(XUI.modules) do m:SetPreview(false) end
+		wipe(autoStarted)
+		if docked then docked = false end
 	end)
 
 	local owner = {}
@@ -512,12 +565,79 @@ local function CreateWindow()
 		if frame:IsShown() then O:RefreshSidebar() O:RefreshPageHead() end
 	end)
 	XUI:On("PreviewChanged", owner, function()
-		if frame:IsShown() then O:RefreshPageHead() end
+		if frame:IsShown() then O:RefreshPageHead() UpdateDockSoon() end
 	end)
 	XUI:On("ModuleError", owner, function()
 		if frame:IsShown() then O:RefreshPageHead() O:RefreshSidebar() end
 	end)
 end
+
+--------------------------------------------------------------------------------
+-- Preview that follows the page, and a window that steps aside for it
+--------------------------------------------------------------------------------
+local function SyncAutoPreview(key)
+	for m in pairs(autoStarted) do
+		if m.key ~= key then
+			autoStarted[m] = nil
+			m:SetPreview(false)
+		end
+	end
+	if XUI.DB.global.panel.autoPreview == false then return end
+	local m = XUI:GetModule(key)
+	if m and not m.preview and not autoStarted[m] then
+		autoStarted[m] = true
+		m:SetPreview(true)
+	end
+end
+
+local function RectsOverlap(a, b)
+	return a.l < b.r and a.r > b.l and a.b < b.t and a.t > b.b
+end
+local function ScreenRect(f)
+	local l, b, w, h = f:GetRect()
+	if not l then return nil end
+	local s = f:GetEffectiveScale() / UIParent:GetEffectiveScale()
+	return { l = l * s, b = b * s, r = (l + w) * s, t = (b + h) * s }
+end
+
+function O:UpdateDock()
+	if not (frame and frame:IsShown()) then return end
+	local want = false
+	local mine = ScreenRect(frame)
+	if XUI.DB.global.panel.dock ~= false and mine then
+		for _, entry in ipairs(XUI.Movers.list) do
+			local m = entry.module
+			if m.preview and entry.frame:IsShown() then
+				local r = ScreenRect(entry.frame)
+				if r and RectsOverlap(mine, r) then
+					-- the side the preview is not on
+					local cx = (r.l + r.r) / 2
+					frame:ClearAllPoints()
+					if cx > UIParent:GetWidth() / 2 then
+						frame:SetPoint("LEFT", UIParent, "LEFT", 24, 0)
+					else
+						frame:SetPoint("RIGHT", UIParent, "RIGHT", -24, 0)
+					end
+					docked = true
+					return
+				end
+				want = want or false
+			end
+		end
+	end
+	if docked then
+		docked = false
+		frame:ClearAllPoints()
+		local p = XUI.DB.global.panel.point
+		if type(p) == "table" and p[1] then
+			frame:SetPoint(p[1], UIParent, p[2] or p[1], p[3] or 0, p[4] or 0)
+		else
+			frame:SetPoint("CENTER")
+		end
+	end
+end
+
+UpdateDockSoon = XUI.Coalesce(function() C_Timer.After(0.05, function() O:UpdateDock() end) end)
 
 function O:Open(key)
 	if not frame then CreateWindow() end
@@ -530,6 +650,8 @@ function O:Open(key)
 	if currentKey and pages[currentKey] and currentKey ~= key then pages[currentKey]:Hide() end
 	currentKey = key
 	frame:Show()
+	SyncAutoPreview(key)
+	UpdateDockSoon()
 	O:RefreshSidebar()
 	O:RefreshPageHead()
 	local page = GetPage(key)
