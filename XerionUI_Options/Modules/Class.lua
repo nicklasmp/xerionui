@@ -249,3 +249,37 @@ O:RegisterModuleOptions("ShiningLight", function(ctx, m, G)
 		Card("Position", G.Position("position")),
 	}
 end)
+
+O:RegisterModuleOptions("ExpelHarmOrbs", function(ctx, m, G)
+	return {
+		Card("Orbs", {
+			{ type = "slider", label = "Orb size", path = "orbSize", min = 6, max = 40, step = 1 },
+			{ type = "slider", label = "Arc radius", path = "orbRadius", min = 10, max = 120, step = 1 },
+			{ type = "slider", label = "Arc spread (degrees)", path = "orbSpread", min = 20, max = 240, step = 5 },
+			{ type = "color", label = "Colour", path = "orbColor" },
+		}),
+		Card("Position", G.Position("position")),
+	}
+end)
+
+O:RegisterModuleOptions("BrewDodge", function(ctx, m, G)
+	return {
+		Card("When", { { type = "toggle", label = "Only in combat", path = "combatOnly", width = "full" } }),
+		Card("Text", G.Font("font", { color = true })),
+		Card("Position", G.Position("position")),
+	}
+end)
+
+O:RegisterModuleOptions("ElixirProc", function(ctx, m, G)
+	return {
+		Card("When", {
+			{ type = "toggle", label = "Show the bright icon while a proc is possible", path = "showReady", width = "full" },
+		}),
+		Card("Icon", Join(G.Icon("icon", { square = true }), {
+			{ type = "toggle", label = "Cooldown swipe", path = "showSwipe" },
+		})),
+		Card("Border", G.Border("border")),
+		Card("Seconds", G.Font("timerText", { toggle = "Show seconds" })),
+		Card("Position", G.Position("position")),
+	}
+end)
