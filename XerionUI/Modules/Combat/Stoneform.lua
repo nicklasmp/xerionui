@@ -68,14 +68,22 @@ local function HasBleed()
 	return ok and found or false
 end
 
+-- Whether Stoneform is off cooldown (a rolling global cooldown counts as
+-- ready). The cooldown record has had different fields over the builds, so each
+-- is tried; an answer the client will not give counts as ready - a reminder that
+-- stays silent is worse than one that is sometimes early.
 local function StoneformReady()
-	if not GetSpellCooldown then return false end
+	if not GetSpellCooldown then return true end
 	local info = XUI.Probe(GetSpellCooldown, STONEFORM)
-	if type(info) ~= "table" then return false end
-	local active = Readable(info.isActive)
-	if active == nil then return false end
+	if type(info) ~= "table" then return true end
 	local onGCD = Readable(info.isOnGCD)
-	return not active or onGCD == true
+	local active = Readable(info.isActive)
+	if type(active) == "boolean" then return not active or onGCD == true end
+	local remaining = Readable(info.timeUntilEndOfStartRecovery)
+	if type(remaining) == "number" then return remaining <= 0 or onGCD == true end
+	local duration = Readable(info.duration)
+	if type(duration) == "number" then return duration <= 0 or onGCD == true end
+	return true
 end
 
 function M:Update(fromAura)
@@ -121,6 +129,30 @@ function M:OnRefresh()
 	local visible = self:IsPreview() or (self:IsRunning() and shown)
 	d:SetGlow(db.glow, visible)
 	d:SetShown(visible)
+end
+
+function M:DebugInfo()
+	local out = {
+		("bleeding: %s, icon showing: %s, Stoneform ready: %s"):format(tostring(bleeding), tostring(shown), tostring(StoneformReady())),
+	}
+	local info = GetSpellCooldown and XUI.Probe(GetSpellCooldown, STONEFORM)
+	if type(info) == "table" then
+		local parts = {}
+		for k, v in pairs(info) do parts[#parts + 1] = k .. "=" .. (IsSecret(v) and "<secret>" or tostring(v)) end
+		table.sort(parts)
+		out[#out + 1] = "cooldown record: " .. table.concat(parts, ", ")
+	else
+		out[#out + 1] = "cooldown record: unreadable"
+	end
+	-- what the harmful auras on you look like to this addon
+	for i = 1, 12 do
+		local ok, aura = pcall(GetAuraDataByIndex, "player", i, "HARMFUL")
+		if not ok or aura == nil then break end
+		if IsSecret(aura) then out[#out + 1] = ("  debuff %d: secret"):format(i) break end
+		local dispel = aura.dispelName
+		out[#out + 1] = ("  debuff %d: %s, dispel type %s"):format(i, IsSecret(aura.name) and "<secret name>" or tostring(aura.name), IsSecret(dispel) and "<secret>" or tostring(dispel))
+	end
+	return out
 end
 
 -- Options test button.
