@@ -283,3 +283,32 @@ O:RegisterModuleOptions("ElixirProc", function(ctx, m, G)
 		Card("Position", G.Position("position")),
 	}
 end)
+
+O:RegisterModuleOptions("RuneforgeAlert", function(ctx, m, G)
+	local cards = {
+		Card("Text", Join({
+			{ type = "input", label = "Text", path = "text" },
+			{ type = "color", label = "Color", path = "color" },
+		}, G.Font("font"))),
+	}
+	-- one card per build of the current specialization: which runes are fine on each weapon
+	for _, setup in ipairs(m.SETUPS) do
+		local items = {}
+		for _, slot in ipairs(setup.slots) do
+			items[#items + 1] = { type = "description", width = "full", text = slot.label .. ": accepted runes" }
+			for _, rune in ipairs(m.RUNES) do
+				items[#items + 1] = {
+					type = "toggle", label = rune.name,
+					get = function()
+						local runes = m:Accepted(setup.key, slot.key)
+						return runes and runes[rune.enchantId] == true or false
+					end,
+					set = function(_, on) m:SetAccepted(setup.key, slot.key, rune.enchantId, on) end,
+				}
+			end
+		end
+		cards[#cards + 1] = Card(setup.label, items, { hidden = function() return setup.spec ~= XUI.GetSpecID() end })
+	end
+	cards[#cards + 1] = Card("Position", G.Position("position"))
+	return cards
+end)
