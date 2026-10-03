@@ -18,7 +18,6 @@ O:RegisterModuleOptions("EUINameplates", function(ctx, m, G)
 		Card("Shield amount", Join({
 			{ type = "toggle", label = "Show the shield amount", path = "shield.enabled" },
 			{ type = "toggle", label = "Enemies only", path = "shield.enemyOnly", disabled = off },
-			{ type = "toggle", label = "Chinese grouping (万 / 亿)", path = "shield.cn", disabled = off },
 			{ type = "spacer" },
 			{ type = "slider", label = "Offset X", path = "shield.offX", min = -40, max = 40, step = 1, disabled = off },
 			{ type = "slider", label = "Offset Y", path = "shield.offY", min = -40, max = 40, step = 1, disabled = off },

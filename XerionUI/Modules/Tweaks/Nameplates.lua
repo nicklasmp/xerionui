@@ -26,7 +26,7 @@ local M = XUI:NewModule("EUINameplates", {
 	requires = "EllesmereUINameplates",
 	defaults = {
 		dispelAlways = true,
-		shield = { enabled = false, enemyOnly = true, cn = false, offX = 0, offY = 0 },
+		shield = { enabled = false, enemyOnly = true, offX = 0, offY = 0 },
 		shieldText = T.Font(11, { color = { 1, 0.82, 0.25, 1 } }),
 	},
 })
@@ -34,7 +34,6 @@ local M = XUI:NewModule("EUINameplates", {
 local IsSecret = XUI.IsSecret
 local SHIELD_GAP = 3
 local PREVIEW_AMOUNT = 5500000
-local CJK_FONT = [[Fonts\ARHei.ttf]]
 
 local function NP()
 	local np = _G.EllesmereNameplates_NS
@@ -68,45 +67,6 @@ end
 --------------------------------------------------------------------------------
 -- Shield text
 --------------------------------------------------------------------------------
--- Chinese grouping (万 / 亿), done by the client's abbreviator so it stays
--- allowed with a secret amount.
-local CN_BREAKPOINTS = {
-	{ breakpoint = 1e9, abbreviation = "亿", significandDivisor = 1e8, fractionDivisor = 1, abbreviationIsGlobal = false },
-	{ breakpoint = 1e8, abbreviation = "亿", significandDivisor = 1e7, fractionDivisor = 10, abbreviationIsGlobal = false },
-	{ breakpoint = 1e5, abbreviation = "万", significandDivisor = 1e4, fractionDivisor = 1, abbreviationIsGlobal = false },
-	{ breakpoint = 1e4, abbreviation = "万", significandDivisor = 1e3, fractionDivisor = 10, abbreviationIsGlobal = false },
-	{ breakpoint = 1, abbreviation = "", significandDivisor = 1, fractionDivisor = 1, abbreviationIsGlobal = false },
-}
-local cnAbbrev
-local function CNAbbrev()
-	if not cnAbbrev then
-		local ok, c = pcall(CreateAbbreviateConfig, CN_BREAKPOINTS)
-		cnAbbrev = (ok and c) and { config = c } or { breakpointData = CN_BREAKPOINTS }
-	end
-	return cnAbbrev
-end
-
--- most number fonts have no 万; measure once per font and fall back to the
--- client's Chinese font
-local glyphProbe, glyphOk = nil, {}
-local function HasCJK(path)
-	if glyphOk[path] == nil then
-		if not glyphProbe then
-			glyphProbe = UIParent:CreateFontString(nil, "BACKGROUND")
-			glyphProbe:SetPoint("TOPLEFT", UIParent, "BOTTOMRIGHT", 100, -100)
-			glyphProbe:SetAlpha(0)
-		end
-		local w = 0
-		if glyphProbe:SetFont(path, 14, "") then
-			glyphProbe:SetText("万")
-			w = glyphProbe:GetStringWidth() or 0
-			glyphProbe:SetText("")
-		end
-		glyphOk[path] = w > 1
-	end
-	return glyphOk[path]
-end
-
 local preview = false
 local gen = 0
 
@@ -151,13 +111,6 @@ local function LayoutShield(w, anchor, host)
 	local db = M.db
 	local f = Style:ApplyFont(w.fs, db.shieldText)
 	local size = f.size or 11
-	if db.shield.cn then
-		local path = w.fs:GetFont()
-		if path and not HasCJK(path) then
-			w.fs:SetFont(CJK_FONT, size, Style:FontFlags(f))
-			w.fs.__xuiFont = nil
-		end
-	end
 	if w.gate:GetParent() ~= host then
 		w.gate:SetParent(host)
 		w.clip:SetParent(host)
@@ -176,9 +129,9 @@ local function Wanted(unit)
 	return XUI.Ask(UnitCanAttack, "player", unit) ~= false
 end
 
-local function Push(w, amount, cn)
+local function Push(w, amount)
 	w.gate:SetValue(amount)
-	w.fs:SetText(AbbreviateNumbers(amount, cn and CNAbbrev() or nil))
+	w.fs:SetText(AbbreviateNumbers(amount))
 end
 
 local function Paint(plate)
@@ -191,7 +144,7 @@ local function Paint(plate)
 		local ok, v = pcall(UnitGetTotalAbsorbs, plate.unit)
 		if ok and (IsSecret(v) or type(v) == "number") then amount = v end
 	end
-	if not pcall(Push, w, amount, M.db.shield.cn) then pcall(Push, w, 0) end
+	if not pcall(Push, w, amount) then pcall(Push, w, 0) end
 end
 
 -- from: "added" (plate came up), "unit" (SetUnit hook), nil (settings pass).
