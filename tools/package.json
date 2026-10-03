@@ -1,0 +1,14 @@
+{
+  "name": "xerionui-tools",
+  "private": true,
+  "description": "Dev tools for XerionUI: Lua lint and a mocked-client test harness.",
+  "scripts": {
+    "lint": "node lint.js ../XerionUI --skip=Libs --globals && node lint.js ../XerionUI_Options --globals",
+    "test": "node harness/run.js",
+    "media": "node gen-media.js"
+  },
+  "dependencies": {
+    "fengari": "^0.1.4",
+    "luaparse": "^0.3.1"
+  }
+}

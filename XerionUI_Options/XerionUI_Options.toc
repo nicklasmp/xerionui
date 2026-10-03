@@ -1,0 +1,28 @@
+## Interface: 120000, 120001, 120005, 120007, 120100
+## Title: |cffff7d0aXerion|r|cffffffffUI|r Options
+## Notes: The XerionUI settings window. Loaded on demand by /xui; costs nothing until then.
+## Author: Nicklas Pedersen
+## IconTexture: Interface\AddOns\XerionUI\Media\logo
+## AllowLoadGameType: mainline
+## Dependencies: XerionUI
+## LoadOnDemand: 1
+## Group: XerionUI
+
+# Keep ## Interface identical to XerionUI.toc: a load-on-demand addon that is
+# out of date refuses to load unless "Load out of date AddOns" is ticked.
+
+Theme.lua
+Controls.lua
+Dropdown.lua
+Page.lua
+Groups.lua
+Panel.lua
+
+# System pages, in sidebar order
+Pages\Style.lua
+Pages\General.lua
+Pages\Profiles.lua
+
+# Module options
+Modules\General.lua
+Modules\Combat.lua

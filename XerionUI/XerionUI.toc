@@ -1,0 +1,42 @@
+## Interface: 120000, 120001, 120005, 120007, 120100
+## Title: |cffff7d0aXerion|r|cffffffffUI|r
+## Notes: Personal quality-of-life and tweak suite. Type /xui for options.
+## Author: Nicklas Pedersen
+## Version: 2.0.0-alpha.1
+## IconTexture: Interface\AddOns\XerionUI\Media\logo
+## AllowLoadGameType: mainline
+## SavedVariables: XerionUIDB
+## SavedVariablesPerCharacter: XerionUICharDB
+## OptionalDeps: SharedMedia, SharedMedia_MyMedia, EllesmereUI
+## AddonCompartmentFunc: XerionUI_OnAddonCompartmentClick
+## Category: Interface Enhancements
+
+# Libraries
+Libs\LibStub\LibStub.lua
+Libs\CallbackHandler-1.0\CallbackHandler-1.0.lua
+Libs\LibSharedMedia-3.0\LibSharedMedia-3.0.lua
+Libs\LibCustomGlow-1.0\LibCustomGlow-1.0.lua
+Libs\LibSerialize\LibSerialize.lua
+Libs\LibDeflate\LibDeflate.lua
+
+# Core (order matters: each file builds on the ones above it)
+Core\Init.lua
+Core\Database.lua
+Core\Media.lua
+Core\Style.lua
+Core\Audio.lua
+Core\Modules.lua
+Core\Widgets.lua
+Core\Movers.lua
+Core\Commands.lua
+
+# Integrations
+Integrations\EllesmereUI.lua
+
+# Modules
+Modules\General\CombatAlert.lua
+Modules\General\CombatTimer.lua
+Modules\Combat\Stoneform.lua
+
+# The options window is the load-on-demand addon XerionUI_Options; it is
+# loaded the first time /xui is used, so nothing of it costs anything at login.
