@@ -241,6 +241,7 @@ local function Paint(btn)
 		Layout(w)
 	end
 	w.host:Show()
+	if w.pv then w.pv:Hide() end
 	local unit = btn:GetAttribute("unit")
 	if not (unit and UnitExists(unit)) or Gone(unit) or not pcall(Feed, w, unit) then
 		Blank(w)
@@ -276,6 +277,73 @@ local function StackPoint()
 	return p
 end
 
+-- Where EllesmereUI really puts a party frame's debuffs, relative to the frame:
+-- learned from the buttons it styles (the first one of each styling pass), else
+-- from a debuff container in the frame's data, else to the right of the frame.
+local geom, geomLocked = nil, false
+
+local function Num(v) return type(v) == "number" and not IsSecret(v) end
+
+local function UIUnits(frame)
+	local x, y = frame:GetCenter()
+	local w, h = frame:GetSize()
+	if not (Num(x) and Num(y) and Num(w) and Num(h)) then return nil end
+	local k = frame:GetEffectiveScale() / UIParent:GetEffectiveScale()
+	return x * k, y * k, w * k, h * k
+end
+
+local function RecordGeometry(button, partyButton)
+	local ok, bx, by, bw, bh = pcall(UIUnits, button)
+	local okP, px, py = pcall(UIUnits, partyButton)
+	if not (ok and okP and bx and px) then return end
+	local fresh = { dx = bx - px, dy = by - py, w = bw, h = bh }
+	if M:IsPreview() and (not geom or math.abs(geom.dx - fresh.dx) > 1 or math.abs(geom.dy - fresh.dy) > 1) then
+		geom = fresh
+		M:RefreshSoon()
+	else
+		geom = fresh
+	end
+end
+
+local function Capture(button)
+	if geomLocked then return end
+	local rf = RF()
+	local list = rf and rf._partyAllButtons
+	if not list then return end
+	local node, depth = button:GetParent(), 0
+	while node and depth < 8 do
+		for _, b in ipairs(list) do
+			if b == node then
+				geomLocked = true
+				RecordGeometry(button, node)
+				return
+			end
+		end
+		node, depth = node:GetParent(), depth + 1
+	end
+end
+
+-- a debuff container among the data EllesmereUI keeps for a party frame
+local function ContainerGeometry(partyButton)
+	local rf = RF()
+	if not (rf and type(rf.GetFFD) == "function") then return nil end
+	local ok, d = pcall(rf.GetFFD, partyButton)
+	if not (ok and type(d) == "table") then return nil end
+	for k, v in pairs(d) do
+		if type(k) == "string" and k:lower():find("debuff") and type(v) == "table" and v.GetCenter and v.GetSize then
+			local okU, cx, cy, cw, ch = pcall(UIUnits, v)
+			local okP, px, py = pcall(UIUnits, partyButton)
+			if okU and okP and cx and px and cw > 1 then
+				local icon = math.max(ch, 1)
+				-- a long row: the first icon sits at its start
+				local x = (cw > icon * 1.5) and (cx - cw / 2 + icon / 2) or cx
+				return { dx = x - px, dy = cy - py, w = icon, h = icon }
+			end
+		end
+	end
+	return nil
+end
+
 local function InstallStackStyle(key)
 	local ak = _G.EllesmereUI and _G.EllesmereUI.AuraKit
 	local style = ak and ak.styles and ak.styles[key]
@@ -283,6 +351,7 @@ local function InstallStackStyle(key)
 	local applyExtra = style.applyExtra
 	style.applyExtra = function(button, data, current)
 		applyExtra(button, data, current)
+		if M.running or M:IsPreview() then pcall(Capture, button) end
 		if not (M.running and data and data.stack) then return end
 		local point = StackPoint()
 		local s = M.db.stack
@@ -306,6 +375,7 @@ end
 
 local function RestyleStacks()
 	InstallStackStyles()
+	geomLocked = false
 	local ak = _G.EllesmereUI and _G.EllesmereUI.AuraKit
 	if ak and type(ak.RestyleSoon) == "function" then
 		ak.RestyleSoon("rf:debuff:party")
@@ -333,9 +403,18 @@ local function UpdateSample()
 		if b.IsVisible and b:IsVisible() then target = b break end
 	end
 	if not target then s:Hide() return end
-	s:ApplyLayout({ width = 24, height = 24 }, nil)
+	local g = geom or ContainerGeometry(target)
+	local size = g and math.max(12, math.min(g.w, g.h)) or 24
+	s:ApplyLayout({ width = size, height = size }, nil)
 	s:ClearAllPoints()
-	s:SetPoint("TOPLEFT", target, "TOPLEFT", 8, -8)
+	local tx, ty, tw = UIUnits(target)
+	if g and tx then
+		-- where EllesmereUI really puts the debuffs
+		s:SetPoint("CENTER", UIParent, "BOTTOMLEFT", tx + g.dx, ty + g.dy)
+	else
+		-- to the right of the frame
+		s:SetPoint("LEFT", target, "RIGHT", 4, 0)
+	end
 	local point = StackPoint()
 	local st = M.db.stack
 	s:ApplyCountText({ size = 11, anchor = point == "TOP" and "BOTTOM" or point })
@@ -434,11 +513,67 @@ local function PaintNumbers()
 	n:Show()
 end
 
+-- The preview on the real party frames: each shows a number from a different
+-- colour band, placed exactly where the live number goes.
+local function PreviewValues()
+	local h = M.db.health
+	local steps = { h.t1, h.t2, h.t3 }
+	table.sort(steps)
+	return { math.max(1, steps[1] - 10), math.floor((steps[1] + steps[2]) / 2), math.floor((steps[2] + steps[3]) / 2), steps[3] + 15 }
+end
+
+local function PreviewParty()
+	local rf = RF()
+	local list = rf and rf._partyAllButtons
+	if not list then return false end
+	local h, values, used = M.db.health, PreviewValues(), 0
+	for _, btn in ipairs(list) do
+		if btn:IsVisible() then
+			local w = Build(btn)
+			if w then
+				used = used + 1
+				if w.gen ~= gen then w.gen = gen Layout(w) end
+				w.host:Show()
+				Blank(w)
+				if not w.pv then w.pv = w.host:CreateFontString(nil, "OVERLAY") end
+				local path, size, flags = w.text[1]:GetFont()
+				if path then w.pv:SetFont(path, size, flags or "") else Style:ApplyFont(w.pv, M.db.healthText) end
+				local a = JUSTIFY[h.anchor] and h.anchor or "RIGHT"
+				w.pv:ClearAllPoints()
+				w.pv:SetPoint(a, w.host, a, h.x, h.y)
+				w.pv:SetJustifyH(JUSTIFY[a])
+				local band = (used - 1) % 4 + 1
+				w.pv:SetText(("%d"):format(values[band]))
+				w.pv:SetTextColor(XUI.UnpackColor(h.byValue and h["c" .. band] or h.color))
+				w.pv:Show()
+			end
+		end
+	end
+	return used > 0
+end
+
+local function ClearPartyPreview()
+	for _, w in pairs(widgets) do
+		if w.pv then w.pv:Hide() end
+	end
+end
+
 function M:OnRefresh()
-	if self:IsPreview() and self.db.health.enabled then PaintNumbers() elseif numbers then numbers:Hide() end
 	gen = gen + 1
-	if self.running and self.db.health.enabled then PaintAll() else HideAll() end
-	if self.running then RestyleStacks() end
+	local preview = self:IsPreview()
+	if preview and self.db.health.enabled then
+		-- on the party frames when there are any, else a stand-in in the middle
+		if PreviewParty() then
+			if numbers then numbers:Hide() end
+		else
+			PaintNumbers()
+		end
+	else
+		if numbers then numbers:Hide() end
+		ClearPartyPreview()
+		if self.running and self.db.health.enabled then PaintAll() else HideAll() end
+	end
+	if self.running or preview then RestyleStacks() end
 	UpdateSample()
 end
 

@@ -151,7 +151,7 @@ end
 -- A plate is stamped twice when it comes up; the second paint is skipped.
 local function ApplyToPlate(plate, from)
 	if not (plate and plate.health) then return end
-	local on = M.running and M.db.shield.enabled
+	local on = (M.running or preview) and M.db.shield.enabled
 	if not on then
 		local w = plate.__xuiShield
 		if w then w.gate:Hide() w.clip:Hide() end
@@ -185,10 +185,54 @@ local function Stamp(plate, from)
 	end
 end
 
+-- A stand-in nameplate for the preview when none is on screen: a health bar
+-- with a percentage and the shield amount placed exactly as on a real plate.
+local standIn
+local function StandIn()
+	if standIn then return standIn end
+	standIn = CreateFrame("Frame", "XUI_ShieldSample", UIParent)
+	standIn:SetSize(140, 14)
+	standIn:SetFrameStrata("HIGH")
+	standIn.bg = standIn:CreateTexture(nil, "BACKGROUND")
+	standIn.bg:SetAllPoints()
+	standIn.bg:SetColorTexture(0, 0, 0, 0.7)
+	standIn.bar = CreateFrame("StatusBar", nil, standIn)
+	standIn.bar:SetAllPoints()
+	standIn.bar:SetStatusBarTexture([[Interface\Buttons\WHITE8X8]])
+	standIn.bar:SetStatusBarColor(0.8, 0.2, 0.2, 1)
+	standIn.bar:SetMinMaxValues(0, 1)
+	standIn.bar:SetValue(0.72)
+	standIn.hp = standIn.bar:CreateFontString(nil, "OVERLAY")
+	Style:ApplyFont(standIn.hp, nil, 11)
+	standIn.hp:SetPoint("RIGHT", standIn, "RIGHT", -3, 0)
+	standIn.hp:SetText("72%")
+	standIn.shield = standIn:CreateFontString(nil, "OVERLAY")
+	standIn:Hide()
+	return standIn
+end
+
+local function PaintStandIn(show)
+	if not (show or standIn) then return end
+	local f = StandIn()
+	f:ClearAllPoints()
+	f:SetPoint("CENTER", UIParent, "CENTER", 0, -120)
+	Style:ApplyFont(f.shield, M.db.shieldText)
+	f.shield:ClearAllPoints()
+	f.shield:SetPoint("LEFT", f, "RIGHT", SHIELD_GAP + M.db.shield.offX, M.db.shield.offY)
+	f.shield:SetText(AbbreviateNumbers(PREVIEW_AMOUNT))
+	f:SetShown(show)
+end
+
 local function StampAll()
 	local np = NP()
-	if not (np and np.plates) then return end
-	for _, plate in pairs(np.plates) do Stamp(plate) end
+	local n = 0
+	if np and np.plates then
+		for _, plate in pairs(np.plates) do
+			Stamp(plate)
+			if plate.health and plate.IsVisible and plate:IsVisible() and M.db.shield.enabled and (M.running or preview) then n = n + 1 end
+		end
+	end
+	PaintStandIn(preview and n == 0)
 end
 
 --------------------------------------------------------------------------------
