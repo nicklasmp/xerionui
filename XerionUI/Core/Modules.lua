@@ -65,6 +65,8 @@ function XUI:NewModule(key, info)
 	m.untested = info.untested and true or false
 	m.defaults = info.defaults or {}
 	if m.defaults.enabled == nil then m.defaults.enabled = false end
+	-- where the module runs at all; every module gets the same three rules
+	m.defaults.visibility = m.defaults.visibility or { group = "ANY", instance = "ANY", role = "ANY" }
 	m.running = false
 	m.preview = false
 	m._gen = 0
@@ -104,8 +106,59 @@ local function Contains(list, value)
 	return false
 end
 
+--------------------------------------------------------------------------------
+-- Visibility rules (the user's: group, kind of content, tank or not)
+--------------------------------------------------------------------------------
+XUI.VISIBILITY = {
+	group = {
+		{ value = "ANY", text = "Anywhere" },
+		{ value = "SOLO", text = "Only when solo" },
+		{ value = "GROUP", text = "Only in a group" },
+		{ value = "RAID", text = "Only in a raid" },
+	},
+	instance = {
+		{ value = "ANY", text = "Anywhere" },
+		{ value = "WORLD", text = "Only in the open world" },
+		{ value = "DUNGEON", text = "Only in dungeons" },
+		{ value = "RAID", text = "Only in raids" },
+		{ value = "PVP", text = "Only in PvP" },
+		{ value = "INSTANCE", text = "Only in instances" },
+	},
+	role = {
+		{ value = "ANY", text = "Any role" },
+		{ value = "TANK", text = "Only as a tank" },
+		{ value = "NOTTANK", text = "Only when not a tank" },
+	},
+}
+
+-- An unreadable answer lets the module run: a rule must never hide something
+-- because the client would not say.
+local function Visible(rules)
+	if type(rules) ~= "table" then return true end
+	if rules.group == "SOLO" and XUI.Ask(IsInGroup) == true then return false end
+	if rules.group == "GROUP" and XUI.Ask(IsInGroup) == false then return false end
+	if rules.group == "RAID" and XUI.Ask(IsInRaid) == false then return false end
+	local want = rules.instance
+	if want and want ~= "ANY" then
+		local ok, _, kind = pcall(GetInstanceInfo)
+		if ok and type(kind) == "string" and not XUI.IsSecret(kind) then
+			if want == "WORLD" and kind ~= "none" then return false end
+			if want == "DUNGEON" and kind ~= "party" then return false end
+			if want == "RAID" and kind ~= "raid" then return false end
+			if want == "PVP" and kind ~= "pvp" and kind ~= "arena" then return false end
+			if want == "INSTANCE" and kind == "none" then return false end
+		end
+	end
+	if rules.role == "TANK" and XUI.PlayerIsTank(true) == false then return false end
+	if rules.role == "NOTTANK" and XUI.PlayerIsTank(false) == true then return false end
+	return true
+end
+
 -- False plus a reason when the module cannot run on this character.
 function Module:CanRun()
+	if self.db and not Visible(self.db.visibility) then
+		return false, "Hidden by your visibility rules."
+	end
 	if self.classes and not Contains(self.classes, XUI.playerClass) then
 		return false, "Not available for your class."
 	end
@@ -405,6 +458,8 @@ boot:SetScript("OnEvent", function(self, event, arg1)
 		-- has loaded, which can be after login).
 		self:RegisterUnitEvent("PLAYER_SPECIALIZATION_CHANGED", "player")
 		self:RegisterEvent("SPELLS_CHANGED")
+		-- the visibility rules follow the group and the kind of content
+		for _, e in ipairs({ "GROUP_ROSTER_UPDATE", "PLAYER_ENTERING_WORLD", "ZONE_CHANGED_NEW_AREA" }) do self:RegisterEvent(e) end
 		for _, m in ipairs(XUI.modules) do
 			if m.requires and not XUI.IsAddOnLoaded(m.requires) then
 				XUI.OnAddOnLoaded(m.requires, function() XUI:UpdateModuleState(m) end)
@@ -414,7 +469,8 @@ boot:SetScript("OnEvent", function(self, event, arg1)
 		if DB.global.loginMessage then
 			XUI.Printf("%s loaded. Type |cffffffff/xui|r for options.", XUI.version)
 		end
-	elseif event == "PLAYER_SPECIALIZATION_CHANGED" or event == "SPELLS_CHANGED" then
+	elseif event == "PLAYER_SPECIALIZATION_CHANGED" or event == "SPELLS_CHANGED" or event == "GROUP_ROSTER_UPDATE"
+		or event == "PLAYER_ENTERING_WORLD" or event == "ZONE_CHANGED_NEW_AREA" then
 		EvaluateSoon()
 	end
 end)

@@ -53,6 +53,12 @@ function O:ModuleExtras(m, ctx)
 		return out
 	end
 	return {
+		O.Card("Where it runs", {
+			{ type = "description", width = "full", text = "Keeps the module off outside the situations you pick. A module that is off does not listen to the game at all." },
+			{ type = "dropdown", label = "Group", path = "visibility.group", values = XUI.VISIBILITY.group },
+			{ type = "dropdown", label = "Kind of content", path = "visibility.instance", values = XUI.VISIBILITY.instance },
+			{ type = "dropdown", label = "Role", path = "visibility.role", values = XUI.VISIBILITY.role },
+		}),
 		O.Card("Copy styling", {
 			{ type = "description", width = "full",
 				text = "Copies fonts, borders, bars, icons and glows from another module onto the ones this module shares with it. Positions and on/off switches stay." },
