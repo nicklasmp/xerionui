@@ -209,3 +209,15 @@ O:RegisterModuleOptions("FieryBrand", function(ctx, m, G)
 		Card("Position", G.Position("position")),
 	}
 end)
+
+O:RegisterModuleOptions("ReapersMark", function(ctx, m, G)
+	return {
+		Card("Icon", Join(G.Icon("icon", { square = true }), {
+			{ type = "toggle", label = "Cooldown swipe", path = "showSwipe" },
+		})),
+		Card("Border", G.Border("border")),
+		Card("Seconds", G.Font("timerText", { toggle = "Show seconds", anchor = true })),
+		Card("Stacks", G.Font("stackText", { toggle = "Show stacks", anchor = true, color = true })),
+		Card("Position", G.Position("position")),
+	}
+end)

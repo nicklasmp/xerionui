@@ -61,6 +61,7 @@ Modules\Class\Paladin\PaladinAura.lua
 Modules\Class\Shaman\ElementalBlast.lua
 Modules\Class\Mage\AlterTime.lua
 Modules\Class\DemonHunter\FieryBrand.lua
+Modules\Class\DeathKnight\ReapersMark.lua
 Modules\Tweaks\Nameplates.lua
 Modules\Tweaks\FocusKick.lua
 Modules\Tweaks\FocusCastbar.lua
