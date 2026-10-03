@@ -54,8 +54,7 @@ O:RegisterSystemPage({
 					type = "description", width = "full", size = O.SIZE.text, color = "label",
 					text = function()
 						return ("%s %s\nA personal quality-of-life and tweak suite for World of Warcraft: Midnight.\n\n"
-							.. "Type |cffffffff/xui|r to open this window and |cffffffff/xui unlock|r to move frames.\n\n"
-							.. "Some features are ported from ItruliaQoL by Itrulia (MIT licence)."):format(XUI.TITLE, XUI.version)
+							.. "Type |cffffffff/xui|r to open this window and |cffffffff/xui unlock|r to move frames."):format(XUI.TITLE, XUI.version)
 					end,
 				},
 			}),
