@@ -360,3 +360,30 @@ O:RegisterModuleOptions("MovementAlert", function(ctx, m, G)
 		Card("Position", G.Position("position")),
 	}
 end)
+
+O:RegisterModuleOptions("SelfDispelAlert", function(ctx, m, G)
+	local sources = {}
+	for _, s in ipairs(m.SOURCE_KEYS) do
+		sources[#sources + 1] = {
+			type = "toggle", label = s.text, width = "full",
+			get = function() return m:IsSourceEnabled(s.value) end,
+			set = function(_, on) m:SetSourceEnabled(s.value, on) m:Resolve() end,
+			hidden = function() return s.value ~= "RACIAL" and s.value ~= XUI.playerClass end,
+		}
+	end
+	return {
+		Card("When", {
+			{ type = "toggle", label = "Only while the dispel is ready", path = "hideOnCooldown", width = "full" },
+			{ type = "toggle", label = "Not in a raid", path = "disableInRaid", width = "full" },
+		}),
+		Card("Dispels used", sources),
+		Card("Icon", Join({ { type = "toggle", label = "Show the icon", path = "showIcon" } }, G.Icon("icon", { square = true }))),
+		Card("Border", G.Border("border")),
+		Card("Text", Join({
+			{ type = "toggle", label = "Show text", path = "showText" },
+			{ type = "input", label = "Text (empty = the dispel's name)", path = "text" },
+			{ type = "color", label = "Color", path = "color" },
+		}, G.Font("font"))),
+		Card("Position", G.Position("position")),
+	}
+end)
