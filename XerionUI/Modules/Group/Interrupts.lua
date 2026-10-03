@@ -249,6 +249,7 @@ end
 
 local function StyleRow(row)
 	local db = M.db
+	row.__urgent, row.__lastText = nil, nil
 	if db.displayMode == "icon" then
 		local i = Style:Resolve("icon", db.icon)
 		local w, h = i.width or 24, i.height or i.width or 24
@@ -512,9 +513,19 @@ local function SelfEndedEarly(row, now)
 	return true
 end
 
+-- whole seconds, rounded up so it never reads 0 while time remains
 local function FormatRem(rem)
-	if rem >= 10 then return format("%d", floor(rem + 0.5)) end
-	return format("%.1f", rem)
+	return format("%d", math.ceil(rem))
+end
+
+local URGENT = 3 -- seconds left when the number turns red
+local function PaintTimerColor(row, urgent)
+	if urgent then
+		row.timer:SetTextColor(1, 0.2, 0.2, 1)
+	else
+		local c = Style:Resolve("font", M.db.timerText).color
+		row.timer:SetTextColor(XUI.UnpackColor(c, 1, 1, 1, 1))
+	end
 end
 
 -- 20 times a second while any bar runs; stops itself when none does. The
@@ -542,10 +553,15 @@ Tick = function(self, elapsed)
 			else
 				row.bar:SetValue(rem)
 				if showTimer then
-					local key = rem >= 10 and floor(rem + 0.5) or FormatRem(rem)
-					if key ~= row.__lastText then
-						row.__lastText = key
-						row.timer:SetText(FormatRem(rem))
+					local text = FormatRem(rem)
+					if text ~= row.__lastText then
+						row.__lastText = text
+						row.timer:SetText(text)
+					end
+					local urgent = rem <= URGENT
+					if urgent ~= row.__urgent then
+						row.__urgent = urgent
+						PaintTimerColor(row, urgent)
 					end
 				end
 				busy = true
