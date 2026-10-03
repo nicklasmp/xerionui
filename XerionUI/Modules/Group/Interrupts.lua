@@ -318,16 +318,31 @@ local function StyleRow(row)
 	PaintIcon(row)
 end
 
+-- The preview rows have no unit; in icon mode they take the party frames that
+-- exist, in order, so the placement beside the frames can be judged.
+local PREVIEW_UNITS = { "player", "party1", "party2", "party3", "party4" }
+local function PreviewUnits()
+	local out = {}
+	if XUI.EUI then
+		for _, u in ipairs(PREVIEW_UNITS) do
+			if XUI.EUI.PartyHealthBar(u) then out[#out + 1] = u end
+		end
+	end
+	return out
+end
+
 local function Layout(list)
 	local db = M.db
 	local iconMode = db.displayMode == "icon"
 	local gap = iconMode and db.partyGap or db.spacing
 	local first = list[1]
 	if first then holder:SetSize(first:GetWidth(), first:GetHeight()) end
+	local previewUnits = iconMode and M:IsPreview() and PreviewUnits() or nil
 	local prev
 	for _, row in ipairs(list) do
 		row:ClearAllPoints()
-		local health = iconMode and row.unit and XUI.EUI and XUI.EUI.PartyHealthBar(row.unit)
+		local unit = row.unit or (previewUnits and previewUnits[row.order or 0])
+		local health = iconMode and unit and XUI.EUI and XUI.EUI.PartyHealthBar(unit)
 		if health then
 			-- beside EllesmereUI's party health bar, in its strata and above it
 			local strata = health:GetFrameStrata()
