@@ -236,3 +236,16 @@ O:RegisterModuleOptions("ForbiddenSacrifice", function(ctx, m, G)
 		Card("Position", G.Position("position")),
 	}
 end)
+
+O:RegisterModuleOptions("ShiningLight", function(ctx, m, G)
+	return {
+		Card("Bar", Join(G.Bar("bar"), {
+			{ type = "toggle", label = "Show the bar when it is empty", path = "alwaysShow" },
+			{ type = "color", label = "Free Shining Light", path = "freeColor" },
+			{ type = "color", label = "Shield of the Righteous charges", path = "chargeColor" },
+		})),
+		Card("Border", G.Border("border")),
+		Card("Seconds", Join({ { type = "toggle", label = "Show seconds", path = "showTimers", width = "full" } }, G.Font("timerText"))),
+		Card("Position", G.Position("position")),
+	}
+end)

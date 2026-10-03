@@ -58,6 +58,7 @@ Modules\Class\Druid\WellHoned.lua
 Modules\Class\Druid\BearForm.lua
 Modules\Class\Warrior\SpellReflect.lua
 Modules\Class\Paladin\PaladinAura.lua
+Modules\Class\Paladin\ShiningLight.lua
 Modules\Class\Shaman\ElementalBlast.lua
 Modules\Class\Mage\AlterTime.lua
 Modules\Class\DemonHunter\FieryBrand.lua
