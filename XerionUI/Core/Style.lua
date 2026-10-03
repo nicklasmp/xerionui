@@ -424,6 +424,8 @@ function Style:HideGlow(frame)
 		XUI.Glow.StopAnts(frame)
 	elseif current == "PULSE" then
 		XUI.Glow.StopPulse(frame)
+	elseif current == "SHINE" then
+		XUI.Glow.StopShine(frame)
 	elseif current == "AUTOCAST" then
 		LCG.AutoCastGlow_Stop(frame, GLOW_KEY)
 	elseif current == "BUTTON" then
@@ -441,7 +443,11 @@ function Style:ShowGlow(frame, block, engineSafe)
 		self:HideGlow(frame)
 		return
 	end
-	if engineSafe and SCRIPTED[kind] then kind = "PIXEL" end
+	if engineSafe and SCRIPTED[kind] then
+		-- LibCustomGlow animates in scripts, which an engine button never runs:
+		-- the shine has a script-free twin, the rest fall back to the pixel glow
+		kind = (kind == "AUTOCAST") and "SHINE" or "PIXEL"
+	end
 	local ok, w, h = pcall(frame.GetSize, frame)
 	if not ok or XUI.IsSecret(w) then w, h = 0, 0 end
 	local sig = GlowSignature(kind, g) .. "|" .. floor((w or 0) + 0.5) .. "x" .. floor((h or 0) + 0.5)
@@ -457,6 +463,10 @@ function Style:ShowGlow(frame, block, engineSafe)
 		})
 	elseif kind == "PULSE" then
 		XUI.Glow.StartPulse(frame, { color = color, frequency = g.frequency, thickness = g.thickness })
+	elseif kind == "SHINE" then
+		XUI.Glow.StartShine(frame, {
+			color = color, particles = g.particles, frequency = g.frequency, scale = g.scale, offset = offset,
+		})
 	elseif kind == "AUTOCAST" then
 		LCG.AutoCastGlow_Start(frame, color, floor(g.particles or 4), g.frequency or 0.25,
 			g.scale or 1, offset, offset, GLOW_KEY)

@@ -10,9 +10,13 @@
 -- cooldown (ready = visible; read in the clear, else through the cooldown
 -- duration object whose zero-ness the client turns into the alpha).
 --
--- THE SOUND needs Lua to know a bleed arrived, so it only plays where your
--- auras can be read. A bleed is recognised by its dispel name, its dispel type
--- number or a bleed flag, whichever the build provides.
+-- THE SOUND needs to know a bleed arrived. Where auras can be read, Lua sees it
+-- (a bleed is recognised by its dispel name, dispel type number or a bleed
+-- flag). Where they are secret (combat), a small frame inside the engine's
+-- button plays it when it is shown: the engine shows that button exactly when
+-- a bleed lands, and a frame is told when its parent is shown. Whether the
+-- client delivers that script on an engine button is tested by /xui debug
+-- Stoneform ("show events seen").
 --------------------------------------------------------------------------------
 local XUI = select(2, ...).XUI
 local T = XUI.Templates
@@ -53,6 +57,7 @@ local GetSpellCooldown = C_Spell and C_Spell.GetSpellCooldown
 
 local host, sample, container, live
 local bleeding = false
+local showEvents, lastSound = 0, 0
 local stylePending = false
 
 --------------------------------------------------------------------------------
@@ -157,6 +162,9 @@ local function InitButton(b)
 	b:SetPoint("CENTER", host, "CENTER")
 	live = XUI.Widgets:CreateIcon(nil, b)
 	live:SetIcon(XUI.GetSpellIcon(STONEFORM, FALLBACK_ICON))
+	-- told when the engine shows the button, i.e. when a bleed lands
+	local probe = CreateFrame("Frame", nil, b)
+	pcall(probe.SetScript, probe, "OnShow", function() M:BleedShown() end)
 	-- the rect comes from our frame, the visibility from the button's chain
 	pcall(StyleLive)
 end
@@ -185,11 +193,24 @@ local function Gate()
 	if container then ApplyCooldownAlpha(container) end
 end
 
+-- the engine just showed the bleed button: a bleed arrived (even if secret)
+function M:BleedShown()
+	showEvents = showEvents + 1
+	if not self.running or self:IsPreview() then return end
+	local now = GetTime()
+	if now - lastSound < 1 then return end
+	-- Stoneform on cooldown cannot answer it; an unreadable cooldown plays
+	if Ready() == false then return end
+	lastSound = now
+	XUI.Audio:Play(self.db.alert, nil, true)
+end
+
 function M:Update(fromAura)
 	local was = bleeding
 	bleeding = HasBleed()
 	-- the sound: a bleed that just arrived while Stoneform can answer it
-	if fromAura and bleeding and not was and Ready() ~= false then
+	if fromAura and bleeding and not was and Ready() ~= false and GetTime() - lastSound >= 1 then
+		lastSound = GetTime()
 		XUI.Audio:Play(self.db.alert)
 	end
 end
@@ -246,7 +267,7 @@ end
 
 function M:DebugInfo()
 	local out = {
-		("bleed seen by Lua: %s, Stoneform ready: %s, engine icon: %s"):format(tostring(bleeding), tostring(Ready()), container and "built" or "NOT built"),
+		("bleed seen by Lua: %s, Stoneform ready: %s, engine icon: %s, show events seen: %d"):format(tostring(bleeding), tostring(Ready()), container and "built" or "NOT built", showEvents),
 	}
 	local info = GetSpellCooldown and XUI.Probe(GetSpellCooldown, STONEFORM)
 	if type(info) == "table" then

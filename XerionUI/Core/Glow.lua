@@ -196,3 +196,116 @@ function Glow.StopPulse(owner)
 	st.ag:Stop()
 	st.frame:Hide()
 end
+
+--------------------------------------------------------------------------------
+-- Shine: the autocast look - sparks travelling round the edge - without a
+-- script. Each spark is a texture on a chain of four translations (the four
+-- sides), started at its own place on the perimeter, so a loop ends where it
+-- began and the sparks stay evenly spaced. This is the Autocast shine on the
+-- engine's aura buttons, where LibCustomGlow's OnUpdate version cannot run.
+--------------------------------------------------------------------------------
+local SPARK = [[Interface\Artifacts\Blizzard_Spark]]
+
+-- o: color, particles (sparks), frequency (laps per second), scale, offset
+function Glow.StartShine(owner, o)
+	local st = owner.__xuiShine
+	if not st then
+		st = { sparks = {} }
+		st.frame = CreateFrame("Frame", nil, owner)
+		owner.__xuiShine = st
+	end
+	local f = st.frame
+	Level(f, owner, 4)
+	local off = o.offset or 0
+	f:ClearAllPoints()
+	f:SetPoint("TOPLEFT", owner, "TOPLEFT", -off, off)
+	f:SetPoint("BOTTOMRIGHT", owner, "BOTTOMRIGHT", off, -off)
+
+	local w, h = Size(owner)
+	if not w or w <= 0 or h <= 0 then
+		f:Hide()
+		return
+	end
+	w, h = w + 2 * off, h + 2 * off
+	local n = max(1, floor(o.particles or 4))
+	local freq = abs(o.frequency or 0.25)
+	if freq == 0 then freq = 0.25 end
+	local period = 1 / freq
+	local size = max(6, 9 * (o.scale or 1))
+	local r, g, b, a = XUI.UnpackColor(o.color)
+	local sig = ("%.2f:%.2f:%d:%.3f:%.2f"):format(w, h, n, period, size)
+	local rebuild = st.sig ~= sig
+	st.sig = sig
+
+	if rebuild then
+		local P = 2 * (w + h)
+		local speed = P / period
+		-- the four sides, clockwise from the top left: length, direction
+		local sides = { { w, 1, 0 }, { h, 0, -1 }, { w, -1, 0 }, { h, 0, 1 } }
+		for i = 1, n do
+			local sp = st.sparks[i]
+			if not sp then
+				sp = { tex = f:CreateTexture(nil, "OVERLAY", nil, 7) }
+				sp.tex:SetTexture(SPARK)
+				sp.tex:SetBlendMode("ADD")
+				sp.ag = sp.tex:CreateAnimationGroup()
+				sp.ag:SetLooping("REPEAT")
+				sp.moves = {}
+				for k = 1, 5 do
+					local m = sp.ag:CreateAnimation("Translation")
+					m:SetSmoothing("NONE")
+					m:SetOrder(k)
+					sp.moves[k] = m
+				end
+				st.sparks[i] = sp
+			end
+			sp.ag:Stop()
+			-- where along the perimeter this spark starts
+			local d = (i - 1) * P / n
+			local side, into = 1, d
+			while side < 4 and into >= sides[side][1] do into = into - sides[side][1] side = side + 1 end
+			local len, dx, dy = sides[side][1], sides[side][2], sides[side][3]
+			local sx, sy
+			if side == 1 then sx, sy = into, 0
+			elseif side == 2 then sx, sy = w, -into
+			elseif side == 3 then sx, sy = w - into, -h
+			else sx, sy = 0, -(h - into) end
+			sp.tex:SetSize(size, size)
+			sp.tex:ClearAllPoints()
+			sp.tex:SetPoint("CENTER", f, "TOPLEFT", sx, sy)
+			-- the rest of this side, the three after it, then the part already walked
+			local function Move(k, length, ddx, ddy)
+				sp.moves[k]:SetOffset(ddx * length, ddy * length)
+				sp.moves[k]:SetDuration(max(0.001, length / speed))
+			end
+			Move(1, len - into, dx, dy)
+			for k = 1, 3 do
+				local s2 = sides[(side + k - 1) % 4 + 1]
+				Move(k + 1, s2[1], s2[2], s2[3])
+			end
+			Move(5, into, dx, dy)
+		end
+		for i = n + 1, #st.sparks do
+			st.sparks[i].ag:Stop()
+			st.sparks[i].tex:Hide()
+		end
+		st.count = n
+	end
+	for i = 1, st.count or 0 do
+		local sp = st.sparks[i]
+		sp.tex:SetVertexColor(r, g, b, a)
+		sp.tex:Show()
+		if rebuild or not sp.ag:IsPlaying() then sp.ag:Play() end
+	end
+	f:Show()
+end
+
+function Glow.StopShine(owner)
+	local st = owner.__xuiShine
+	if not st then return end
+	for _, sp in ipairs(st.sparks) do
+		sp.ag:Stop()
+		sp.tex:Hide()
+	end
+	st.frame:Hide()
+end
