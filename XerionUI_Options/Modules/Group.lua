@@ -83,7 +83,7 @@ O:RegisterModuleOptions("Interrupts", function(ctx, m, G)
 			{ type = "toggle", label = "Hide in raids", path = "hideInRaid" },
 			{ type = "toggle", label = "Raid marker of the kicked mob", path = "showMark", hidden = barMode },
 			{ type = "toggle", label = "Icon", path = "showIcon", hidden = barMode },
-			{ type = "toggle", label = "Timer", path = "showTimer", hidden = barMode },
+			{ type = "toggle", label = "Timer", path = "showTimer" },
 		}),
 		Card("Bars", Join(G.Bar("bar"), {
 			{ type = "dropdown", label = "Grow", path = "growth", values = m.GROWTH },
@@ -97,7 +97,7 @@ O:RegisterModuleOptions("Interrupts", function(ctx, m, G)
 		}), { hidden = iconMode }),
 		Card("Border", G.Border("border")),
 		Card("Name text", G.Font("nameText"), { hidden = barMode }),
-		Card("Timer text", G.Font("timerText"), { hidden = barMode }),
+		Card("Timer text", G.Font("timerText")),
 		Card("Detection", {
 			{ type = "toggle", label = "Watch interrupted casts", path = "observe",
 				tip = "Starts a member's bar when an enemy's cast is interrupted, even when the client hides who did it." },
