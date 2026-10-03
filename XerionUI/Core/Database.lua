@@ -40,6 +40,7 @@ DB.GLOBAL_DEFAULTS = {
 		autoPreview = true,
 		dock = true,
 		density = "normal",
+		classFolded = false,
 	},
 	-- named looks of the global style, shared by every profile
 	themes = {},

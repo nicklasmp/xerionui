@@ -333,10 +333,15 @@ end
 local function SidebarHead(i)
 	local h = headPool[i]
 	if h then return h end
-	h = CreateFrame("Frame", nil, sidebar.child)
+	h = CreateFrame("Button", nil, sidebar.child)
 	h:SetHeight(30)
 	h.text = O:Text(h, O.SIZE.small, "faint")
 	h.text:SetPoint("BOTTOMLEFT", 16, 6)
+	h.arrow = O:Icon(h, "chevron", 10, "muted", "OVERLAY")
+	h.arrow:SetPoint("BOTTOMRIGHT", -14, 8)
+	h:SetScript("OnClick", function(self) if self.onClick then self.onClick() end end)
+	h:SetScript("OnEnter", function(self) if self.onClick then self.text:SetTextColor(O:Color("text")) end end)
+	h:SetScript("OnLeave", function(self) self.text:SetTextColor(O:Color("faint")) end)
 	headPool[i] = h
 	return h
 end
@@ -435,10 +440,15 @@ function O:RefreshSidebar()
 		entries[#entries + 1] = key
 		y = y + ITEM_H
 	end
-	local function AddHead(text)
+	-- fold: nil for a plain heading, else { folded = bool, toggle = function }
+	local function AddHead(text, fold)
 		nh = nh + 1
 		local h = SidebarHead(nh)
 		h.text:SetText(text:upper())
+		h.onClick = fold and fold.toggle or nil
+		h.arrow:SetShown(fold ~= nil)
+		if fold then h.arrow:SetRotation(fold.folded and math.rad(90) or 0) end
+		h:EnableMouse(fold ~= nil)
 		h:ClearAllPoints()
 		h:SetPoint("TOPLEFT", child, "TOPLEFT", 0, -y)
 		h:SetPoint("TOPRIGHT", child, "TOPRIGHT", 0, -y)
@@ -454,12 +464,17 @@ function O:RefreshSidebar()
 	for _, cat in ipairs(XUI.CATEGORIES) do
 		local list = {}
 		if cat.key == "class" then
-			-- every class, whatever you play, each with its modules below it
-			AddHead(cat.name)
+			-- every class, whatever you play, each with its modules below it; the
+			-- whole group folds from its heading (a search unfolds it)
+			local folded = XUI.DB.global.panel.classFolded and searchText == ""
+			AddHead(cat.name, { folded = folded, toggle = function()
+				XUI.DB.global.panel.classFolded = not XUI.DB.global.panel.classFolded
+				O:RefreshSidebar()
+			end })
 			local order = {}
 			for _, c in ipairs(O.CLASSES) do order[#order + 1] = c end
 			order[#order + 1] = O.ANY_CLASS
-			for _, c in ipairs(order) do
+			for _, c in ipairs(folded and {} or order) do
 				local mods, matching = O:ClassModules(c.token), {}
 				for _, m in ipairs(mods) do
 					if Matches(ModuleWords(m) .. " " .. c.name:lower()) then matching[#matching + 1] = m end
