@@ -171,3 +171,91 @@ function XUI.DurationBarOptions()
 	if Enum and Enum.StatusBarTimerDirection then o.direction = Enum.StatusBarTimerDirection.RemainingTime end
 	return o
 end
+
+--------------------------------------------------------------------------------
+-- Cooldown Manager
+--------------------------------------------------------------------------------
+local function IdMatches(v, want) return not IsSecret(v) and v == want end
+
+-- Whether a Cooldown Manager cooldownID stands for `want` (its spell, a
+-- linked spell or an override).
+function XUI.CooldownMatches(cooldownID, want)
+	if not cooldownID or IsSecret(cooldownID) then return false end
+	local get = C_CooldownViewer and C_CooldownViewer.GetCooldownViewerCooldownInfo
+	if not get then return false end
+	local ok, info = pcall(get, cooldownID)
+	if not ok or type(info) ~= "table" then return false end
+	if IdMatches(info.spellID, want) or IdMatches(info.linkedSpellID, want)
+		or IdMatches(info.overrideSpellID, want) or IdMatches(info.overrideTooltipSpellID, want) then
+		return true
+	end
+	local linked = info.linkedSpellIDs
+	if type(linked) == "table" then
+		for i = 1, #linked do
+			if IdMatches(linked[i], want) then return true end
+		end
+	end
+	return false
+end
+
+XUI.CDM_BUFF_VIEWERS = { "BuffIconCooldownViewer", "BuffBarCooldownViewer" }
+XUI.CDM_ALL_VIEWERS = { "EssentialCooldownViewer", "UtilityCooldownViewer", "BuffIconCooldownViewer", "BuffBarCooldownViewer" }
+
+-- Every Cooldown Manager item frame (Blizzard's viewers, and EllesmereUI's
+-- custom buff bars when it is installed) whose cooldown stands for `spellID`.
+-- `viewers` defaults to the buff viewers.
+function XUI.FindCDMFrames(spellID, viewers, out)
+	out = out or {}
+	local seen = {}
+	for _, name in ipairs(viewers or XUI.CDM_BUFF_VIEWERS) do
+		local viewer = _G[name]
+		if viewer and viewer.GetItemFrames then
+			local ok, frames = pcall(viewer.GetItemFrames, viewer)
+			if ok and type(frames) == "table" then
+				for _, f in ipairs(frames) do
+					if f and f.GetCooldownID and not seen[f] then
+						local okID, id = pcall(f.GetCooldownID, f)
+						if okID and XUI.CooldownMatches(id, spellID) then
+							seen[f] = true
+							out[#out + 1] = f
+						end
+					end
+				end
+			end
+		end
+	end
+	-- EllesmereUI's custom buff bars: matched by icon texture
+	local getBar, db = _G._ECME_GetBarFrame, _G._ECME_AceDB
+	local bars = db and db.profile and db.profile.cdmBars and db.profile.cdmBars.bars
+	if getBar and type(bars) == "table" then
+		local want = C_Spell and XUI.Probe(C_Spell.GetSpellTexture, spellID)
+		for _, bd in ipairs(bars) do
+			local bt = bd and bd.barType
+			if want and bd.key and (bt == "buffs" or bt == "custom_buff") then
+				local okB, bar = pcall(getBar, bd.key)
+				if okB and bar and bar.GetChildren then
+					for _, f in ipairs({ bar:GetChildren() }) do
+						local tex = f and (f.Icon or f._tex)
+						if f._isCustomBuffFrame and not f._isPlaceholderFrame and tex and tex.GetTexture and not seen[f] then
+							local okT, t = pcall(tex.GetTexture, tex)
+							if okT and not IsSecret(t) and t == want then
+								seen[f] = true
+								out[#out + 1] = f
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+	return out
+end
+
+-- Shown and not faded out (an unreadable answer counts as not shown).
+function XUI.FrameActive(f)
+	if not f or f._isPlaceholderFrame then return false end
+	if XUI.Ask(f.IsShown, f) ~= true then return false end
+	local a = XUI.Probe(f.GetAlpha, f)
+	if type(a) == "number" and a < 0.05 then return false end
+	return true
+end

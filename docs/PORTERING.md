@@ -9,8 +9,8 @@ Hvert legacy-feature flyttes ind i den nye kerne som ét modul: én fil i `Xerio
 
 | Feature | Kilde | Status | Note |
 |---|---|---|---|
-| Combat Alert | I | ✅ | + valgfri lyd/TTS ved start og slut |
-| Combat Timer | I | ✅ | Tikker kun i kamp (legacy kørte `OnUpdate` hver frame) |
+| Combat Alert | I | ✖ | Porteret, men fjernet igen efter ønske |
+| Combat Timer | I | ✖ | Porteret, men fjernet igen efter ønske |
 | Stoneform Bleed Alert | X | ✅ | Unit-filtreret aura-event, cooldown-event kun mens man bløder |
 
 ## Fase 1b — gruppe, kamp og EllesmereUI (færdig, oktober 2026)

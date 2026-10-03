@@ -166,7 +166,13 @@ function O:RefreshPageHead()
 		f.enable.switch:SetState(m.db.enabled)
 		f.enable.label:SetText(m.db.enabled and "Enabled" or "Disabled")
 		local ok, why = m:CanRun()
-		if m.db.enabled and not ok then f.status:SetText(why or "") end
+		if m.db.enabled and not ok then
+			f.status:SetTextColor(O:Color("danger"))
+			f.status:SetText(why or "")
+		elseif m.untested then
+			f.status:SetTextColor(O:Accent())
+			f.status:SetText("Untested in game - please report anything that looks wrong.")
+		end
 		local ar, ag, ab = O:Accent()
 		if m.preview then
 			f.preview.icon:SetVertexColor(ar, ag, ab)
@@ -314,7 +320,7 @@ function O:RefreshSidebar()
 		ni = ni + 1
 		local b = SidebarItem(ni)
 		b.key, b.module = key, m
-		b.text:SetText(title)
+		b.text:SetText(m and m.untested and (title .. "  |cff777777untested|r") or title)
 		if isMedia then
 			b.icon:SetTexture(O.MEDIA .. icon)
 			b.icon:SetTexCoord(0, 1, 0, 1)

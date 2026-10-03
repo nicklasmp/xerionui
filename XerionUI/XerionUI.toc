@@ -36,8 +36,6 @@ Core\Commands.lua
 Integrations\EllesmereUI.lua
 
 # Modules
-Modules\General\CombatAlert.lua
-Modules\General\CombatTimer.lua
 Modules\Combat\MeleeIndicator.lua
 Modules\Combat\Stoneform.lua
 Modules\Group\DeathAlert.lua

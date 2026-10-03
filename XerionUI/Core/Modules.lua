@@ -2,13 +2,14 @@
 -- XerionUI - Core/Modules.lua
 -- Feature modules and their lifecycle.
 --
---   local M = XUI:NewModule("CombatAlert", {
---       name = "Combat Alert", desc = "...", category = "general",
+--   local M = XUI:NewModule("DeathAlert", {
+--       name = "Death Alert", desc = "...", category = "group",
 --       icon = 132147,              -- texture/fileID shown in the options sidebar
 --       classes = { "WARRIOR" },    -- optional: only load for these classes
 --       specs = { 73 },             -- optional: only run in these specializations
 --       requires = "EllesmereUI",   -- optional: only run when this addon is loaded
 --       defaults = { ... },         -- the module's saved settings
+--       untested = true,            -- optional: flagged as untested in the options
 --   })
 --
 -- A module RUNS while it is enabled and its load conditions hold. Running is
@@ -60,6 +61,8 @@ function XUI:NewModule(key, info)
 	m.classes = info.classes
 	m.specs = info.specs
 	m.requires = info.requires
+	-- ported but never run in game by the author; the options say so
+	m.untested = info.untested and true or false
 	m.defaults = info.defaults or {}
 	if m.defaults.enabled == nil then m.defaults.enabled = false end
 	m.running = false
