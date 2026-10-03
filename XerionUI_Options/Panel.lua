@@ -33,6 +33,7 @@ local entries = {}       -- sidebar entries in display order
 local pages = {}         -- [key] = Page
 local currentKey
 local autoStarted, docked, UpdateDockSoon = {}, false, nil
+local expandedClass = {}
 local searchText = ""
 
 --------------------------------------------------------------------------------
@@ -44,11 +45,15 @@ local function ModuleContext(m)
 	end, { module = m })
 end
 
+local function ClassKey(key) return type(key) == "string" and key:match("^class:(.+)$") end
+
 local function GetPage(key)
 	if pages[key] then return pages[key] end
 	local m = XUI:GetModule(key)
 	local spec
-	if m then
+	if ClassKey(key) then
+		spec = O:ClassPageSpec(ClassKey(key))
+	elseif m then
 		local build = O.moduleBuilders[key]
 		spec = {
 			ctx = ModuleContext(m),
@@ -248,6 +253,14 @@ function O:RefreshPageHead()
 			f.preview.icon:SetVertexColor(O:Color("muted"))
 			f.preview.text:SetTextColor(O:Color("label"))
 		end
+	elseif ClassKey(currentKey) then
+		local c = O.classByToken[ClassKey(currentKey)]
+		f.icon:SetTexture(c and c.icon or 134400)
+		f.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+		f.icon:SetVertexColor(1, 1, 1)
+		f.iconBorder:Apply({ useGlobal = false, style = "SOLID", size = 1, color = { 0, 0, 0, 1 } })
+		f.title:SetText(c and c.name or "")
+		f.desc:SetText(c and c.token ~= "ANY" and "Pick a specialization to see its modules." or "Modules that work for every class.")
 	else
 		local s
 		for _, sp in ipairs(O.systemPages) do if sp.key == currentKey then s = sp end end
@@ -294,6 +307,8 @@ local function SidebarItem(i)
 	b.icon = b:CreateTexture(nil, "ARTWORK")
 	b.icon:SetSize(16, 16)
 	b.icon:SetPoint("LEFT", 16, 0)
+	b.arrow = O:Icon(b, "chevron", 10, "muted", "OVERLAY")
+	b.arrow:SetPoint("RIGHT", -14, 0)
 	b.text = O:Text(b, O.SIZE.text, "label")
 	b.text:SetPoint("LEFT", b.icon, "RIGHT", 10, 0)
 	b.text:SetPoint("RIGHT", -26, 0)
@@ -303,7 +318,14 @@ local function SidebarItem(i)
 		if self.key ~= currentKey then self.text:SetTextColor(O:Color("text")) end
 	end)
 	b:SetScript("OnLeave", function(self) O:PaintItem(self) end)
-	b:SetScript("OnClick", function(self) O:Open(self.key) end)
+	b:SetScript("OnClick", function(self)
+		if self.classToken then
+			-- a second click on the open class folds it
+			if self.key == currentKey then expandedClass[self.classToken] = not expandedClass[self.classToken]
+			else expandedClass[self.classToken] = true end
+		end
+		O:Open(self.key)
+	end)
 	itemPool[i] = b
 	return b
 end
@@ -341,7 +363,10 @@ function O:PaintItem(b)
 		b.dot:Hide()
 		b.icon:SetDesaturated(false)
 		b.icon:SetAlpha(1)
-		if selected then b.icon:SetVertexColor(ar, ag, ab) else b.icon:SetVertexColor(O:Color("muted")) end
+		if b.classToken then
+			b.icon:SetVertexColor(1, 1, 1)
+			b.arrow:SetVertexColor(O:Color(selected and "text" or "muted"))
+		elseif selected then b.icon:SetVertexColor(ar, ag, ab) else b.icon:SetVertexColor(O:Color("muted")) end
 	end
 end
 
@@ -383,10 +408,16 @@ function O:RefreshSidebar()
 	local y, ni, nh = 6, 0, 0
 	wipe(entries)
 
-	local function AddItem(key, title, icon, m, isMedia)
+	local function AddItem(key, title, icon, m, isMedia, indent, classToken)
 		ni = ni + 1
 		local b = SidebarItem(ni)
-		b.key, b.module = key, m
+		b.key, b.module, b.classToken = key, m, classToken
+		b.icon:ClearAllPoints()
+		b.icon:SetPoint("LEFT", 16 + (indent or 0), 0)
+		b.arrow:SetShown(classToken ~= nil)
+		if classToken then
+			b.arrow:SetRotation(expandedClass[classToken] and 0 or math.rad(90))
+		end
 		b.text:SetText(m and m.untested and (title .. "  |cff777777untested|r") or title)
 		if isMedia then
 			b.icon:SetTexture(O.MEDIA .. icon)
@@ -422,10 +453,36 @@ function O:RefreshSidebar()
 	end
 	for _, cat in ipairs(XUI.CATEGORIES) do
 		local list = {}
+		if cat.key == "class" then
+			-- every class, whatever you play, each with its modules below it
+			AddHead(cat.name)
+			local order = {}
+			for _, c in ipairs(O.CLASSES) do order[#order + 1] = c end
+			order[#order + 1] = O.ANY_CLASS
+			for _, c in ipairs(order) do
+				local mods, matching = O:ClassModules(c.token), {}
+				for _, m in ipairs(mods) do
+					if Matches(ModuleWords(m) .. " " .. c.name:lower()) then matching[#matching + 1] = m end
+				end
+				local classMatches = Matches(c.name:lower())
+				if searchText == "" or classMatches or #matching > 0 then
+					-- the class you play starts unfolded
+					if expandedClass[c.token] == nil then expandedClass[c.token] = (c.token == XUI.playerClass) end
+					AddItem("class:" .. c.token, c.name, c.icon, nil, false, 0, c.token)
+					if searchText ~= "" or expandedClass[c.token] then
+						for _, m in ipairs(searchText ~= "" and not classMatches and matching or mods) do
+							AddItem(m.key, m.name, XUI.ModuleIcon(m), m, false, 14)
+						end
+					end
+				end
+			end
+			list = {}
+		else
 		for _, m in ipairs(XUI:SortedModules(cat.key)) do
 			if m:IsAvailable() and Matches(ModuleWords(m) .. " " .. cat.name:lower()) then
 				list[#list + 1] = m
 			end
+		end
 		end
 		if #list > 0 then
 			AddHead(cat.name)
@@ -648,7 +705,7 @@ UpdateDockSoon = XUI.Coalesce(function() C_Timer.After(0.05, function() O:Update
 function O:Open(key)
 	if not frame then CreateWindow() end
 	key = key or currentKey or (O.systemPages[1] and O.systemPages[1].key)
-	if XUI:GetModule(key) == nil then
+	if XUI:GetModule(key) == nil and not (ClassKey(key) and O.classByToken[ClassKey(key)]) then
 		local found = false
 		for _, s in ipairs(O.systemPages) do if s.key == key then found = true end end
 		if not found then key = O.systemPages[1].key end

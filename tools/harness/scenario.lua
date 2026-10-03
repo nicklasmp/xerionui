@@ -76,6 +76,8 @@ end
 
 local pageKeys = { "style", "general", "profiles" }
 for _, m in ipairs(XUI.modules) do pageKeys[#pageKeys + 1] = m.key end
+for _, c in ipairs(XUI.Options.CLASSES) do pageKeys[#pageKeys + 1] = "class:" .. c.token end
+pageKeys[#pageKeys + 1] = "class:ANY"
 
 for _, key in ipairs(pageKeys) do
 	Step("page " .. key, function()

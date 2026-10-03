@@ -498,6 +498,55 @@ function Controls.description(parent, desc, ctx)
 end
 
 --------------------------------------------------------------------------------
+-- Tabs: a row of labels, one active (desc.values = { { value, text } })
+--------------------------------------------------------------------------------
+function Controls.tabs(parent, desc, ctx)
+	local f = Base(parent, desc, ctx, 30)
+	f.buttons = {}
+	f.line = O:Rect(f, "line", "BACKGROUND")
+	f.line:SetHeight(1)
+	f.line:SetPoint("BOTTOMLEFT")
+	f.line:SetPoint("BOTTOMRIGHT")
+	local function Button(i)
+		local b = f.buttons[i]
+		if b then return b end
+		b = CreateFrame("Button", nil, f)
+		b:SetHeight(30)
+		b.text = O:Text(b, O.SIZE.text, "label")
+		b.text:SetPoint("CENTER", 0, 1)
+		b.under = O:Rect(b, nil, "ARTWORK")
+		b.under:SetHeight(2)
+		b.under:SetPoint("BOTTOMLEFT")
+		b.under:SetPoint("BOTTOMRIGHT")
+		b:SetScript("OnClick", function(self) O:SetValue(desc, ctx, self.value) end)
+		f.buttons[i] = b
+		return b
+	end
+	function f:Refresh()
+		local values = O:DropdownValues(desc, ctx)
+		local current = O:GetValue(desc, ctx)
+		local x = 0
+		for i, v in ipairs(values) do
+			local b = Button(i)
+			b.value = v.value
+			b.text:SetText(v.text)
+			local w = (b.text:GetStringWidth() or 40) + 28
+			b:SetWidth(w)
+			b:ClearAllPoints()
+			b:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", x, 0)
+			x = x + w
+			local active = v.value == current
+			b.under:SetShown(active)
+			if active then b.under:SetVertexColor(O:Accent()) end
+			b.text:SetTextColor(O:Color(active and "text" or "muted"))
+			b:Show()
+		end
+		for i = #values + 1, #f.buttons do f.buttons[i]:Hide() end
+	end
+	return f
+end
+
+--------------------------------------------------------------------------------
 -- Subheading inside a card
 --------------------------------------------------------------------------------
 function Controls.heading(parent, desc, ctx)
