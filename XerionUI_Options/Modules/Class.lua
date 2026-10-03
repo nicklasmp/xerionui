@@ -312,3 +312,51 @@ O:RegisterModuleOptions("RuneforgeAlert", function(ctx, m, G)
 	cards[#cards + 1] = Card("Position", G.Position("position"))
 	return cards
 end)
+
+O:RegisterModuleOptions("MovementAlert", function(ctx, m, G)
+	local function spec() return XUI.GetSpecID() end
+	-- the abilities of the current specialization, as one toggle each
+	local tracked = {}
+	local seen = {}
+	for specId, ids in pairs(m.BY_SPEC) do
+		for _, id in ipairs(ids) do
+			if not seen[id] then
+				seen[id] = true
+				tracked[#tracked + 1] = {
+					type = "toggle", label = function() return XUI.GetSpellName(id) end, width = "full",
+					get = function() return m:IsTracked(spec(), id) end,
+					set = function(_, on) m:SetTracked(spec(), id, on) end,
+					hidden = function()
+						for _, sid in ipairs(m.BY_SPEC[spec()] or {}) do if sid == id then return false end end
+						return true
+					end,
+				}
+			end
+		end
+	end
+	local spiral = {}
+	for _, id in ipairs(m.TIME_SPIRAL[XUI.playerClass] or {}) do
+		spiral[#spiral + 1] = {
+			type = "toggle", label = function() return XUI.GetSpellName(id) end, width = "full",
+			get = function() return m:IsTimeSpiralTracked(id) end,
+			set = function(_, on) m:SetTimeSpiralTracked(id, on) end,
+			disabled = function() return not m.db.showTimeSpiral end,
+		}
+	end
+	return {
+		Card("Abilities of this specialization", Join({
+			{ type = "description", width = "full", text = "Warns when the first ticked ability you know is on cooldown." },
+		}, tracked)),
+		Card("Text", Join({
+			{ type = "dropdown", label = "Decimals", path = "precision", values = { { value = 0, text = "None" }, { value = 1, text = "One" } } },
+			{ type = "color", label = "Color", path = "color" },
+		}, G.Font("font"))),
+		Card("Time Spiral", Join({
+			{ type = "toggle", label = "Show when a Time Spiral frees your movement", path = "showTimeSpiral", width = "full" },
+			{ type = "input", label = "Text", path = "timeSpiralText" },
+			{ type = "color", label = "Color", path = "timeSpiralColor" },
+		}, spiral)),
+		Card("Time Spiral alert", G.Alert("timeSpiralAlert")),
+		Card("Position", G.Position("position")),
+	}
+end)
