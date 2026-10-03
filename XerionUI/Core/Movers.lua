@@ -53,15 +53,48 @@ function Movers:GetDefaultPosition(entry)
 	return GetPath(entry.module.defaults, entry.path)
 end
 
+-- The frame a position is attached to by name (position.attach), if there is
+-- one, it exists and it is not the frame itself.
+local function AttachTarget(p, frame)
+	local name = p.attach
+	if type(name) ~= "string" or name == "" then return nil end
+	local target = _G[name]
+	if type(target) ~= "table" or target == frame or not target.GetObjectType or not target.GetCenter then return nil end
+	return target
+end
+
 function Movers:Apply(frame)
 	local entry = self.byFrame[frame]
 	if not entry then return end
 	local p = self:GetPosition(entry)
 	if type(p) ~= "table" then return end
 	frame:ClearAllPoints()
-	frame:SetPoint(p.point or "CENTER", UIParent, p.relPoint or p.point or "CENTER", p.x or 0, p.y or 0)
+	local target = AttachTarget(p, frame)
+	-- an anchor that would loop back to this frame is refused by the client
+	if target and pcall(frame.SetPoint, frame, p.point or "CENTER", target, p.relPoint or p.point or "CENTER", p.x or 0, p.y or 0) then
+		entry.attached = true
+	else
+		entry.attached = false
+		frame:ClearAllPoints()
+		frame:SetPoint(p.point or "CENTER", UIParent, p.relPoint or p.point or "CENTER", p.x or 0, p.y or 0)
+	end
 	if p.strata then frame:SetFrameStrata(p.strata) end
 end
+
+-- Frames other addons build late (EllesmereUI, the Cooldown Manager) are
+-- looked for again after loading screens.
+local latePlace = CreateFrame("Frame")
+latePlace:RegisterEvent("PLAYER_ENTERING_WORLD")
+latePlace:SetScript("OnEvent", function()
+	C_Timer.After(2, function()
+		for _, entry in ipairs(Movers.list) do
+			local p = Movers:GetPosition(entry)
+			if type(p) == "table" and type(p.attach) == "string" and p.attach ~= "" and entry.module.db.enabled then
+				Movers:Apply(entry.frame)
+			end
+		end
+	end)
+end)
 
 -- Stores the frame's current screen spot as a CENTER offset from UIParent's
 -- centre, rounded to whole units.
@@ -84,7 +117,8 @@ function Movers:SetOffset(entry, x, y)
 		local g = grid.gridSize / 4
 		x, y = XUI.Round(x, g), XUI.Round(y, g)
 	end
-	p.point, p.relPoint = "CENTER", "CENTER"
+	-- attached to another frame, the anchor points are the user's
+	if not entry.attached then p.point, p.relPoint = "CENTER", "CENTER" end
 	p.x, p.y = floor(x + 0.5), floor(y + 0.5)
 	self:Apply(entry.frame)
 end
@@ -92,7 +126,7 @@ end
 function Movers:Reset(entry)
 	local p, d = self:GetPosition(entry), self:GetDefaultPosition(entry)
 	if type(p) ~= "table" or type(d) ~= "table" then return end
-	p.point, p.relPoint, p.x, p.y = d.point, d.relPoint, d.x, d.y
+	p.point, p.relPoint, p.x, p.y, p.attach = d.point, d.relPoint, d.x, d.y, d.attach
 	self:Apply(entry.frame)
 	entry.module:RefreshSoon()
 end
@@ -102,6 +136,7 @@ end
 --------------------------------------------------------------------------------
 local overlays = {}
 local toolbar, grid
+local HideGuides, DragUpdate
 
 local function Accent()
 	return XUI.UnpackColor(XUI.DB.global.accent)
@@ -116,8 +151,109 @@ local function UpdateLabel(ov)
 	end
 end
 
-local function OverlayOnUpdate(ov)
-	-- follows the frame while it is dragged and keeps the read-out live
+--------------------------------------------------------------------------------
+-- Dragging: our own, so the position can snap to the grid and to the edges and
+-- centres of the other movers (and the middle of the screen) while it moves.
+--------------------------------------------------------------------------------
+local guides
+
+local function Guides()
+	if guides then return guides end
+	guides = CreateFrame("Frame", nil, UIParent)
+	guides:SetAllPoints(UIParent)
+	guides:SetFrameStrata("FULLSCREEN")
+	guides.v = guides:CreateTexture(nil, "OVERLAY")
+	guides.h = guides:CreateTexture(nil, "OVERLAY")
+	local r, g, b = Accent()
+	guides.v:SetColorTexture(r, g, b, 0.9)
+	guides.h:SetColorTexture(r, g, b, 0.9)
+	guides.v:Hide()
+	guides.h:Hide()
+	return guides
+end
+
+HideGuides = function()
+	if guides then guides.v:Hide() guides.h:Hide() end
+end
+
+local function ShowGuide(vertical, at)
+	local gd = Guides()
+	local t = vertical and gd.v or gd.h
+	t:ClearAllPoints()
+	local px = Style:Pixels(gd, 1)
+	if vertical then
+		t:SetPoint("TOPLEFT", gd, "TOPLEFT", at, 0)
+		t:SetPoint("BOTTOMLEFT", gd, "BOTTOMLEFT", at, 0)
+		t:SetWidth(px)
+	else
+		t:SetPoint("BOTTOMLEFT", gd, "BOTTOMLEFT", 0, at)
+		t:SetPoint("BOTTOMRIGHT", gd, "BOTTOMRIGHT", 0, at)
+		t:SetHeight(px)
+	end
+	t:Show()
+end
+
+-- left, right, bottom, top of a frame in UIParent units
+local function ScreenRect(f)
+	local l, b, w, h = f:GetRect()
+	if not l then return nil end
+	local k = f:GetEffectiveScale() / UIParent:GetEffectiveScale()
+	return l * k, (l + w) * k, b * k, (b + h) * k
+end
+
+local SNAP = 6
+local function SnapToOthers(entry, k)
+	local p = Movers:GetPosition(entry)
+	local l, r, b, t = ScreenRect(entry.frame)
+	if not (p and l) then HideGuides() return end
+	local mineX, mineY = { l, (l + r) / 2, r }, { b, (b + t) / 2, t }
+	-- targets: the middle of the screen, then every other shown mover
+	local tx, ty = { UIParent:GetWidth() / 2 }, { UIParent:GetHeight() / 2 }
+	for _, other in ipairs(Movers.list) do
+		if other ~= entry and other.module.db.enabled and other.frame:IsShown() then
+			local ol, orr, ob, ot = ScreenRect(other.frame)
+			if ol then
+				tx[#tx + 1], tx[#tx + 2], tx[#tx + 3] = ol, (ol + orr) / 2, orr
+				ty[#ty + 1], ty[#ty + 2], ty[#ty + 3] = ob, (ob + ot) / 2, ot
+			end
+		end
+	end
+	local function Best(list, targets)
+		local bestD, bestAt
+		for _, m in ipairs(list) do
+			for _, tg in ipairs(targets) do
+				local d = tg - m
+				if math.abs(d) <= SNAP and (not bestD or math.abs(d) < math.abs(bestD)) then bestD, bestAt = d, tg end
+			end
+		end
+		return bestD, bestAt
+	end
+	local dx, atX = Best(mineX, tx)
+	local dy, atY = Best(mineY, ty)
+	if dx or dy then
+		p.x = (p.x or 0) + (dx or 0) / k
+		p.y = (p.y or 0) + (dy or 0) / k
+		Movers:Apply(entry.frame)
+	end
+	if atX then ShowGuide(true, atX) elseif guides then guides.v:Hide() end
+	if atY then ShowGuide(false, atY) elseif guides then guides.h:Hide() end
+end
+
+DragUpdate = function(ov)
+	local d = ov.drag
+	if not d then return end
+	local cx, cy = GetCursorPosition()
+	local us = UIParent:GetEffectiveScale()
+	local k = ov.entry.frame:GetEffectiveScale() / us
+	local dx, dy = cx / us - d.cx, cy / us - d.cy
+	if math.abs(dx) + math.abs(dy) > 3 then d.moved = true end
+	if not d.moved then return end
+	Movers:SetOffset(ov.entry, d.x + dx / k, d.y + dy / k)
+	if XUI.DB.global.unlock.snap and not IsShiftKeyDown() then
+		SnapToOthers(ov.entry, k)
+	else
+		HideGuides()
+	end
 	UpdateLabel(ov)
 end
 
@@ -142,22 +278,32 @@ local function CreateOverlay(entry)
 	ov.label:SetTextColor(1, 1, 1)
 
 	ov:SetScript("OnMouseDown", function(self, button)
-		if button == "LeftButton" then
-			Movers.dragging = self
-			self.entry.frame:StartMoving()
-			self:SetScript("OnUpdate", OverlayOnUpdate)
-		end
+		if button ~= "LeftButton" then return end
+		local p = Movers:GetPosition(self.entry)
+		if type(p) ~= "table" then return end
+		local cx, cy = GetCursorPosition()
+		local us = UIParent:GetEffectiveScale()
+		self.drag = { cx = cx / us, cy = cy / us, x = p.x or 0, y = p.y or 0, moved = false }
+		Movers.dragging = self
+		self:SetScript("OnUpdate", DragUpdate)
 	end)
 	ov:SetScript("OnMouseUp", function(self, button)
 		if button == "LeftButton" and Movers.dragging == self then
-			self.entry.frame:StopMovingOrSizing()
-			-- a moved named frame is otherwise saved in layout-local.txt by
-			-- the client and put back there at login, fighting our position
-			self.entry.frame:SetUserPlaced(false)
-			Movers:SaveFromFrame(self.entry)
+			local moved = self.drag and self.drag.moved
 			Movers.dragging = nil
+			self.drag = nil
 			self:SetScript("OnUpdate", nil)
+			HideGuides()
 			UpdateLabel(self)
+			-- a second click without moving opens the module's settings
+			local now = GetTime()
+			if not moved and self.lastClick and now - self.lastClick < 0.35 then
+				self.lastClick = nil
+				XUI:SetUnlocked(false)
+				XUI:OpenOptions(self.entry.module.key)
+			elseif not moved then
+				self.lastClick = now
+			end
 		end
 	end)
 	ov:SetScript("OnEnter", function(self)
@@ -167,7 +313,8 @@ local function CreateOverlay(entry)
 		UpdateLabel(self)
 		GameTooltip:SetOwner(self, "ANCHOR_TOP")
 		GameTooltip:AddLine(self.entry.label, 1, 1, 1)
-		GameTooltip:AddLine("Drag to move. Arrow keys nudge (Shift: 10).", 0.7, 0.7, 0.7)
+		GameTooltip:AddLine("Drag to move (hold Shift to turn snapping off). Arrow keys nudge (Shift: 10).", 0.7, 0.7, 0.7)
+		GameTooltip:AddLine("Double-click to open its settings.", 0.7, 0.7, 0.7)
 		GameTooltip:Show()
 	end)
 	ov:SetScript("OnLeave", function(self)

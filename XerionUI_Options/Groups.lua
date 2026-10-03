@@ -391,6 +391,18 @@ end
 --------------------------------------------------------------------------------
 -- Position
 --------------------------------------------------------------------------------
+-- frames worth attaching to; a missing one is simply skipped by the client
+G.ATTACH_TARGETS = {
+	{ value = "", text = "The screen" },
+	{ value = "PlayerFrame", text = "Player frame (Blizzard)" },
+	{ value = "TargetFrame", text = "Target frame (Blizzard)" },
+	{ value = "Minimap", text = "Minimap" },
+	{ value = "EssentialCooldownViewer", text = "Cooldown Manager: Essential" },
+	{ value = "UtilityCooldownViewer", text = "Cooldown Manager: Utility" },
+	{ value = "BuffIconCooldownViewer", text = "Cooldown Manager: Buff icons" },
+	{ value = "BuffBarCooldownViewer", text = "Cooldown Manager: Buff bars" },
+}
+
 function G.Position(path, opts)
 	opts = opts or {}
 	local function range()
@@ -402,6 +414,27 @@ function G.Position(path, opts)
 		{ type = "slider", label = "X", path = path .. ".x", min = -rx, max = rx, step = 1 },
 		{ type = "slider", label = "Y", path = path .. ".y", min = -ry, max = ry, step = 1 },
 		{ type = "dropdown", label = "Layer", path = path .. ".strata", values = Style.STRATA },
+		{
+			type = "dropdown", label = "Attach to", values = G.ATTACH_TARGETS,
+			tip = "Hang this on another frame instead of the screen: X and Y then count from the point you pick. If the frame does not exist (yet), the screen is used.",
+			get = function(ctx)
+				local a = GetPath(ctx:Root(), path .. ".attach")
+				return (type(a) == "string") and a or ""
+			end,
+			set = function(ctx, v) XUI.SetPath(ctx:Root(), path .. ".attach", v) end,
+		},
+		{
+			type = "input", label = "Or a frame name", path = path .. ".attach",
+			tip = "The global name of any frame, e.g. PlayerFrame. /fstack in the game shows names.",
+		},
+		{
+			type = "dropdown", label = "Point on that frame", path = path .. ".relPoint", values = Style.ANCHORS,
+			hidden = function(ctx) local a = GetPath(ctx:Root(), path .. ".attach") return type(a) ~= "string" or a == "" end,
+		},
+		{
+			type = "dropdown", label = "Point on this", path = path .. ".point", values = Style.ANCHORS,
+			hidden = function(ctx) local a = GetPath(ctx:Root(), path .. ".attach") return type(a) ~= "string" or a == "" end,
+		},
 		{ type = "spacer" },
 		{ type = "button", text = "Unlock frames", onClick = function() XUI:SetUnlocked(true) end },
 		{
@@ -410,7 +443,7 @@ function G.Position(path, opts)
 				local m = ctx.module
 				local p, d = GetPath(ctx:Root(), path), m and GetPath(m.defaults, path)
 				if p and d then
-					p.point, p.relPoint, p.x, p.y = d.point, d.relPoint, d.x, d.y
+					p.point, p.relPoint, p.x, p.y, p.attach = d.point, d.relPoint, d.x, d.y, d.attach
 					ctx:Changed(path)
 				end
 			end,

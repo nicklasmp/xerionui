@@ -13,7 +13,10 @@ O:RegisterSystemPage({
 	desc = "Settings for the addon itself. They apply to every profile.",
 	root = function() return XUI.DB.global end,
 	onChange = function(path)
-		if path == "panel.scale" then
+		if path == "panel.density" then
+			O:SetDensity(XUI.DB.global.panel.density)
+			O:RebuildAll()
+		elseif path == "panel.scale" then
 			local f = _G.XUI_OptionsFrame
 			if f then f:SetScale(XUI.DB.global.panel.scale) end
 		elseif path == "accent" then
@@ -31,6 +34,7 @@ O:RegisterSystemPage({
 					type = "dropdown", label = "Font", path = "panel.font", media = "font",
 					tip = "Applies the next time you log in or /reload.",
 				},
+				{ type = "dropdown", label = "Spacing", path = "panel.density", values = O.DENSITIES },
 				{ type = "toggle", label = "Preview the module whose page is open", path = "panel.autoPreview", width = "full",
 					tip = "Starts the preview when you open a module's page and ends it when you leave." },
 				{ type = "toggle", label = "Move the window away from what you preview", path = "panel.dock", width = "full",

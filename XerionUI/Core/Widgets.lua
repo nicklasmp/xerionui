@@ -274,7 +274,7 @@ local function Merge(t, extra)
 end
 
 function T.Position(x, y, strata)
-	return { point = "CENTER", relPoint = "CENTER", x = x or 0, y = y or 0, strata = strata or "MEDIUM" }
+	return { point = "CENTER", relPoint = "CENTER", x = x or 0, y = y or 0, strata = strata or "MEDIUM", attach = "" }
 end
 
 -- A font block for one text element; `extra` adds fields such as color,

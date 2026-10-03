@@ -210,3 +210,19 @@ npm run media     # regenerates the UI textures in XerionUI/Media
 ```
 
 The harness (fengari, Lua 5.3) mocks the WoW API closely enough to load the TOCs, fire ADDON_LOADED / PLAYER_LOGIN / combat / aura events, open every options page, change every control, run profiles, previews and unlock mode, and fail on any Lua error. It is not the game: always test in the client too, with BugSack enabled.
+
+## Customization and preview features
+
+| Feature | Where |
+|---|---|
+| Per-module Lua errors, status line, red sidebar dot | `XUI.SafeCallFor` (Init), `Module.errors`, Panel page head |
+| Preview follows the open page, window steps aside | `Panel.lua` (`SyncAutoPreview`, `UpdateDock`), General: `panel.autoPreview`, `panel.dock` |
+| Preview looks and card eye buttons | `module.PREVIEW_STATES`, `Module:SetPreviewState`, card option `previewState` |
+| Test button | optional `module:Test()` (use `self:RequireRunning()`) |
+| Reset mark on changed controls | `O:AttachReset` in `Page.lua` |
+| Copy styling, share one module, visibility rules | `XerionUI_Options/Extras.lua`, `DB:ExportModule/ImportModule`, `Module:CanRun` (`db.visibility`) |
+| Style themes | Global Style page, `DB:SaveTheme/ApplyTheme` (account-wide) |
+| Automatic profile by content or spec | `Core/AutoProfile.lua`, Profiles page |
+| Attach a position to another frame | `position.attach` (+ `point`/`relPoint`), `Movers:Apply`, `G.Position` |
+| Unlock mode snapping to other movers, guides, double-click to open settings | `Core/Movers.lua` |
+| Window spacing | General: `panel.density`, `O:SetDensity` |

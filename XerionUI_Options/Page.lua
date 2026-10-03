@@ -19,6 +19,19 @@ local CARD_PAD = 14
 local CARD_GAP = 12
 local COL_GAP = 18
 local ROW_GAP = 12
+
+-- How tightly the pages are packed: compact, normal or roomy.
+local DENSITY = {
+	compact = { page = 10, card = 10, cardGap = 8, col = 14, row = 7 },
+	normal = { page = 16, card = 14, cardGap = 12, col = 18, row = 12 },
+	roomy = { page = 20, card = 18, cardGap = 16, col = 22, row = 16 },
+}
+function O:SetDensity(name)
+	local d = DENSITY[name] or DENSITY.normal
+	PAGE_PAD, CARD_PAD, CARD_GAP, COL_GAP, ROW_GAP = d.page, d.card, d.cardGap, d.col, d.row
+end
+O.DENSITIES = { { value = "compact", text = "Compact" }, { value = "normal", text = "Normal" }, { value = "roomy", text = "Roomy" } }
+O:SetDensity(XUI.DB.global.panel.density)
 local TITLE_H = 26
 
 --------------------------------------------------------------------------------

@@ -39,6 +39,7 @@ DB.GLOBAL_DEFAULTS = {
 		font = "Arial Narrow",
 		autoPreview = true,
 		dock = true,
+		density = "normal",
 	},
 	-- named looks of the global style, shared by every profile
 	themes = {},
