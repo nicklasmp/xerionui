@@ -130,6 +130,33 @@ local function ApplyIconText(self, fs, block, defaultAnchor)
 	return true
 end
 
+-- Styles the cooldown swipe's own countdown numbers with a font block (the
+-- client writes them; the 12.0 aura icons use it). The cooldown resets its
+-- font now and then, so the style is put back whenever it does.
+function IconMixin:StyleCooldownText(block)
+	local cd = self:GetCooldown()
+	local fs = cd.GetCountdownFontString and cd:GetCountdownFontString()
+	cd:SetHideCountdownNumbers(type(block) == 'table' and block.enabled == false)
+	if not fs then return end
+	self.__cdTextBlock = block
+	if not fs.__xuiHooked then
+		fs.__xuiHooked = true
+		local icon = self
+		hooksecurefunc(fs, 'SetFont', function(s)
+			if s.__xuiGuard then return end
+			s.__xuiGuard, s.__xuiFont = true, nil
+			Style:ApplyFont(s, icon.__cdTextBlock)
+			s.__xuiGuard = false
+		end)
+	end
+	fs.__xuiGuard, fs.__xuiFont = true, nil
+	Style:ApplyFont(fs, block)
+	fs.__xuiGuard = false
+	local anchor = (type(block) == 'table' and block.anchor) or 'CENTER'
+	fs:ClearAllPoints()
+	fs:SetPoint(anchor, self, anchor, type(block) == 'table' and block.x or 0, type(block) == 'table' and block.y or 0)
+end
+
 function IconMixin:ApplyTimerText(block)
 	return ApplyIconText(self, self.timer, block, "CENTER")
 end

@@ -272,7 +272,12 @@ function O:DropdownValues(desc, ctx)
 		if desc.media == "border" then
 			for _, v in ipairs(XUI.Style.BORDER_STYLES) do list[#list + 1] = v end
 		end
-		if desc.media == "sound" then list[#list + 1] = { value = "", text = "None" } end
+		if desc.media == "sound" then
+			list[#list + 1] = { value = "", text = "None" }
+			if not desc.filesOnly then
+				for _, s in ipairs(XUI.Audio.GAME_SOUNDS) do list[#list + 1] = { value = s.name, text = s.name } end
+			end
+		end
 		for _, name in ipairs(XUI.Media:List(desc.media)) do
 			if not (desc.media == "border" and (name == "None" or name == "Xerion Pixel")) then
 				list[#list + 1] = { value = name, text = name }
@@ -525,5 +530,177 @@ function Controls.custom(parent, desc, ctx)
 	f.desc, f.ctx = desc, ctx
 	f.height = f.height or f:GetHeight()
 	f.Refresh = f.Refresh or function() end
+	return f
+end
+
+--------------------------------------------------------------------------------
+-- Spell list: one row per spell ID (icon, name, ID), optional colour and
+-- label per spell, optional reordering, and a box to add an ID.
+--   path        the list of IDs
+--   colors      path of an [id] = {r,g,b} table (optional)
+--   labels      path of an [id] = "text" table (optional)
+--   reorder     show up/down buttons
+--   defaultColor(id), defaultLabel(id)  shown when the user set none
+--------------------------------------------------------------------------------
+local ROW_H, ADD_H = 26, 28
+
+function Controls.spellList(parent, desc, ctx)
+	local f = Base(parent, desc, ctx, ADD_H)
+	f.rows = {}
+
+	local function List() return GetPath(ctx:Root(), desc.path) or {} end
+	local function Changed() ctx:Changed(desc.path) end
+
+	local function Row(i)
+		local r = f.rows[i]
+		if r then return r end
+		r = CreateFrame("Frame", nil, f)
+		r:SetHeight(ROW_H - 2)
+		r.bg = O:Rect(r, "control", "BACKGROUND")
+		r.bg:SetAllPoints()
+		r.bg:SetAlpha(i % 2 == 0 and 0.35 or 0.6)
+		r.icon = r:CreateTexture(nil, "ARTWORK")
+		r.icon:SetSize(18, 18)
+		r.icon:SetPoint("LEFT", 4, 0)
+		r.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+		r.name = O:Text(r, O.SIZE.text, "text")
+		r.name:SetPoint("LEFT", r.icon, "RIGHT", 8, 0)
+		r.id = O:Text(r, O.SIZE.small, "muted")
+		r.remove = O:IconButton(r, "close", 22, "Remove", function()
+			table.remove(List(), r.index)
+			Changed()
+		end)
+		r.remove:SetPoint("RIGHT", -2, 0)
+		local right = r.remove
+		if desc.reorder then
+			r.down = O:IconButton(r, "chevron", 22, "Move down", function()
+				local l = List()
+				if r.index < #l then l[r.index], l[r.index + 1] = l[r.index + 1], l[r.index] Changed() end
+			end)
+			r.down:SetPoint("RIGHT", right, "LEFT", -2, 0)
+			r.up = O:IconButton(r, "chevron", 22, "Move up", function()
+				local l = List()
+				if r.index > 1 then l[r.index], l[r.index - 1] = l[r.index - 1], l[r.index] Changed() end
+			end)
+			r.up.icon:SetTexCoord(0, 1, 1, 0)
+			r.up:SetPoint("RIGHT", r.down, "LEFT", -2, 0)
+			right = r.up
+		end
+		if desc.labels then
+			r.label = CreateFrame("EditBox", nil, r)
+			r.label:SetSize(110, 20)
+			r.label:SetPoint("RIGHT", right, "LEFT", -8, 0)
+			r.label:SetAutoFocus(false)
+			r.label:SetFont(O:FontPath(), O.SIZE.small, "")
+			r.label:SetTextColor(O:Color("text"))
+			r.label:SetTextInsets(6, 6, 0, 0)
+			O:Skin(r.label, "control", "controlLine")
+			local function commit()
+				local labels = GetPath(ctx:Root(), desc.labels)
+				local t = (r.label:GetText() or ""):match("^%s*(.-)%s*$")
+				labels[r.spell] = t ~= "" and t or nil
+				r.label:ClearFocus()
+				Changed()
+			end
+			r.label:SetScript("OnEnterPressed", commit)
+			r.label:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+			r.label:SetScript("OnEditFocusLost", function(self)
+				if not self.committing then self.committing = true commit() self.committing = false end
+			end)
+			right = r.label
+		end
+		if desc.colors then
+			r.swatch = CreateFrame("Button", nil, r)
+			r.swatch:SetSize(26, 16)
+			r.swatch:SetPoint("RIGHT", right, "LEFT", -8, 0)
+			O:Skin(r.swatch, "control", "controlLine")
+			r.swatch.tex = O:Rect(r.swatch, nil, "ARTWORK")
+			r.swatch.tex:SetPoint("TOPLEFT", 2, -2)
+			r.swatch.tex:SetPoint("BOTTOMRIGHT", -2, 2)
+			r.swatch:SetScript("OnClick", function()
+				local colors = GetPath(ctx:Root(), desc.colors)
+				local cur = colors[r.spell] or { desc.defaultColor(r.spell) }
+				local cr, cg, cb = XUI.UnpackColor(cur)
+				ColorPickerFrame:SetupColorPickerAndShow({
+					r = cr, g = cg, b = cb, hasOpacity = false,
+					swatchFunc = function()
+						local nr, ng, nb = ColorPickerFrame:GetColorRGB()
+						colors[r.spell] = { nr, ng, nb }
+						Changed()
+					end,
+					cancelFunc = function() colors[r.spell] = cur Changed() end,
+				})
+			end)
+			right = r.swatch
+		end
+		r.id:SetPoint("RIGHT", right, "LEFT", -8, 0)
+		r.name:SetPoint("RIGHT", r.id, "LEFT", -6, 0)
+		f.rows[i] = r
+		return r
+	end
+
+	-- the add box
+	f.add = CreateFrame("EditBox", nil, f)
+	f.add:SetSize(120, 24)
+	f.add:SetAutoFocus(false)
+	f.add:SetNumeric(true)
+	f.add:SetFont(O:FontPath(), O.SIZE.text, "")
+	f.add:SetTextColor(O:Color("text"))
+	f.add:SetTextInsets(8, 8, 0, 0)
+	O:Skin(f.add, "control", "controlLine")
+	f.hint = O:Text(f.add, O.SIZE.text, "faint")
+	f.hint:SetPoint("LEFT", 8, 0)
+	f.hint:SetText("Spell ID")
+	f.add:SetScript("OnTextChanged", function(self) f.hint:SetShown((self:GetText() or "") == "") end)
+	local function Add()
+		local id = tonumber(f.add:GetText() or "")
+		f.add:SetText("")
+		f.add:ClearFocus()
+		if not id or id <= 0 then return end
+		local l = List()
+		for _, v in ipairs(l) do if v == id then return end end
+		l[#l + 1] = id
+		Changed()
+	end
+	f.add:SetScript("OnEnterPressed", Add)
+	f.add:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+	f.addBtn = O:Button(f, "Add", 70, Add)
+	f.addBtn:SetPoint("LEFT", f.add, "RIGHT", 6, 0)
+
+	function f:Measure()
+		local n = #List()
+		self.height = n * ROW_H + ADD_H + (n > 0 and 6 or 0)
+		self:SetHeight(self.height)
+		return self.height
+	end
+
+	function f:Refresh()
+		local list = List()
+		local colors = desc.colors and GetPath(ctx:Root(), desc.colors)
+		local labels = desc.labels and GetPath(ctx:Root(), desc.labels)
+		for i, id in ipairs(list) do
+			local r = Row(i)
+			r.index, r.spell = i, id
+			r:ClearAllPoints()
+			r:SetPoint("TOPLEFT", 0, -(i - 1) * ROW_H)
+			r:SetPoint("TOPRIGHT", 0, -(i - 1) * ROW_H)
+			r.icon:SetTexture(XUI.GetSpellIcon(id))
+			r.name:SetText(XUI.GetSpellName(id))
+			r.id:SetText(tostring(id))
+			if r.swatch then
+				local c = colors[id]
+				if type(c) == "table" then r.swatch.tex:SetVertexColor(XUI.UnpackColor(c)) else r.swatch.tex:SetVertexColor(desc.defaultColor(id)) end
+			end
+			if r.label and not r.label:HasFocus() then
+				r.label:SetText(labels[id] or "")
+				if not labels[id] and desc.defaultLabel then r.label:SetText(desc.defaultLabel(id) or "") end
+			end
+			r:Show()
+		end
+		for i = #list + 1, #self.rows do self.rows[i]:Hide() end
+		self.add:ClearAllPoints()
+		self.add:SetPoint("TOPLEFT", 0, -(#list * ROW_H + (#list > 0 and 6 or 0)))
+		self:Measure()
+	end
 	return f
 end

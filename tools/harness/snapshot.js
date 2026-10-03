@@ -81,7 +81,7 @@ background:radial-gradient(circle at 30% 20%,#4b5563,#1f2328)}#v div{position:ab
       const uri = mediaURI(op.tex);
       if (uri) {
         html += `<div style="${pos}background:${css(op.color, op.a)};-webkit-mask:url(${uri}) center/100% 100% no-repeat;mask:url(${uri}) center/100% 100% no-repeat"></div>`;
-      } else if (/^\d+$/.test(op.tex)) {
+      } else if (/^\d+$/.test(op.tex) || /Interface.Icons/i.test(op.tex)) {
         html += `<div style="${pos}background:linear-gradient(135deg,#8a6d3b,#3b2f1e);opacity:${op.a};${op.desat ? 'filter:grayscale(1)' : ''}"></div>`;
       } else {
         html += `<div style="${pos}background:${css(op.color, op.a)}"></div>`;

@@ -6,7 +6,7 @@
 ## AllowLoadGameType: mainline
 ## SavedVariables: XerionUIDB
 ## SavedVariablesPerCharacter: XerionUICharDB
-## OptionalDeps: SharedMedia, SharedMedia_MyMedia, EllesmereUI
+## OptionalDeps: SharedMedia, SharedMedia_MyMedia, EllesmereUI, EllesmereUINameplates, EllesmereUICooldownManager, EllesmereUIMythicTimer, EllesmereUIRaidFrames, EllesmereUIUnitFrames
 ## AddonCompartmentFunc: XerionUI_OnAddonCompartmentClick
 ## Category: Interface Enhancements
 
@@ -20,8 +20,11 @@ Libs\LibDeflate\LibDeflate.lua
 
 # Core (order matters: each file builds on the ones above it)
 Core\Init.lua
+Core\Midnight.lua
+Core\Data.lua
 Core\Database.lua
 Core\Media.lua
+Core\Glow.lua
 Core\Style.lua
 Core\Audio.lua
 Core\Modules.lua
@@ -35,7 +38,21 @@ Integrations\EllesmereUI.lua
 # Modules
 Modules\General\CombatAlert.lua
 Modules\General\CombatTimer.lua
+Modules\Combat\MeleeIndicator.lua
 Modules\Combat\Stoneform.lua
+Modules\Group\DeathAlert.lua
+Modules\Group\Externals.lua
+Modules\Group\Interrupts.lua
+Modules\Group\CoTank.lua
+Modules\Group\Shroud.lua
+Modules\Group\CCTracker.lua
+Modules\Group\AggroCheck.lua
+Modules\Group\Bloodlust.lua
+Modules\Tweaks\Nameplates.lua
+Modules\Tweaks\FocusKick.lua
+Modules\Tweaks\FocusCastbar.lua
+Modules\Tweaks\TargetedSpellBars.lua
+Modules\Tweaks\PartyFrames.lua
 
 # The options window is the load-on-demand addon XerionUI_Options; it is
 # loaded the first time /xui is used, so nothing of it costs anything at login.

@@ -1,0 +1,133 @@
+--------------------------------------------------------------------------------
+-- Melee Indicator
+-- A melee spec in combat with an attackable target out of melee range sees a
+-- marker. Checked twice a second, and only while in combat.
+-- Ported from ItruliaQoL (MIT, (c) Itrulia).
+--
+-- Midnight: the range answer can be secret. Then the marker is shown with
+-- its alpha driven by the secret boolean (SetAlphaFromBoolean), so the client
+-- decides and Lua never reads it.
+--------------------------------------------------------------------------------
+local XUI = select(2, ...).XUI
+local T = XUI.Templates
+
+-- A melee ability per spec, used as the range probe.
+local MELEE_SPELLS = {
+	DEATHKNIGHT = { [250] = 49998, [251] = 49998, [252] = 49998 },  -- Death Strike
+	DEMONHUNTER = { [577] = 162794, [581] = 344859 },               -- Chaos Strike, Demon's Bite
+	DRUID = { [103] = 5221, [104] = 33917 },                        -- Shred, Mangle
+	HUNTER = { [255] = 186270 },                                    -- Raptor Strike
+	MONK = { [268] = 205523, [269] = 205523, [270] = 205523 },      -- Blackout Kick
+	PALADIN = { [66] = 96231, [70] = 96231 },                       -- Rebuke
+	ROGUE = { [259] = 1752, [260] = 1752, [261] = 1752 },           -- Sinister Strike
+	SHAMAN = { [263] = 73899 },                                     -- Primal Strike
+	WARRIOR = { [71] = 1715, [72] = 1715, [73] = 1715 },            -- Hamstring
+}
+
+local M = XUI:NewModule("MeleeIndicator", {
+	name = "Melee Indicator",
+	desc = "Shows a marker in combat when your target is out of melee range.",
+	category = "combat",
+	icon = [[Interface\Icons\Ability_Warrior_Charge]],
+	order = 20,
+	defaults = {
+		text = "+",
+		color = { 1, 0, 0, 1 },
+		interval = 0.25,
+		font = T.Font(28),
+		position = T.Position(0, -40),
+	},
+})
+
+local IsSecret = XUI.IsSecret
+local display, ticker
+local spellID
+
+local function Display()
+	if display then return display end
+	display = XUI.Widgets:CreateText("XUI_MeleeIndicator")
+	display:Hide()
+	XUI.Movers:Register(display, M, "position")
+	return display
+end
+
+local function ResolveSpell()
+	local entry = MELEE_SPELLS[XUI.playerClass]
+	local spec = XUI.GetSpecID()
+	local id = entry and spec and entry[spec]
+	if id and C_Spell.GetSpellInfo(id) then spellID = id else spellID = nil end
+end
+
+function M:CanLoad()
+	ResolveSpell()
+	if not spellID then return false, "Only for melee specializations." end
+	return true
+end
+
+-- Druids only count in cat or bear form: the probe is usable there.
+local function FormReady()
+	if XUI.playerClass ~= "DRUID" then return true end
+	local usable, noMana = C_Spell.IsSpellUsable(spellID)
+	if IsSecret(usable) then return true end
+	return (usable or noMana) and true or false
+end
+
+local function Check()
+	local d = display
+	if not d then return end
+	if not spellID or not UnitExists("target") or XUI.Ask(UnitCanAttack, "player", "target") == false or not FormReady() then
+		d:Hide()
+		return
+	end
+	local inRange = C_Spell.IsSpellInRange(spellID, "target")
+	if IsSecret(inRange) then
+		d:Show()
+		d:SetAlphaFromBoolean(inRange, 0, 1)
+		return
+	end
+	d:SetAlpha(1)
+	d:SetShown(not inRange)
+end
+
+function M:StartChecking()
+	self:CancelTicker(ticker)
+	ticker = self:NewTicker(self.db.interval, Check)
+	Check()
+end
+
+function M:StopChecking()
+	self:CancelTicker(ticker)
+	ticker = nil
+	if display and not self:IsPreview() then display:Hide() end
+end
+
+function M:OnEnable()
+	Display()
+	ResolveSpell()
+	self:RegisterEvent("PLAYER_REGEN_DISABLED", "StartChecking")
+	self:RegisterEvent("PLAYER_REGEN_ENABLED", "StopChecking")
+	self:RegisterEvent("PLAYER_TARGET_CHANGED", function() if ticker then Check() end end)
+	self:RegisterEvent("UPDATE_SHAPESHIFT_FORM", function() if ticker then Check() end end)
+	if InCombatLockdown() then self:StartChecking() end
+end
+
+function M:OnDisable()
+	ticker = nil
+end
+
+function M:OnRefresh()
+	if not (display or self:IsPreview()) then return end
+	local d, db = Display(), self.db
+	XUI.Movers:Apply(d)
+	d:ApplyStyle(db.font)
+	d:SetText(db.text)
+	d:SetTextColor(XUI.UnpackColor(db.color))
+	if self:IsPreview() then
+		d:SetAlpha(1)
+		d:Show()
+	elseif ticker and self:IsRunning() then
+		self:StartChecking() -- the interval may have changed
+	else
+		d:Hide()
+	end
+end

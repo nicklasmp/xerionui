@@ -14,6 +14,8 @@ local WHITE = [[Interface\Buttons\WHITE8X8]]
 LSM:Register("statusbar", "Xerion Flat", WHITE)
 LSM:Register("background", "Xerion Solid", WHITE)
 LSM:Register("border", "Xerion Pixel", WHITE)
+LSM:Register("sound", "Xerion: Stun", XUI.MEDIA_PATH .. [[Sounds\stun.mp3]])
+LSM:Register("sound", "Xerion: External", XUI.MEDIA_PATH .. [[Sounds\external.ogg]])
 
 local FALLBACK = {
 	font = "Arial Narrow",

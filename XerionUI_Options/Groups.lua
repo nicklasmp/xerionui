@@ -246,7 +246,7 @@ function G.Glow(path, opts)
 	items[#items + 1] = StyleField("glow", path, "frequency", opts, {
 		type = "slider", label = "Speed", min = -2, max = 2, step = 0.05,
 		tip = "Negative values run the animation the other way.",
-		hidden = notType("PIXEL", "AUTOCAST", "BUTTON"),
+		hidden = notType("PIXEL", "PULSE", "AUTOCAST", "BUTTON"),
 	})
 	items[#items + 1] = StyleField("glow", path, "offset", opts, {
 		type = "slider", label = "Offset", min = -10, max = 20, step = 1,

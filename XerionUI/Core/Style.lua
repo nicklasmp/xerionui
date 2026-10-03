@@ -22,7 +22,7 @@ local Media = XUI.Media
 
 local LCG = LibStub("LibCustomGlow-1.0")
 
-local type, pairs, max = type, pairs, math.max
+local type, pairs, max, floor = type, pairs, math.max, math.floor
 local UnpackColor = XUI.UnpackColor
 
 local Style = {}
@@ -54,6 +54,7 @@ Style.BORDER_STYLES = {
 
 Style.GLOW_TYPES = {
 	{ value = "PIXEL", text = "Pixel" },
+	{ value = "PULSE", text = "Pulse" },
 	{ value = "AUTOCAST", text = "Autocast shine" },
 	{ value = "BUTTON", text = "Action button" },
 	{ value = "PROC", text = "Proc" },
@@ -394,15 +395,20 @@ function Style:IconTexCoord(tex, w, h, zoom)
 end
 
 --------------------------------------------------------------------------------
--- Glows (LibCustomGlow)
+-- Glows
+-- PIXEL and PULSE are our own animation-group glows (Core/Glow.lua): no Lua
+-- per frame, and safe on the engine's aura buttons. AUTOCAST, BUTTON and
+-- PROC come from LibCustomGlow, which animates in OnUpdate scripts; on an
+-- engine button (engineSafe) those fall back to PIXEL.
 -- Starting the same glow again is a no-op, so callers may simply call
 -- ShowGlow on every refresh.
 --------------------------------------------------------------------------------
 local GLOW_KEY = "XerionUI"
+local SCRIPTED = { AUTOCAST = true, BUTTON = true, PROC = true }
 
-local function GlowSignature(g)
+local function GlowSignature(kind, g)
 	local r, gg, b, a = UnpackColor(g.color)
-	return ("%s|%.3f|%.3f|%.3f|%.3f|%s|%s|%s|%s|%s|%s|%s"):format(g.type, r, gg, b, a,
+	return ("%s|%.3f|%.3f|%.3f|%.3f|%s|%s|%s|%s|%s|%s|%s"):format(kind, r, gg, b, a,
 		g.lines or 0, g.frequency or 0, g.length or 0, g.thickness or 0,
 		g.particles or 0, g.scale or 0, g.offset or 0)
 end
@@ -411,7 +417,9 @@ function Style:HideGlow(frame)
 	local current = frame.__xuiGlow
 	if not current then return end
 	if current == "PIXEL" then
-		LCG.PixelGlow_Stop(frame, GLOW_KEY)
+		XUI.Glow.StopAnts(frame)
+	elseif current == "PULSE" then
+		XUI.Glow.StopPulse(frame)
 	elseif current == "AUTOCAST" then
 		LCG.AutoCastGlow_Stop(frame, GLOW_KEY)
 	elseif current == "BUTTON" then
@@ -422,36 +430,40 @@ function Style:HideGlow(frame)
 	frame.__xuiGlow, frame.__xuiGlowSig = nil, nil
 end
 
-function Style:ShowGlow(frame, block)
+function Style:ShowGlow(frame, block, engineSafe)
 	local g = self:Resolve("glow", block)
-	if g.enabled == false or not g.type or g.type == "NONE" then
+	local kind = g.type
+	if g.enabled == false or not kind or kind == "NONE" then
 		self:HideGlow(frame)
 		return
 	end
-	local w = frame:GetWidth()
-	local sig = GlowSignature(g) .. "|" .. math.floor((w or 0) + 0.5)
+	if engineSafe and SCRIPTED[kind] then kind = "PIXEL" end
+	local ok, w, h = pcall(frame.GetSize, frame)
+	if not ok or XUI.IsSecret(w) then w, h = 0, 0 end
+	local sig = GlowSignature(kind, g) .. "|" .. floor((w or 0) + 0.5) .. "x" .. floor((h or 0) + 0.5)
 	if frame.__xuiGlowSig == sig then return end
-	if frame.__xuiGlow and frame.__xuiGlow ~= g.type then self:HideGlow(frame) end
+	if frame.__xuiGlow and frame.__xuiGlow ~= kind then self:HideGlow(frame) end
 
 	local color = { UnpackColor(g.color) }
 	local offset = g.offset or 0
-	local floor = math.floor
-	if g.type == "PIXEL" then
-		local length = (g.length and g.length > 0) and g.length or nil
-		local th = max(Style:Pixels(frame, 1), Style:Pixels(frame, g.thickness or 2))
-		LCG.PixelGlow_Start(frame, color, floor(g.lines or 8), g.frequency or 0.25, length, th,
-			offset, offset, false, GLOW_KEY)
-	elseif g.type == "AUTOCAST" then
+	if kind == "PIXEL" then
+		XUI.Glow.StartAnts(frame, {
+			color = color, lines = g.lines, frequency = g.frequency, offset = offset,
+			length = g.length, thickness = self:Pixels(frame, max(1, g.thickness or 2)),
+		})
+	elseif kind == "PULSE" then
+		XUI.Glow.StartPulse(frame, { color = color, frequency = g.frequency, thickness = g.thickness })
+	elseif kind == "AUTOCAST" then
 		LCG.AutoCastGlow_Start(frame, color, floor(g.particles or 4), g.frequency or 0.25,
 			g.scale or 1, offset, offset, GLOW_KEY)
-	elseif g.type == "BUTTON" then
+	elseif kind == "BUTTON" then
 		LCG.ButtonGlow_Start(frame, color, g.frequency or 0.25)
-	elseif g.type == "PROC" then
+	elseif kind == "PROC" then
 		LCG.ProcGlow_Start(frame, { color = color, key = GLOW_KEY, xOffset = offset, yOffset = offset })
 	end
-	frame.__xuiGlow, frame.__xuiGlowSig = g.type, sig
+	frame.__xuiGlow, frame.__xuiGlowSig = kind, sig
 end
 
-function Style:SetGlow(frame, block, shown)
-	if shown then self:ShowGlow(frame, block) else self:HideGlow(frame) end
+function Style:SetGlow(frame, block, shown, engineSafe)
+	if shown then self:ShowGlow(frame, block, engineSafe) else self:HideGlow(frame) end
 end

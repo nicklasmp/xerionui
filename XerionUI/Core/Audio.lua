@@ -69,13 +69,38 @@ local lastPlayed = setmetatable({}, { __mode = "k" })
 
 function Audio:Speak(text, voice, volume, rate)
 	local V = C_VoiceChat
-	if not (V and V.SpeakText) or type(text) ~= "string" or not text:find("%S") then return end
+	if not (V and V.SpeakText) or text == nil then return end
+	-- a secret text (a name read in combat) is handed over as it is
+	if not XUI.IsSecret(text) and (type(text) ~= "string" or not text:find("%S")) then return end
 	pcall(V.SpeakText, VoiceID(voice), text, rate or 0, volume or 100, true)
 end
 
+-- The game's own sounds, offered next to LibSharedMedia's under these names.
+Audio.GAME_SOUNDS = {
+	{ name = "WoW: Raid Warning", kit = "RAID_WARNING" },
+	{ name = "WoW: Ready Check", kit = "READY_CHECK" },
+	{ name = "WoW: Alarm Clock", kit = "ALARM_CLOCK_WARNING_3" },
+	{ name = "WoW: Level Up", kit = "LEVEL_UP" },
+}
+local gameKit = {}
+for _, s in ipairs(Audio.GAME_SOUNDS) do gameKit[s.name] = s.kit end
+
 function Audio:PlaySound(name, channel)
+	local kit = gameKit[name]
+	if kit then
+		local id = SOUNDKIT and SOUNDKIT[kit]
+		if id then PlaySound(id, channel or "Master") end
+		return
+	end
 	local path = Media:Fetch("sound", name)
 	if path then PlaySoundFile(path, channel or "Master") end
+end
+
+-- The file behind a sound name, for engine-played sounds (AddAuraSound);
+-- nil for "None" and for the game's own sounds, which have no file path.
+function Audio:SoundFile(name)
+	if not name or name == "" or gameKit[name] then return nil end
+	return Media:Fetch("sound", name)
 end
 
 -- Plays an alert block. TTS speaks the block's own text, or `fallbackText`

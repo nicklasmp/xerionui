@@ -3,7 +3,7 @@
 -- Unknown widget methods are no-ops that return nil; they are recorded in
 -- MOCK.unknown so missing return values can be spotted.
 
-MOCK = { errors = {}, unknown = {}, timers = {}, now = 1000, events = {}, frames = {} }
+MOCK = { errors = {}, unknown = {}, timers = {}, now = 1000, events = {}, frames = {}, onUpdate = {} }
 
 -- Lua 5.1 compatibility
 unpack = table.unpack
@@ -233,7 +233,10 @@ function Object:IsProtected() return false end
 function Object:IsMouseOver() return false end
 function Object:IsMouseEnabled() return self._mouse or false end
 function Object:EnableMouse(v) self._mouse = v end
-function Object:SetScript(name, fn) self._scripts[name] = fn end
+function Object:SetScript(name, fn)
+	self._scripts[name] = fn
+	if name == "OnUpdate" then MOCK.onUpdate[self] = fn and true or nil end
+end
 function Object:GetScript(name) return self._scripts[name] end
 function Object:HookScript(name, fn)
 	local old = self._scripts[name]
@@ -384,7 +387,30 @@ function C_Timer.NewTimer(d, fn)
 end
 
 -- Advances time and runs due timers (bounded, since tickers re-arm).
+local function RunOnUpdates(elapsed)
+	local list = {}
+	for f in pairs(MOCK.onUpdate) do list[#list + 1] = f end
+	for _, f in ipairs(list) do
+		local shown, o = true, f
+		while o do if not o._shown then shown = false break end o = o._parent end
+		local s = f._scripts.OnUpdate
+		if shown and s then
+			local ok, err = xpcall(s, debug.traceback, f, elapsed)
+			if not ok then MOCK.errors[#MOCK.errors + 1] = 'OnUpdate: ' .. tostring(err) end
+		end
+	end
+end
+
 function MOCK.Advance(seconds)
+	local stepEnd = MOCK.now + (seconds or 0)
+	while MOCK.now + 0.05 <= stepEnd do
+		MOCK.AdvanceTimers(0.05)
+		RunOnUpdates(0.05)
+	end
+	MOCK.AdvanceTimers(stepEnd - MOCK.now)
+end
+
+function MOCK.AdvanceTimers(seconds)
 	local target = MOCK.now + (seconds or 0)
 	for _ = 1, 10000 do
 		table.sort(MOCK.timers, function(a, b) return a.at < b.at end)
@@ -450,3 +476,109 @@ C_VoiceChat = {
 C_TTSSettings = { GetVoiceOptionID = function() return 0 end, GetSpeechRate = function() return 0 end }
 C_UIFileAsset = { IsKnownFile = function() return true end }
 C_ChatInfo = { RegisterAddonMessagePrefix = function() end, SendAddonMessage = function() end }
+
+--------------------------------------------------------------------------------
+-- Auto-stubs: any API-looking global that is not defined above answers with
+-- a function returning nil (C_ namespaces with tables of such functions,
+-- Enum with tables of small numbers). Keeps rarely used APIs from failing
+-- the run while still exercising the code around them.
+--------------------------------------------------------------------------------
+function CreateColor(r, g, b, a)
+	local c = { r = r, g = g, b = b, a = a or 1 }
+	function c:WrapTextInColorCode(text)
+		return ("|cff%02x%02x%02x%s|r"):format(math.floor(self.r * 255), math.floor(self.g * 255), math.floor(self.b * 255), tostring(text))
+	end
+	function c:GetRGB() return self.r, self.g, self.b end
+	function c:GetRGBA() return self.r, self.g, self.b, self.a end
+	return c
+end
+function IsInGroup() return MOCK.inGroup or false end
+function IsInRaid() return MOCK.inRaid or false end
+function UnitExists(u) return u == "player" or (MOCK.inGroup and u:match("^party%d$") ~= nil) end
+function UnitIsUnit(a, b) return a == b end
+function UnitClassBase() return "WARRIOR" end
+function UnitCanAttack() return false end
+function UnitGroupRolesAssigned() return "DAMAGER" end
+function UnitHealth() return 50 end
+function UnitHealthMax() return 100 end
+function UnitGetTotalAbsorbs() return 0 end
+function AbbreviateNumbers(n) return tostring(n) end
+RAID_CLASS_COLORS = setmetatable({}, { __index = function() return { r = 0.5, g = 0.5, b = 0.5 } end })
+UNKNOWN = "Unknown"
+C_Spell.GetSpellInfo = function(id) return { name = "Spell" .. tostring(id), iconID = 1 } end
+C_Spell.IsSpellInRange = function() return true end
+C_Spell.IsSpellUsable = function() return true, false end
+C_ClassColor = { GetClassColor = function() return CreateColor(0.5, 0.5, 0.5) end }
+
+local function StubTable(name)
+	return setmetatable({}, { __index = function(t, k)
+		local f = function() return nil end
+		rawset(t, k, f)
+		return f
+	end })
+end
+local enumMeta = { __index = function(t, k)
+	local sub = setmetatable({}, { __index = function(s, kk) local n = 1 for _ in pairs(s) do n = n + 1 end rawset(s, kk, n) return n end })
+	rawset(t, k, sub)
+	return sub
+end }
+setmetatable(Enum, enumMeta)
+
+setmetatable(_G, { __index = function(t, k)
+	if type(k) ~= "string" then return nil end
+	if k:match("^C_%u") then
+		local v = StubTable(k)
+		rawset(t, k, v)
+		return v
+	end
+	if k:match("^%u%l") and (k:match("^Unit") or k:match("^Is") or k:match("^Get") or k:match("^Can")
+		or k:match("^Notify") or k:match("^Set") or k:match("^Play") or k:match("^Has")) then
+		MOCK.unknown["_G." .. k] = true
+		return function() return nil end
+	end
+	return nil
+end })
+
+--------------------------------------------------------------------------------
+-- 12.1 mode (MOCK_BUILD=120100): aura containers exist and call their
+-- initializers with fake engine buttons, so the engine paths run.
+--------------------------------------------------------------------------------
+if MOCK_BUILD and MOCK_BUILD >= 120100 then
+	function GetBuildInfo() return "12.1.0", "61000", "Oct 1 2026", MOCK_BUILD end
+	C_XMLUtil = { GetTemplateInfo = function() return {} end }
+	AnchorUtil = {
+		FlowDirection = { Left = 1, Right = 2, Up = 3, Down = 4 },
+		FlowLayoutAxis = { Horizontal = 1, Vertical = 2 },
+	}
+	local function EngineButton(parent)
+		local b = CreateFrame("Button", nil, parent)
+		for _, m in ipairs({ "SetIcon", "SetDurationCooldown", "SetDurationText", "SetDurationBar",
+			"SetApplicationCount", "AddDispelTypeTexture", "SetTooltipAnchorPoint", "SetMouseClickEnabled", "SetMouseMotionEnabled" }) do
+			b[m] = function() end
+		end
+		return b
+	end
+	local origCreate = CreateFrame
+	function CreateFrame(kind, name, parent, template)
+		local f = origCreate(kind, name, parent, template)
+		if kind == "AuraContainer" then
+			MOCK.containers = (MOCK.containers or 0) + 1
+			f.AddAuraGroup = function(self, key, filter, opts)
+				for _ = 1, math.min(2, opts.maxFrameCount or 2) do
+					if opts.initializeFrame then opts.initializeFrame(EngineButton(self)) end
+				end
+			end
+			f.AddAuraSlot = function(self, key, filter, opts)
+				if opts.initializeFrame then opts.initializeFrame(EngineButton(self)) end
+			end
+			f.GetOnUpdateMode = function() return 1 end
+		end
+		return f
+	end
+	C_UnitAuras.AddAuraSound = function() MOCK.auraSounds = (MOCK.auraSounds or 0) + 1 return MOCK.auraSounds end
+	C_UnitAuras.RemoveAuraSound = function() end
+	C_UnitAuras.GetPlayerAuraBySpellID = function() return nil end
+	C_UnitAuras.GetAuraSlots = function() return nil end
+	C_UnitAuras.GetAuraDataBySlot = function() return nil end
+	C_UnitAuras.GetAuraDuration = function() return nil end
+end

@@ -4,7 +4,7 @@
   "description": "Dev tools for XerionUI: Lua lint and a mocked-client test harness.",
   "scripts": {
     "lint": "node lint.js ../XerionUI --skip=Libs --globals && node lint.js ../XerionUI_Options --globals",
-    "test": "node harness/run.js",
+    "test": "node harness/run.js && node harness/run.js --121",
     "shots": "node harness/run.js shots.lua",
     "media": "node gen-media.js"
   },

@@ -190,6 +190,10 @@ Step("logout strips defaults", function()
 end)
 
 print("")
+print(("build %d: aura containers made %d, engine sound registrations %d"):format(XUI.BUILD, MOCK.containers or 0, MOCK.auraSounds or 0))
+local running = {}
+for _, m in ipairs(XUI.modules) do if m.running then running[#running + 1] = m.key end end
+print("running at the end: " .. table.concat(running, ", "))
 local unknown = {}
 for k in pairs(MOCK.unknown) do unknown[#unknown + 1] = k end
 table.sort(unknown)

@@ -20,3 +20,15 @@ O:RegisterModuleOptions("Stoneform", function(ctx, m, G)
 		Card("Position", G.Position("position")),
 	}
 end)
+
+O:RegisterModuleOptions("MeleeIndicator", function(ctx, m, G)
+	return {
+		Card("Marker", {
+			{ type = "input", label = "Text", path = "text" },
+			{ type = "color", label = "Color", path = "color" },
+			{ type = "slider", label = "Check every (seconds)", path = "interval", min = 0.1, max = 1, step = 0.05 },
+		}),
+		Card("Text", G.Font("font")),
+		Card("Position", G.Position("position")),
+	}
+end)

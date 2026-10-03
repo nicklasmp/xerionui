@@ -38,7 +38,12 @@ function runFile(file) {
   }
 }
 
+if (process.argv.includes('--121')) process.env.MOCK_BUILD = '120100';
+if (process.env.MOCK_BUILD) {
+  lauxlib.luaL_dostring(L, to_luastring('MOCK_BUILD = ' + Number(process.env.MOCK_BUILD)));
+}
 runFile('wowmock.lua');
 runFile('render.lua');
 runFile('loader.lua');
-runFile(process.argv[2] || 'scenario.lua');
+const scen = process.argv.slice(2).find((a) => a.endsWith('.lua'));
+runFile(scen || 'scenario.lua');
