@@ -357,7 +357,10 @@ local function Layout(list)
 		row:ClearAllPoints()
 		local unit = row.unit or (previewUnits and previewUnits[row.order or 0])
 		local health = iconMode and unit and XUI.EUI and XUI.EUI.PartyHealthBar(unit)
-		if health then
+		if previewUnits and #previewUnits > 0 and not unit then
+			-- more sample rows than party frames: only members have an icon
+			row:Hide()
+		elseif health then
 			-- beside EllesmereUI's party health bar, in its strata and above it
 			local strata = health:GetFrameStrata()
 			if strata then row:SetFrameStrata(strata) end
@@ -1207,7 +1210,10 @@ function M:OnRefresh()
 			h.__previewing = true
 			BuildPreview()
 		else
-			for _, row in ipairs(shown) do StyleRow(row) end
+			for _, row in ipairs(shown) do
+				row:Show() -- a sample row hidden for lack of a party frame comes back
+				StyleRow(row)
+			end
 			ShowRows()
 		end
 		return
