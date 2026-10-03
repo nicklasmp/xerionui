@@ -305,6 +305,35 @@ local function RecordGeometry(button, partyButton)
 	end
 end
 
+-- The style EllesmereUI applies to a debuff button last: the size of its icons
+-- is its setting, so the sample reads it when no real debuff has been seen.
+local lastStyle
+local SIZE_NAMES = { "iconSize", "buttonSize", "size", "iconWidth", "width" }
+local HEIGHT_NAMES = { "iconHeight", "buttonHeight", "height" }
+
+local function FirstNumber(t, names)
+	if type(t) ~= "table" then return nil end
+	for _, name in ipairs(names) do
+		local v = t[name]
+		if Num(v) and v >= 6 and v <= 200 then return v, name end
+	end
+	return nil
+end
+
+local function StyleSize()
+	local ak = _G.EllesmereUI and _G.EllesmereUI.AuraKit
+	local sources = { lastStyle }
+	for _, key in ipairs({ "rf:debuff:party", "rf:debuffcc:party" }) do
+		local st = ak and ak.styles and ak.styles[key]
+		if st then sources[#sources + 1] = st end
+	end
+	for _, src in ipairs(sources) do
+		local w = FirstNumber(src, SIZE_NAMES)
+		if w then return w, FirstNumber(src, HEIGHT_NAMES) or w end
+	end
+	return nil
+end
+
 local function Capture(button)
 	if geomLocked then return end
 	local rf = RF()
@@ -351,7 +380,10 @@ local function InstallStackStyle(key)
 	local applyExtra = style.applyExtra
 	style.applyExtra = function(button, data, current)
 		applyExtra(button, data, current)
-		if M.running or M:IsPreview() then pcall(Capture, button) end
+		if M.running or M:IsPreview() then
+			lastStyle = current
+			pcall(Capture, button)
+		end
 		if not (M.running and data and data.stack) then return end
 		local point = StackPoint()
 		local s = M.db.stack
@@ -404,8 +436,12 @@ local function UpdateSample()
 	end
 	if not target then s:Hide() return end
 	local g = geom or ContainerGeometry(target)
-	local size = g and math.max(12, math.min(g.w, g.h)) or 24
-	s:ApplyLayout({ width = size, height = size }, nil)
+	-- the size of the real debuffs: a button seen, else the style's own setting
+	local sw, sh
+	if geom then sw, sh = geom.w, geom.h else sw, sh = StyleSize() end
+	if not sw and g then sw, sh = g.w, g.h end
+	sw, sh = math.max(8, sw or 24), math.max(8, sh or sw or 24)
+	s:ApplyLayout({ width = sw, height = sh }, nil)
 	s:ClearAllPoints()
 	local tx, ty, tw = UIUnits(target)
 	if g and tx then
@@ -579,6 +615,7 @@ end
 
 function M:DebugInfo()
 	local rf = RF()
+	local styleW, styleH = StyleSize()
 	local out = {
 		("EllesmereUIRaidFrames namespace: %s, GetFFD: %s"):format(tostring(rf ~= nil), tostring(rf and type(rf.GetFFD))),
 		("health text on: %s, in combat: %s"):format(tostring(self.db.health.enabled), tostring(InCombatLockdown())),
@@ -593,6 +630,18 @@ function M:DebugInfo()
 			i, tostring(ok and unit or "?"), tostring(btn:IsVisible()), tostring(w ~= nil), tostring(w and w.live),
 			width ~= nil and (IsSecret(width) and "secret" or tostring(width)) or "-",
 			w and w.host:IsShown() and "" or " (host hidden)")
+	end
+	out[#out + 1] = ("debuff size: real button seen %s, style setting %s, sample placement %s"):format(
+		geom and ("%dx%d"):format(geom.w, geom.h) or "none yet",
+		styleW and ("%dx%d"):format(styleW, styleH) or "not found",
+		geom and "from a real button" or "estimated")
+	if type(lastStyle) == "table" then
+		local names = {}
+		for k, v in pairs(lastStyle) do
+			if type(k) == "string" and Num(v) then names[#names + 1] = k .. "=" .. tostring(v) end
+		end
+		table.sort(names)
+		out[#out + 1] = "style numbers: " .. table.concat(names, ", ")
 	end
 	return out
 end
