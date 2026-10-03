@@ -10,9 +10,7 @@
 --
 -- Unlock mode (/xui unlock) previews every enabled module and lays a mover over
 -- each registered frame: drag with the left button, nudge with the arrow keys
--- (Shift = 10px), right-click to reset. With EllesmereUI installed the movers
--- are registered with ITS unlock mode instead (Integrations/EllesmereUI.lua),
--- so the whole UI is arranged on one screen.
+-- (Shift = 10px), right-click to reset.
 --------------------------------------------------------------------------------
 local XUI = select(2, ...).XUI
 local Style = XUI.Style
@@ -308,15 +306,11 @@ local function CreateToolbar()
 	return f
 end
 
--- Previews every enabled module and shows the movers. With EllesmereUI's
--- unlock mode in use this opens that instead.
+-- Previews every enabled module and shows the movers.
 function XUI:SetUnlocked(on)
 	on = on and true or false
 	if on and InCombatLockdown() then
 		XUI.Print("Unlock mode is not available in combat.")
-		return
-	end
-	if on and XUI.Integrations and XUI.Integrations.EllesmereUnlock and XUI.Integrations.EllesmereUnlock() then
 		return
 	end
 	if XUI.unlockActive == on and Movers.overlayMode == on then return end
@@ -335,7 +329,6 @@ function XUI:SetUnlocked(on)
 end
 
 -- Turns the "everything previews" state on or off and refreshes the modules.
--- Shared by our own unlock mode and EllesmereUI's.
 function XUI:SetUnlockPreview(on)
 	if XUI.unlockActive == on then return end
 	XUI.unlockActive = on

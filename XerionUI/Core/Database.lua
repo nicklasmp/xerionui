@@ -39,9 +39,6 @@ DB.GLOBAL_DEFAULTS = {
 		font = "Arial Narrow",
 	},
 	unlock = {
-		-- Register movers with EllesmereUI's unlock mode when it is installed,
-		-- so everything is placed from one screen.
-		useEllesmere = true,
 		gridSize = 32,
 		snap = true,
 	},

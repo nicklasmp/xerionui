@@ -6,11 +6,6 @@ local XUI = _G.XerionUI
 local O = XUI and XUI.Options
 if not O then return end
 
-local function HasEllesmere()
-	local E = _G.EllesmereUI
-	return type(E) == "table" and E.RegisterUnlockElements ~= nil
-end
-
 O:RegisterSystemPage({
 	key = "general",
 	title = "General",
@@ -38,12 +33,6 @@ O:RegisterSystemPage({
 				},
 			}),
 			O.Card("Unlock mode", {
-				{
-					type = "toggle", label = "Use EllesmereUI unlock mode", path = "unlock.useEllesmere",
-					tip = "With EllesmereUI installed, XerionUI's frames are moved in EllesmereUI's unlock mode together with the rest of your UI.",
-					disabled = function() return not HasEllesmere() end,
-					width = "full",
-				},
 				{ type = "toggle", label = "Snap to grid while dragging", path = "unlock.snap" },
 				{ type = "slider", label = "Grid size", path = "unlock.gridSize", min = 8, max = 128, step = 4 },
 				{ type = "button", text = "Unlock frames", onClick = function() XUI:SetUnlocked(true) end },

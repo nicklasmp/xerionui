@@ -28,7 +28,7 @@ Load order matters; each file builds on the ones above it.
 | `Movers.lua` | `XUI.Movers`, our unlock mode, `XUI:SetUnlocked` |
 | `Commands.lua` | `/xui`, options loading, Blizzard settings entry, addon compartment |
 
-`Integrations/EllesmereUI.lua` registers our movers with EllesmereUI's unlock mode when it is installed.
+`Integrations/EllesmereUI.lua` holds `XUI.EUI`, helpers for reading EllesmereUI modules (used by the EllesmereUI Tweaks).
 
 ### Messages (`XUI:On(message, owner, fn)`)
 
