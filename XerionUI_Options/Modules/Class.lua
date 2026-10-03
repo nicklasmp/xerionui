@@ -172,3 +172,27 @@ O:RegisterModuleOptions("PaladinAura", function(ctx, m, G)
 		Card("Position", G.Position("position")),
 	}
 end)
+
+O:RegisterModuleOptions("ElementalBlast", function(ctx, m, G)
+	return {
+		Card("Letters", Join({
+			{ type = "color", label = "Critical Strike (C)", path = "critColor" },
+			{ type = "color", label = "Haste (H)", path = "hasteColor" },
+			{ type = "color", label = "Mastery (M)", path = "masteryColor" },
+			{ type = "slider", label = "Height above the icon", path = "offsetY", min = -20, max = 30, step = 1 },
+		}, G.Font("font"))),
+		Card("Preview position", G.Position("position")),
+	}
+end)
+
+O:RegisterModuleOptions("AlterTime", function(ctx, m, G)
+	return {
+		Card("Text", G.Font("font", { color = true })),
+		Card("Placement", {
+			{ type = "toggle", label = "Hang it on the Cooldown Manager's Alter Time icon", path = "anchorCDM", width = "full" },
+			{ type = "slider", label = "Offset X", path = "anchorX", min = -60, max = 60, step = 1 },
+			{ type = "slider", label = "Offset Y", path = "anchorY", min = -60, max = 60, step = 1 },
+		}),
+		Card("Position (when not on the icon)", G.Position("position")),
+	}
+end)
