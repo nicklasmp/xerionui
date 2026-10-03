@@ -178,7 +178,7 @@ function O:RefreshPageHead()
 	else
 		local s
 		for _, sp in ipairs(O.systemPages) do if sp.key == currentKey then s = sp end end
-		f.icon:SetTexture(O.MEDIA .. (s and s.icon or "logo"))
+		f.icon:SetTexture(O.MEDIA .. (s and s.icon or "sliders"))
 		f.icon:SetTexCoord(0, 1, 0, 1)
 		f.icon:SetVertexColor(O:Accent())
 		f.iconBorder:Apply({ useGlobal = false, style = "NONE" })
@@ -412,12 +412,8 @@ local function CreateWindow()
 		SavePosition()
 	end)
 
-	local logo = header:CreateTexture(nil, "ARTWORK")
-	logo:SetTexture(O.MEDIA .. "logo")
-	logo:SetSize(26, 26)
-	logo:SetPoint("LEFT", 16, 0)
 	local title = O:Text(header, 17, "text")
-	title:SetPoint("LEFT", logo, "RIGHT", 10, 0)
+	title:SetPoint("LEFT", 20, 0)
 	title:SetText(XUI.TITLE)
 	local version = O:Text(header, O.SIZE.small, "faint")
 	version:SetPoint("BOTTOMLEFT", title, "BOTTOMRIGHT", 8, 1)

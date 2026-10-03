@@ -2,7 +2,6 @@
 ## Title: |cffff7d0aXerion|r|cffffffffUI|r Options
 ## Notes: The XerionUI settings window. Loaded on demand by /xui; costs nothing until then.
 ## Author: Nicklas Pedersen
-## IconTexture: Interface\AddOns\XerionUI\Media\logo
 ## AllowLoadGameType: mainline
 ## Dependencies: XerionUI
 ## LoadOnDemand: 1

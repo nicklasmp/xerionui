@@ -140,19 +140,6 @@ function writeTGA(name, c, color) {
 // check
 { const c = canvas(32); fill(c, line(8, 16.5, 13.5, 22, 3)); fill(c, line(13.5, 22, 24, 10, 3)); writeTGA('check', c); }
 
-// logo: dark rounded square with an orange X
-{
-  const c = canvas(64);
-  fill(c, roundRect(2, 2, 62, 62, 12));
-  const xMask = canvas(64);
-  fill(xMask, line(19, 18, 45, 46, 8)); fill(xMask, line(45, 18, 19, 46, 8));
-  c.rgb = (x, y) => {
-    const a = xMask.a[y * 64 + x];
-    const bg = [20, 20, 20], fg = [255, 125, 10];
-    return bg.map((v, i) => Math.round(v + (fg[i] - v) * a));
-  };
-  writeTGA('logo', c);
-}
 
 // drop (global style)
 {
