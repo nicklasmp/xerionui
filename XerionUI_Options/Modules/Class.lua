@@ -51,3 +51,44 @@ O:RegisterModuleOptions("BoilingPoint", function(ctx, m, G)
 		Card("Position", G.Position("position")),
 	}
 end)
+
+--------------------------------------------------------------------------------
+-- Shared card sets
+--------------------------------------------------------------------------------
+-- The cards of a Kit.TimedIcon module; `extra` cards are put first.
+local function TimedIconCards(G, extra, glow)
+	local cards = {}
+	for _, c in ipairs(extra or {}) do cards[#cards + 1] = c end
+	cards[#cards + 1] = Card("Icon", Join(G.Icon("icon", { square = true }), {
+		{ type = "toggle", label = "Cooldown swipe", path = "showSwipe" },
+	}))
+	cards[#cards + 1] = Card("Border", G.Border("border"))
+	if glow then cards[#cards + 1] = Card("Glow", G.Glow("glow")) end
+	cards[#cards + 1] = Card("Timer text", G.Font("timerText", { toggle = "Show timer", color = true }))
+	cards[#cards + 1] = Card("Position", G.Position("position"))
+	return cards
+end
+
+O:RegisterModuleOptions("BloodIsLife", function(ctx, m, G)
+	return TimedIconCards(G, nil, true)
+end)
+
+O:RegisterModuleOptions("BloodBeast", function(ctx, m, G)
+	return {
+		Card("Text", Join(G.Font("font"), {
+			{ type = "color", label = "Label colour", path = "labelColor" },
+			{ type = "color", label = "Value colour", path = "valueColor" },
+		})),
+		Card("Position", G.Position("position")),
+	}
+end)
+
+O:RegisterModuleOptions("ControlUndead", function(ctx, m, G)
+	return TimedIconCards(G, {
+		Card("When", {
+			{ type = "toggle", label = "Hide when the minion is gone", path = "hideOnPetLost" },
+			{ type = "slider", label = "Warn colour with seconds left", path = "warnAt", min = 0, max = 120, step = 5 },
+			{ type = "color", label = "Warn colour", path = "warnColor" },
+		}),
+	})
+end)

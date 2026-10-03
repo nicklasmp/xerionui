@@ -46,9 +46,13 @@ Modules\Group\Shroud.lua
 Modules\Group\CCTracker.lua
 Modules\Group\AggroCheck.lua
 Modules\Group\Bloodlust.lua
+Modules\Class\Kit.lua
 Modules\Class\DeathKnight\BoneShield.lua
 Modules\Class\DeathKnight\DRWSound.lua
 Modules\Class\DeathKnight\BoilingPoint.lua
+Modules\Class\DeathKnight\BloodIsLife.lua
+Modules\Class\DeathKnight\BloodBeast.lua
+Modules\Class\DeathKnight\ControlUndead.lua
 Modules\Tweaks\Nameplates.lua
 Modules\Tweaks\FocusKick.lua
 Modules\Tweaks\FocusCastbar.lua
