@@ -3,12 +3,20 @@
 -- Dwarves: shows the Stoneform icon (and optionally speaks or plays a sound)
 -- while you have a bleed on you and Stoneform is ready to remove it.
 --
--- Midnight: an aura's dispel type or the spell's cooldown can be secret in
--- restricted content. A secret reads as "unknown" and the alert stays hidden
--- rather than guessing.
+-- THE ICON is drawn by the game's own aura engine: an aura container on you
+-- holds one slot filtered to the Bleed dispel type, and its button carries our
+-- icon, so it shows exactly while you have a bleed - also where auras are
+-- secret (keys, fights) and Lua cannot read them. Its alpha follows Stoneform's
+-- cooldown (ready = visible; read in the clear, else through the cooldown
+-- duration object whose zero-ness the client turns into the alpha).
+--
+-- THE SOUND needs Lua to know a bleed arrived, so it only plays where your
+-- auras can be read. A bleed is recognised by its dispel name, its dispel type
+-- number or a bleed flag, whichever the build provides.
 --------------------------------------------------------------------------------
 local XUI = select(2, ...).XUI
 local T = XUI.Templates
+local Style = XUI.Style
 
 local STONEFORM = 20594
 local FALLBACK_ICON = 132275
@@ -33,6 +41,9 @@ function M:CanLoad()
 	if not XUI.IsSpellKnown(STONEFORM) then
 		return false, "Requires the Dwarf racial Stoneform."
 	end
+	if not XUI.HasAuraContainers() then
+		return false, "Needs the 12.1 aura containers."
+	end
 	return true
 end
 
@@ -40,24 +51,29 @@ local Readable, IsSecret = XUI.Readable, XUI.IsSecret
 local GetAuraDataByIndex = C_UnitAuras and C_UnitAuras.GetAuraDataByIndex
 local GetSpellCooldown = C_Spell and C_Spell.GetSpellCooldown
 
-local display
-local bleeding, shown = false, false
+local host, sample, container, live
+local bleeding = false
+local stylePending = false
 
-local function Display()
-	if display then return display end
-	display = XUI.Widgets:CreateIcon("XUI_Stoneform")
-	display:SetIcon(XUI.GetSpellIcon(STONEFORM, FALLBACK_ICON))
-	display:Hide()
-	XUI.Movers:Register(display, M, "position")
-	return display
+--------------------------------------------------------------------------------
+-- Recognising a bleed in the clear (for the sound)
+--------------------------------------------------------------------------------
+local function IsBleed(aura)
+	local name = aura.dispelName
+	if not IsSecret(name) and name == "Bleed" then return true end
+	local kind = aura.dispelType
+	local E = Enum and Enum.SpellDispelType
+	if not IsSecret(kind) and E and E.Bleed ~= nil and kind == E.Bleed then return true end
+	local flag = aura.isBleed
+	if not IsSecret(flag) and flag == true then return true end
+	return false
 end
 
 local function ScanBleed()
 	for i = 1, 40 do
 		local aura = GetAuraDataByIndex("player", i, "HARMFUL")
-		if IsSecret(aura) or aura == nil then return false end
-		local dispel = aura.dispelName
-		if not IsSecret(dispel) and dispel == "Bleed" then return true end
+		if aura == nil or IsSecret(aura) then return false end
+		if IsBleed(aura) then return true end
 	end
 	return false
 end
@@ -68,14 +84,15 @@ local function HasBleed()
 	return ok and found or false
 end
 
--- Whether Stoneform is off cooldown (a rolling global cooldown counts as
--- ready). The cooldown record has had different fields over the builds, so each
--- is tried; an answer the client will not give counts as ready - a reminder that
--- stays silent is worse than one that is sometimes early.
-local function StoneformReady()
-	if not GetSpellCooldown then return true end
+--------------------------------------------------------------------------------
+-- Stoneform's cooldown
+--------------------------------------------------------------------------------
+-- true, false, or nil when the client will not say. A rolling global cooldown
+-- counts as ready. The record has had different fields over the builds.
+local function Ready()
+	if not GetSpellCooldown then return nil end
 	local info = XUI.Probe(GetSpellCooldown, STONEFORM)
-	if type(info) ~= "table" then return true end
+	if type(info) ~= "table" then return nil end
 	local onGCD = Readable(info.isOnGCD)
 	local active = Readable(info.isActive)
 	if type(active) == "boolean" then return not active or onGCD == true end
@@ -83,57 +100,153 @@ local function StoneformReady()
 	if type(remaining) == "number" then return remaining <= 0 or onGCD == true end
 	local duration = Readable(info.duration)
 	if type(duration) == "number" then return duration <= 0 or onGCD == true end
-	return true
+	return nil
+end
+
+local function ApplyCooldownAlpha(c)
+	local ready = Ready()
+	if ready ~= nil then
+		c:SetAlpha(ready and 1 or 0)
+		return
+	end
+	local ok, duration = pcall(function()
+		return C_Spell.GetSpellCooldownDuration and C_Spell.GetSpellCooldownDuration(STONEFORM)
+	end)
+	if ok and not IsSecret(duration) and duration ~= nil and c.SetAlphaFromBoolean then
+		if pcall(function() c:SetAlphaFromBoolean(duration:IsZero()) end) then return end
+	end
+	c:SetAlpha(1)
+end
+
+--------------------------------------------------------------------------------
+-- The frames
+--------------------------------------------------------------------------------
+local function Host()
+	if host then return host end
+	host = CreateFrame("Frame", "XUI_Stoneform", UIParent)
+	host:SetSize(48, 48)
+	host:Hide()
+	-- the sample the settings are tuned on; the live icon is the engine's
+	sample = XUI.Widgets:CreateIcon(nil, host)
+	sample:SetIcon(XUI.GetSpellIcon(STONEFORM, FALLBACK_ICON))
+	sample:SetAllPoints(host)
+	sample:Hide()
+	XUI.Movers:Register(host, M, "position")
+	return host
+end
+
+local function Size()
+	local i = Style:Resolve("icon", M.db.icon)
+	local w = i.width or i.size or 48
+	return w, i.height or i.size or w
+end
+
+local function StyleLive()
+	if not live then return end
+	live:ApplyLayout(M.db.icon, M.db.border)
+	live:ClearAllPoints()
+	live:SetAllPoints(host)
+	-- the engine's buttons only take the scriptless glows
+	Style:SetGlow(live, M.db.glow, true, true)
+end
+
+local function InitButton(b)
+	pcall(b.SetMouseClickEnabled, b, false)
+	pcall(b.SetMouseMotionEnabled, b, false)
+	b:SetSize(1, 1)
+	b:SetPoint("CENTER", host, "CENTER")
+	live = XUI.Widgets:CreateIcon(nil, b)
+	live:SetIcon(XUI.GetSpellIcon(STONEFORM, FALLBACK_ICON))
+	-- the rect comes from our frame, the visibility from the button's chain
+	pcall(StyleLive)
+end
+
+local function EnsureContainer()
+	if container then return end
+	if not C_AddOns.IsAddOnLoaded("Blizzard_AuraContainer") then C_AddOns.LoadAddOn("Blizzard_AuraContainer") end
+	local ok, c = pcall(CreateFrame, "AuraContainer", nil, host, "CustomAuraContainerTemplate")
+	if not ok or not c then return end
+	c:SetPoint("CENTER", host, "CENTER")
+	c:SetSize(1, 1)
+	c:SetScale(1)
+	pcall(c.AddAuraSlot, c, "bleed", "HARMFUL", {
+		candidateFilters = { includeDispelTypes = { Bleed = true } },
+		initializeFrame = InitButton,
+	})
+	pcall(c.SetUnit, c, "player")
+	pcall(c.UpdateAllAuras, c)
+	container = c
+end
+
+--------------------------------------------------------------------------------
+-- Lifecycle
+--------------------------------------------------------------------------------
+local function Gate()
+	if container then ApplyCooldownAlpha(container) end
 end
 
 function M:Update(fromAura)
-	local want = bleeding and StoneformReady()
-	if want and not shown and fromAura then
+	local was = bleeding
+	bleeding = HasBleed()
+	-- the sound: a bleed that just arrived while Stoneform can answer it
+	if fromAura and bleeding and not was and Ready() ~= false then
 		XUI.Audio:Play(self.db.alert)
 	end
-	shown = want
-	self:Refresh()
 end
 
 function M:OnEnable()
-	Display()
-	self:RegisterUnitEvent("UNIT_AURA", "player", function(self)
-		local was = bleeding
-		bleeding = HasBleed()
-		-- the cooldown only matters while something bleeds
-		if bleeding and not was then
-			self:RegisterEvent("SPELL_UPDATE_COOLDOWN", function(self) self:Update(false) end)
-		elseif was and not bleeding then
-			self:UnregisterEvent("SPELL_UPDATE_COOLDOWN")
-		end
-		self:Update(true)
-	end)
-	self:RegisterEvent("PLAYER_ENTERING_WORLD", function(self)
-		bleeding = HasBleed()
-		self:Update(false)
-	end)
+	Host()
+	EnsureContainer()
 	bleeding = HasBleed()
-	shown = bleeding and StoneformReady()
+	self:RegisterUnitEvent("UNIT_AURA", "player", function(self) self:Update(true) end)
+	self:RegisterEvent("PLAYER_ENTERING_WORLD", function(self)
+		self:Update(false)
+		if container then pcall(container.UpdateAllAuras, container) end
+	end)
+	self:RegisterEvent("PLAYER_REGEN_ENABLED", function(self)
+		if stylePending then
+			stylePending = not pcall(StyleLive)
+		end
+	end)
+	-- the cooldown gate follows Stoneform's cooldown
+	self:NewTicker(0.2, Gate)
+	Gate()
 end
 
 function M:OnDisable()
-	bleeding, shown = false, false
+	bleeding = false
+	if container then container:SetAlpha(0) end
+	if host and not self:IsPreview() then host:Hide() end
 end
 
 function M:OnRefresh()
-	if not (display or self:IsPreview()) then return end
-	local d = Display()
-	local db = self.db
-	XUI.Movers:Apply(d)
-	d:ApplyLayout(db.icon, db.border)
-	local visible = self:IsPreview() or (self:IsRunning() and shown)
-	d:SetGlow(db.glow, visible)
-	d:SetShown(visible)
+	if not (host or self:IsPreview()) then return end
+	local h, db = Host(), self.db
+	XUI.Movers:Apply(h)
+	h:SetSize(Size())
+	local preview = self:IsPreview()
+	sample:ApplyLayout(db.icon, db.border)
+	sample:ClearAllPoints()
+	sample:SetAllPoints(h)
+	sample:SetGlow(db.glow, preview)
+	sample:SetShown(preview)
+	if self.running then
+		EnsureContainer()
+		-- a restyle the client refuses (in combat) waits for the fight to end
+		stylePending = not pcall(StyleLive)
+		container:SetShown(not preview)
+	end
+	h:SetShown(preview or self.running)
+end
+
+-- Options test button.
+function M:TestAlert()
+	XUI.Audio:Play(self.db.alert, nil, true)
 end
 
 function M:DebugInfo()
 	local out = {
-		("bleeding: %s, icon showing: %s, Stoneform ready: %s"):format(tostring(bleeding), tostring(shown), tostring(StoneformReady())),
+		("bleed seen by Lua: %s, Stoneform ready: %s, engine icon: %s"):format(tostring(bleeding), tostring(Ready()), container and "built" or "NOT built"),
 	}
 	local info = GetSpellCooldown and XUI.Probe(GetSpellCooldown, STONEFORM)
 	if type(info) == "table" then
@@ -149,13 +262,10 @@ function M:DebugInfo()
 		local ok, aura = pcall(GetAuraDataByIndex, "player", i, "HARMFUL")
 		if not ok or aura == nil then break end
 		if IsSecret(aura) then out[#out + 1] = ("  debuff %d: secret"):format(i) break end
-		local dispel = aura.dispelName
-		out[#out + 1] = ("  debuff %d: %s, dispel type %s"):format(i, IsSecret(aura.name) and "<secret name>" or tostring(aura.name), IsSecret(dispel) and "<secret>" or tostring(dispel))
+		local dispel, kind = aura.dispelName, aura.dispelType
+		out[#out + 1] = ("  debuff %d: %s, dispelName %s, dispelType %s, bleed %s"):format(i,
+			IsSecret(aura.name) and "<secret name>" or tostring(aura.name),
+			IsSecret(dispel) and "<secret>" or tostring(dispel), IsSecret(kind) and "<secret>" or tostring(kind), tostring(IsBleed(aura)))
 	end
 	return out
-end
-
--- Options test button.
-function M:TestAlert()
-	XUI.Audio:Play(self.db.alert, nil, true)
 end
