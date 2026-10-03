@@ -29,7 +29,7 @@ local XUI = select(2, ...).XUI
 local DB = XUI.DB
 
 local type, ipairs, pairs, tinsert = type, ipairs, pairs, table.insert
-local SafeCall = XUI.SafeCall
+local SafeCall, SafeCallFor = XUI.SafeCall, XUI.SafeCallFor
 
 XUI.CATEGORIES = {
 	{ key = "general", name = "General" },
@@ -141,7 +141,7 @@ local function EventFrame(m)
 	f.handlers = {}
 	f:SetScript("OnEvent", function(_, event, ...)
 		local h = f.handlers[event]
-		if h then h(m, event, ...) end
+		if h then SafeCallFor(m, h, m, event, ...) end
 	end)
 	m._events = f
 	return f
@@ -194,13 +194,13 @@ end
 function Module:After(delay, fn)
 	local gen = self._gen
 	C_Timer.After(delay, function()
-		if self._gen == gen then SafeCall(fn, self) end
+		if self._gen == gen then SafeCallFor(self, fn, self) end
 	end)
 end
 
 function Module:NewTicker(interval, fn, iterations)
 	local ticker = C_Timer.NewTicker(interval, function(t)
-		SafeCall(fn, self, t)
+		SafeCallFor(self, fn, self, t)
 	end, iterations)
 	self._tickers = self._tickers or {}
 	self._tickers[ticker] = true
@@ -241,7 +241,7 @@ function Module:SecureHook(target, method, fn)
 	local entry = { fn = fn }
 	self._hooks[id] = entry
 	local function hook(...)
-		if self.running then SafeCall(entry.fn, self, ...) end
+		if self.running then SafeCallFor(self, entry.fn, self, ...) end
 	end
 	if target then hooksecurefunc(target, method, hook) else hooksecurefunc(method, hook) end
 end
@@ -254,19 +254,20 @@ function Module:IsPreview() return self.preview or XUI.unlockActive and self.db.
 function Module:IsEnabled() return self.db.enabled end
 
 function Module:Refresh()
-	if self.OnRefresh then SafeCall(self.OnRefresh, self) end
+	if self.OnRefresh then SafeCallFor(self, self.OnRefresh, self) end
 end
 
 local function Start(m)
 	m.running = true
-	if m.OnEnable then SafeCall(m.OnEnable, m) end
+	m.errorCount, m.errors = 0, nil
+	if m.OnEnable then SafeCallFor(m, m.OnEnable, m) end
 end
 
 local function Stop(m)
 	m.running = false
 	m:UnregisterAllEvents()
 	m:CancelTimers()
-	if m.OnDisable then SafeCall(m.OnDisable, m) end
+	if m.OnDisable then SafeCallFor(m, m.OnDisable, m) end
 end
 
 -- Starts or stops the module to match its setting and load conditions.
@@ -318,7 +319,7 @@ function XUI:NotifySettingChanged(m, path)
 	if path == "enabled" then
 		m:SetEnabled(m.db.enabled)
 	else
-		SafeCall(m.OnSettingChanged, m, path)
+		SafeCallFor(m, m.OnSettingChanged, m, path)
 	end
 end
 

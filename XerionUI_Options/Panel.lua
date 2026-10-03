@@ -166,12 +166,22 @@ function O:RefreshPageHead()
 		f.enable.switch:SetState(m.db.enabled)
 		f.enable.label:SetText(m.db.enabled and "Enabled" or "Disabled")
 		local ok, why = m:CanRun()
-		if m.db.enabled and not ok then
+		local note = m.untested and "  |cff888888Untested in game.|r" or ""
+		if (m.errorCount or 0) > 0 then
 			f.status:SetTextColor(O:Color("danger"))
-			f.status:SetText(why or "")
-		elseif m.untested then
+			f.status:SetText(("%d Lua error(s), last: %s"):format(m.errorCount, (m.errors and m.errors[#m.errors] or ""):match("^[^\n]*"):sub(1, 140)))
+		elseif m.db.enabled and not ok then
+			f.status:SetTextColor(O:Color("danger"))
+			f.status:SetText("Not running: " .. (why or "unknown reason"))
+		elseif m.db.enabled and m.running then
 			f.status:SetTextColor(O:Accent())
-			f.status:SetText("Untested in game - please report anything that looks wrong.")
+			f.status:SetText("Running." .. note)
+		elseif m.db.enabled then
+			f.status:SetTextColor(O:Color("muted"))
+			f.status:SetText("Enabled, starting..." .. note)
+		else
+			f.status:SetTextColor(O:Color("muted"))
+			f.status:SetText("Off - switch it on, or use Preview to see it." .. note)
 		end
 		local ar, ag, ab = O:Accent()
 		if m.preview then
@@ -266,7 +276,7 @@ function O:PaintItem(b)
 		b.dot:Show()
 		if m.db.enabled then
 			local ok = m:CanRun()
-			if ok then b.dot:SetVertexColor(ar, ag, ab) else b.dot:SetVertexColor(O:Color("danger")) end
+			if ok and (m.errorCount or 0) == 0 then b.dot:SetVertexColor(ar, ag, ab) else b.dot:SetVertexColor(O:Color("danger")) end
 		else
 			b.dot:SetVertexColor(O:Color("faint"))
 		end
@@ -503,6 +513,9 @@ local function CreateWindow()
 	end)
 	XUI:On("PreviewChanged", owner, function()
 		if frame:IsShown() then O:RefreshPageHead() end
+	end)
+	XUI:On("ModuleError", owner, function()
+		if frame:IsShown() then O:RefreshPageHead() O:RefreshSidebar() end
 	end)
 end
 

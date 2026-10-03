@@ -97,6 +97,30 @@ function XUI.SafeCall(fn, ...)
 	return xpcall(fn, ErrorHandler, ...)
 end
 
+-- Like SafeCall, and the error is also kept on the module that caused it
+-- (module.errors, module.errorCount), which the options show as a badge.
+local current
+local function ModuleErrorHandler(err)
+	local m = current
+	if m then
+		m.errorCount = (m.errorCount or 0) + 1
+		m.errors = m.errors or {}
+		m.errors[#m.errors + 1] = tostring(err):sub(1, 300)
+		if #m.errors > 5 then table.remove(m.errors, 1) end
+		if XUI.Fire then pcall(XUI.Fire, XUI, "ModuleError", m) end
+	end
+	return ErrorHandler(err)
+end
+
+function XUI.SafeCallFor(m, fn, ...)
+	if type(fn) ~= "function" then return false end
+	local previous = current
+	current = m
+	local ok, a, b, c = xpcall(fn, ModuleErrorHandler, ...)
+	current = previous
+	return ok, a, b, c
+end
+
 --------------------------------------------------------------------------------
 -- Tables
 --------------------------------------------------------------------------------
@@ -210,6 +234,7 @@ end
 --   MediaChanged        LibSharedMedia registered new media
 --   UnlockModeChanged   (active) the mover overlay was toggled
 --   ModuleStateChanged  (module) a module was enabled or disabled
+--   ModuleError         (module) a module's code raised an error
 --------------------------------------------------------------------------------
 local listeners = {}
 
