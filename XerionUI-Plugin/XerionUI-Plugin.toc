@@ -1,0 +1,65 @@
+## Interface: 120000, 120001, 120005, 120007, 120100
+## AllowLoadGameType: mainline
+## Title: |cffff7d0aXerionUI|r Plugin
+## Notes: Personal XerionUI addon with ItruliaQoL features. Settings: /xui; Xerion options: /xqol.
+## Author: XerionUI, Kiratank and Itrulia
+## Version: 1.20
+## OptionalDeps: ElvUI, EllesmereUI, EllesmereUICooldownManager, EllesmereUIUnitFrames, EllesmereUINameplates, EllesmereUIMythicTimer, EllesmereUIDamageMeters, EllesmereUIQoL, EllesmereUIRaidFrames, SharedMedia_MyMedia
+## SavedVariables: XerionUIChangesDB, XerionUIFeaturesDB
+## SavedVariablesPerCharacter: XerionUIChangesCharDB
+
+# Embedded libraries (must load before plugin files)
+Libs\LibStub\LibStub.lua
+Libs\LibSerialize\LibSerialize.lua
+Libs\LibDeflate\LibDeflate.lua
+
+# ItruliaQoL feature structure and UI libraries
+embeds.xml
+Media\load_media.xml
+src\init.xml
+src\init.retail.xml [AllowLoadGameType mainline]
+
+XerionUI-Plugin.lua
+XerionUI-Plugin_VersionCheck.lua
+XerionUI-Plugin_Glow.lua
+XerionUI-Plugin_CDMAnchor.lua
+XerionUI-Plugin_EUI.lua
+XerionUI-Plugin_EUINameplates.lua
+XerionUI-Plugin_EUIFocusKick.lua
+XerionUI-Plugin_EUIMythicCast.lua
+XerionUI-Plugin_EUIMeterIlvl.lua
+XerionUI-Plugin_EUIPartyHealth.lua
+XerionUI-Plugin_Externals.lua
+XerionUI-Plugin_Bloodlust.lua
+XerionUI-Plugin_Brewmaster.lua
+XerionUI-Plugin_ShiningLight.lua
+XerionUI-Plugin_PaladinAura.lua
+XerionUI-Plugin_FieryBrand.lua
+XerionUI-Plugin_Mage.lua
+XerionUI-Plugin_Shaman.lua
+XerionUI-Plugin_Druid.lua
+XerionUI-Plugin_Warrior.lua
+XerionUI-Plugin_ControlUndead.lua
+XerionUI-Plugin_BoilingPoint.lua
+XerionUI-Plugin_BloodIsLife.lua
+XerionUI-Plugin_BloodBeast.lua
+XerionUI-Plugin_ReapersMark.lua
+XerionUI-Plugin_Blightfall.lua
+XerionUI-Plugin_Putrefy.lua
+XerionUI-Plugin_DRWIcon.lua
+XerionUI-Plugin_DRWSound.lua
+XerionUI-Plugin_Stoneform.lua
+XerionUI-Plugin_BoneShield.lua
+XerionUI-Plugin_AggroCheck.lua
+XerionUI-Plugin_KeyVendor.lua
+XerionUI-Plugin_Interrupts.lua
+XerionUI-Plugin_CoTank.lua
+XerionUI-Plugin_Shroud.lua
+XerionUI-Plugin_CCBars.lua
+XerionUI-Plugin_CCCasts.lua
+
+# The settings window and edit mode are NOT listed here. They live in
+# XerionUI-Plugin_Options\, a LoadOnDemand addon that the core loads the first
+# time /xui is opened (see ns.ShowConfig in XerionUI-Plugin.lua), so the
+# client neither parses nor keeps them in memory at login.
+

@@ -1,0 +1,22 @@
+## Interface: 120000, 120001, 120005, 120007, 120100
+## AllowLoadGameType: mainline
+## Title: |cffff7d0aXerionUI|r - QoL Options
+## Notes: Xerion-specific settings window (/xqol) and edit mode. Loaded on demand the first time the window is opened; nothing here runs at login.
+## Author: Kiratank
+## Dependencies: XerionUI-Plugin
+## LoadOnDemand: 1
+## X-Build: 2026-09-05.5
+
+# No ## Version here on purpose: the window shows the plugin's version, read
+# from XerionUI-Plugin.toc at runtime, so a release still bumps one line.
+#
+# Keep ## Interface identical to XerionUI-Plugin.toc. A LoadOnDemand addon whose
+# Interface is behind refuses to load unless "Load out of date AddOns" is
+# ticked, and the settings window then cannot open at all.
+#
+# Both files take the plugin's namespace from _G.XerionUIPlugin.__ns (a second
+# addon gets its own table from `...`, not the plugin's).
+
+# Edit mode first: the options file reads ns.hasEditMode when it builds.
+XerionUI-Plugin_EditMode.lua
+XerionUI-Plugin_Options.lua

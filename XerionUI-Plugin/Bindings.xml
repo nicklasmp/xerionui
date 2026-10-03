@@ -1,0 +1,8 @@
+<Bindings>
+	<!-- "Healer external used": the trigger for the healer external bars
+	     (XerionUI-Plugin_HealerExternal.lua). The same thing as /xerionexternal
+	     in a macro; the body calls through the plugin's public table. -->
+	<Binding name="XERIONUI_HEALER_EXTERNAL" header="XERIONUIPLUGIN" category="ADDONS">
+		if XerionUIPlugin and XerionUIPlugin.HealerExternalUsed then XerionUIPlugin.HealerExternalUsed() end
+	</Binding>
+</Bindings>

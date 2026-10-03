@@ -1,0 +1,11 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+	<Include file="stance-alert\init.xml"/>
+	<Include file="runeforge-alert\init.xml"/>
+
+	<Include file="lfg-improvements\init.xml"/>
+	<Include file="keystone-lister\init.xml"/>
+	<Include file="dungeon-teleports\init.xml"/>
+	<Include file="flying-bar\init.xml"/>
+
+	<Include file="macro-factory\retail-macros\init.xml"/>
+</Ui>

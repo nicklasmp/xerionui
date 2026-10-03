@@ -1,0 +1,6 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+	<Script file="general.lua"/>
+	<Script file="priest.lua"/>
+	<Script file="death-knight.lua"/>
+	<Script file="warrior.lua"/>
+</Ui>

@@ -1,0 +1,6 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">	
+	<Script file="ace-helpers.lua"/>
+	<Script file="icon-button.lua"/>
+	<Script file="multiselect-dropdown.lua"/>
+	<Script file="preview.lua"/>
+</Ui>

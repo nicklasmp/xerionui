@@ -1,0 +1,40 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">	
+	<Script file="init.lua"/>
+	<Script file="utils.lua"/>
+	<Script file="preview.lua"/>
+
+	<Include file="integrations/ace/init.xml"/>
+	<Include file="integrations/ellesmere/init.xml"/>
+
+	<Include file="general\init.xml"/>
+
+	<Include file="focus-interrupt-indicator\init.xml"/>
+	<Include file="focus-target-marker\init.xml"/>
+	<Include file="melee-indicator\init.xml"/>
+	<Include file="pet-missing-indicator\init.xml"/>
+	<Include file="pet-passive-indicator\init.xml"/>
+	<Include file="stealth-indicator\init.xml"/>
+
+	<Include file="death-alert\init.xml"/>
+	<Include file="combat-alert\init.xml"/>
+	<Include file="potion-alert\init.xml"/>
+	<Include file="combat-timer\init.xml"/>
+	<Include file="movement-alert\init.xml"/>
+	<Include file="defensive-indicator\init.xml"/>
+	<Include file="self-dispel-alert\init.xml"/>
+	<Include file="healer-mana-indicator\init.xml"/>
+	<Include file="no-target-indicator\init.xml"/>
+	<Include file="repair-indicator\init.xml"/>
+	<Include file="character-indicator\init.xml"/>
+
+	<Include file="cursor-circle\init.xml"/>
+	<Include file="prevent-release\init.xml"/>
+	<Include file="friendly-nameplates\init.xml"/>
+	<Include file="macro-factory\init.xml"/>
+	<Include file="raid-frame-manager\init.xml"/>
+	<Include file="summon-helper\init.xml"/>
+
+	<Include file="misc\init.xml"/>
+
+	<Script file="cdm-slash.lua"/>
+</Ui>
