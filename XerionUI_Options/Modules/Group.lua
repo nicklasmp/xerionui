@@ -186,7 +186,9 @@ O:RegisterModuleOptions("CCTracker", function(ctx, m, G)
 		}),
 		Card("Bar", G.Bar("bar")),
 		Card("Border", G.Border("border")),
-		Card("Name text", G.Font("nameText", { toggle = "Show name" })),
+		Card("Name text", Join(G.Font("nameText", { toggle = "Show name" }), {
+			{ type = "dropdown", label = "Align", path = "nameAlign", values = m.NAME_ALIGNS },
+		})),
 		Card("Timer text", Join(G.Font("timerText", { toggle = "Show timer" }), {
 			{ type = "dropdown", label = "Timer side", path = "timerSide", values = m.TIMER_SIDES },
 			{ type = "toggle", label = "Tenths of a second", path = "tenths" },

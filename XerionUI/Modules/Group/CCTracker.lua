@@ -77,6 +77,7 @@ local M = XUI:NewModule("CCTracker", {
 		nameText = T.Font(12, { enabled = true, y = 0 }),
 		timerText = T.Font(12, { enabled = true }),
 		timerSide = "LEFT",
+		nameAlign = "AUTO",
 		tenths = true,
 		maxUnits = 15,
 		sound = "Xerion: Stun",
@@ -95,6 +96,12 @@ M.MODES = { { value = "group", text = "One bar per spell" }, { value = "each", t
 M.GROW = { { value = "DOWN", text = "Down" }, { value = "UP", text = "Up" } }
 M.ICON_SIDES = { { value = "RIGHT", text = "Right" }, { value = "LEFT", text = "Left" }, { value = "NONE", text = "None" } }
 M.TIMER_SIDES = { { value = "LEFT", text = "Left" }, { value = "RIGHT", text = "Right" } }
+M.NAME_ALIGNS = {
+	{ value = "AUTO", text = "Away from the seconds" },
+	{ value = "LEFT", text = "Left" },
+	{ value = "CENTER", text = "Center" },
+	{ value = "RIGHT", text = "Right" },
+}
 M.SOUND_FROM = { { value = "ALL", text = "Every enemy nameplate" }, { value = "TARGET", text = "Your target only" } }
 
 local IsSecret, Ask = XUI.IsSecret, XUI.Ask
@@ -274,7 +281,10 @@ local function StyleBar(p, id, rel, dy)
 	p.name:ClearAllPoints()
 	p.name:SetPoint(nSide, p.bar, nSide, -inset, nameY)
 	p.name:SetPoint(tSide, p.bar, tSide, tSide == "LEFT" and (4 + reserve) or -(4 + reserve), nameY)
-	p.name:SetJustifyH(nSide)
+	-- the name sits between the seconds and the far edge; AUTO keeps it against
+	-- the far edge, the others place it inside that space
+	p.name:SetJustifyH(db.nameAlign == "LEFT" and "LEFT" or db.nameAlign == "CENTER" and "CENTER"
+		or db.nameAlign == "RIGHT" and "RIGHT" or nSide)
 	p.name:SetText(M:SpellLabel(id))
 	p.name:SetShown(db.nameText.enabled ~= false)
 end
