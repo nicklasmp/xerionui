@@ -158,8 +158,7 @@ local function StyleLive()
 end
 
 local function InitButton(b)
-	pcall(b.SetMouseClickEnabled, b, false)
-	pcall(b.SetMouseMotionEnabled, b, false)
+	XUI.Engine.Silence(b)
 	b:SetSize(1, 1)
 	b:SetPoint("CENTER", host, "CENTER")
 	live = XUI.Widgets:CreateIcon(nil, b)
@@ -173,12 +172,9 @@ end
 
 local function EnsureContainer()
 	if container then return end
-	if not C_AddOns.IsAddOnLoaded("Blizzard_AuraContainer") then C_AddOns.LoadAddOn("Blizzard_AuraContainer") end
-	local ok, c = pcall(CreateFrame, "AuraContainer", nil, host, "CustomAuraContainerTemplate")
-	if not ok or not c then return end
+	local c = XUI.Engine.NewContainer(host)
+	if not c then return end
 	c:SetPoint("CENTER", host, "CENTER")
-	c:SetSize(1, 1)
-	c:SetScale(1)
 	pcall(c.AddAuraSlot, c, "bleed", "HARMFUL", {
 		candidateFilters = { includeDispelTypes = { Bleed = true } },
 		initializeFrame = InitButton,

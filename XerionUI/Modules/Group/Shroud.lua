@@ -210,8 +210,7 @@ end
 
 -- Runs inside the engine's frame batch: no scripts, and armoured.
 local function InitButton(t, b)
-	pcall(b.SetMouseClickEnabled, b, false)
-	pcall(b.SetMouseMotionEnabled, b, false)
+	XUI.Engine.Silence(b)
 	local w, h = BarSize(M.db)
 	b:SetSize(w, h)
 	local p = MakeBar(b)
@@ -224,12 +223,11 @@ end
 
 local function EnsureContainer(t)
 	if t.container or t.failed then return end
-	local ok, c = pcall(CreateFrame, "AuraContainer", nil, t.slot, "CustomAuraContainerTemplate")
-	if not ok or not c then
+	local c = XUI.Engine.NewContainer(t.slot)
+	if not c then
 		t.failed = true
 		return
 	end
-	c:SetSize(1, 1)
 	local include = {}
 	for _, id in ipairs(t.ids) do include[id] = true end
 	local w, h = BarSize(M.db)
@@ -308,10 +306,7 @@ function M:OnEnable()
 		rereadNext = true
 		self:After(0.5, function() self:Scan() end)
 	end)
-	self:RegisterEvent("PLAYER_REGEN_ENABLED", function() if stylePending then RestyleButtons() end end)
-	self:RegisterEvent("ADDON_RESTRICTION_STATE_CHANGED", function(self)
-		if stylePending then self:After(0, RestyleButtons) end
-	end)
+	XUI.Engine.WhenFree(self, function() return stylePending end, RestyleButtons)
 end
 
 function M:OnDisable()

@@ -138,8 +138,7 @@ local function StyleFace(p)
 end
 
 local function InitSlot(b)
-	pcall(b.SetMouseClickEnabled, b, false)
-	pcall(b.SetMouseMotionEnabled, b, false)
+	XUI.Engine.Silence(b)
 	pcall(b.SetSize, b, 1, 1)
 	pcall(b.SetPoint, b, "CENTER", holder, "CENTER", 0, 0)
 	local p = MakeFace(b)
@@ -151,9 +150,8 @@ local function InitSlot(b)
 end
 
 local function Build(i)
-	local ok, c = pcall(CreateFrame, "AuraContainer", nil, holder, "CustomAuraContainerTemplate")
-	if not ok or not c then failed = "the client refused the AuraContainer frame" return false end
-	c:SetSize(1, 1)
+	local c, why = XUI.Engine.NewContainer(holder)
+	if not c then failed = why return false end
 	c:SetPoint("CENTER", holder, "CENTER", 0, 0)
 	pcall(c.SetEnabled, c, false)
 	local okS, errS = pcall(c.AddAuraSlot, c, SLOT_KEY, FILTER, {
@@ -265,10 +263,7 @@ function M:OnEnable()
 	for _, e in ipairs({ "NAME_PLATE_UNIT_ADDED", "NAME_PLATE_UNIT_REMOVED", "UNIT_FLAGS", "PLAYER_TARGET_CHANGED" }) do
 		self:RegisterEvent(e, OnWatch)
 	end
-	self:RegisterEvent("PLAYER_REGEN_ENABLED", function() if stylePending then Restyle() end end)
-	self:RegisterEvent("ADDON_RESTRICTION_STATE_CHANGED", function(self)
-		if stylePending then self:After(0, Restyle) end
-	end)
+	XUI.Engine.WhenFree(self, function() return stylePending end, Restyle)
 	BuildSome()
 end
 

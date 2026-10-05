@@ -105,8 +105,7 @@ local function StylePieces(p, layer)
 end
 
 local function InitButton(layer, b)
-	pcall(b.SetMouseClickEnabled, b, false)
-	pcall(b.SetMouseMotionEnabled, b, false)
+	XUI.Engine.Silence(b)
 	local w, h = Size()
 	b:SetSize(w, h)
 	local p = MakePieces(b)
@@ -123,10 +122,9 @@ local function EnsureContainer(layer, name)
 	local sub = CreateFrame("Frame", nil, holder)
 	sub:SetAllPoints(holder)
 	sub:SetFrameLevel(holder:GetFrameLevel() + (layer.debuff and 1 or 16))
-	local ok, c = pcall(CreateFrame, "AuraContainer", "XUI_FieryBrand_" .. name, sub, "CustomAuraContainerTemplate")
-	if not ok or not c then layer.failed = true return end
+	local c = XUI.Engine.NewContainer(sub, "XUI_FieryBrand_" .. name)
+	if not c then layer.failed = true return end
 	c:SetPoint("CENTER", holder, "CENTER", 0, 0)
-	c:SetSize(1, 1)
 	local okSlot, slot = pcall(c.AddAuraSlot, c, name, layer.filter, {
 		candidateFilters = { includeSpellIDs = FB_IDS },
 		initializeFrame = function(b) InitButton(layer, b) end,
@@ -187,10 +185,7 @@ function M:OnEnable()
 		self:RefreshSoon()
 		self:After(2, function() self:Refresh() end)
 	end)
-	self:RegisterEvent("PLAYER_REGEN_ENABLED", function() if stylePending then Restyle() end end)
-	self:RegisterEvent("ADDON_RESTRICTION_STATE_CHANGED", function(self)
-		if stylePending then self:After(0, Restyle) end
-	end)
+	XUI.Engine.WhenFree(self, function() return stylePending end, Restyle)
 end
 
 function M:OnDisable() self:UpdateLayers() end

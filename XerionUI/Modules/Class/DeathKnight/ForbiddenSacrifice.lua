@@ -352,8 +352,7 @@ local function Flow(c)
 end
 
 local function InitButton(b)
-	pcall(b.SetMouseClickEnabled, b, false)
-	pcall(b.SetMouseMotionEnabled, b, false)
+	XUI.Engine.Silence(b)
 	pcall(b.SetSize, b, 1, 1)
 	local p = MakeFace(b)
 	pcall(StyleFace, p)
@@ -369,9 +368,8 @@ end
 local function EnsureContainer()
 	if container or failed then return end
 	if not (XUI.HasAuraContainers() and AXIS and DIR) then failed = "aura containers unavailable" return end
-	local ok, c = pcall(CreateFrame, "AuraContainer", "XUI_ForbiddenSacrificeContainer", holder, "CustomAuraContainerTemplate")
-	if not ok or not c then failed = "the client refused the AuraContainer frame" return end
-	c:SetSize(1, 1)
+	local c, why = XUI.Engine.NewContainer(holder, "XUI_ForbiddenSacrificeContainer")
+	if not c then failed = why return end
 	local okF, errF = pcall(Flow, c)
 	if not okF then failed = "column layout refused: " .. tostring(errF) c:Hide() return end
 	local include = {}
