@@ -96,19 +96,6 @@ latePlace:SetScript("OnEvent", function()
 	end)
 end)
 
--- Stores the frame's current screen spot as a CENTER offset from UIParent's
--- centre, rounded to whole units.
-function Movers:SaveFromFrame(entry)
-	local frame = entry.frame
-	local cx, cy = frame:GetCenter()
-	local ux, uy = UIParent:GetCenter()
-	if not (cx and ux) then return end
-	local fs, us = frame:GetEffectiveScale(), UIParent:GetEffectiveScale()
-	local x = (cx * fs - ux * us) / fs
-	local y = (cy * fs - uy * us) / fs
-	self:SetOffset(entry, x, y)
-end
-
 function Movers:SetOffset(entry, x, y)
 	local p = self:GetPosition(entry)
 	if type(p) ~= "table" then return end

@@ -178,6 +178,22 @@ Step("global style change reaches modules", function()
 	MOCK.Advance(0.1)
 end)
 
+Step("sidebar: search, class folding, dock", function()
+	local O = XUI.Options
+	O:Open("general")
+	for _, text in ipairs({ "tank", "interrupt", "druid", "zzzz", "" }) do
+		O.S.searchText = text
+		O:RefreshSidebar()
+	end
+	XUI.DB.global.panel.classFolded = true
+	O:RefreshSidebar()
+	XUI.DB.global.panel.classFolded = false
+	O:RefreshSidebar()
+	O:Open("class:DRUID")
+	O:UpdateDock()
+	O:RebuildAll()
+end)
+
 Step("diagnostics, self-check and perf", function()
 	XUI.perfOn = true
 	local text = XUI.Health.Report()

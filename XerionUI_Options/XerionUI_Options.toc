@@ -17,6 +17,9 @@ Page.lua
 Groups.lua
 Classes.lua
 Panel.lua
+PageHead.lua
+Sidebar.lua
+Preview.lua
 
 # System pages, in sidebar order
 Pages\Overview.lua

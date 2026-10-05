@@ -237,3 +237,7 @@ The harness (fengari, Lua 5.3) mocks the WoW API closely enough to load the TOCs
 | Banner on a module that is off | module page builder in `Panel.lua` |
 
 Add a check by putting a function in `Health.CHECKS[moduleKey]` that calls `problem("text")` for each missing dependency.
+
+## Options window files
+
+`Panel.lua` (window, opening, page lookup, the shared state table `O.S`), `PageHead.lua` (page header, Diagnostics popup, reset dialog), `Sidebar.lua` (search, class folding, entries), `Preview.lua` (preview that follows the page, window docking). Aura-engine helpers shared by modules are in `Core/Engine.lua` (`XUI.Engine`).
