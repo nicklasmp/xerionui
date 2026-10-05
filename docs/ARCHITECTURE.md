@@ -225,3 +225,15 @@ The harness (fengari, Lua 5.3) mocks the WoW API closely enough to load the TOCs
 | Attach a position to another frame | `position.attach` (+ `point`/`relPoint`), `Movers:Apply`, `G.Position` |
 | Unlock mode snapping to other movers, guides, double-click to open settings | `Core/Movers.lua` |
 | Window spacing | General: `panel.density`, `O:SetDensity` |
+
+## Diagnostics, self-check and performance
+
+| What | Where |
+|---|---|
+| Self-check per module (EllesmereUI fields, Cooldown Manager, damage meter, aura sounds) | `Core/Health.lua` (`Health.CHECKS`, `Health.Issues`), shown as a yellow dot/status and a "Needs attention" card |
+| Diagnostics text (build, class, EllesmereUI, status, checks, errors, `DebugInfo`) | `Health.Report`, the **Diagnostics** button in a module's page head (`O:ShowText`) |
+| Time per module | `/xui perf on`, play, `/xui perf`; `XUI.SafeCallFor` times the outermost call per module |
+| All modules on one page | `Pages/Overview.lua` ("Modules") |
+| Banner on a module that is off | module page builder in `Panel.lua` |
+
+Add a check by putting a function in `Health.CHECKS[moduleKey]` that calls `problem("text")` for each missing dependency.

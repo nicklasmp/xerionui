@@ -19,6 +19,7 @@ Classes.lua
 Panel.lua
 
 # System pages, in sidebar order
+Pages\Overview.lua
 Pages\Style.lua
 Pages\General.lua
 Pages\Profiles.lua

@@ -45,6 +45,8 @@ local function ModuleContext(m)
 	end, { module = m })
 end
 
+function O:GetPageIfBuilt(key) return pages[key] end
+
 local function ClassKey(key) return type(key) == "string" and key:match("^class:(.+)$") end
 
 local function GetPage(key)
@@ -58,8 +60,31 @@ local function GetPage(key)
 		spec = {
 			ctx = ModuleContext(m),
 			build = function(ctx)
-				if build then return build(ctx, m, O.Groups) end
-				return { O.Card(nil, { { type = "description", text = "This module has no settings yet.", width = "full" } }) }
+				local cards = {
+					-- a module that is off says so, and can be switched on right here
+					O.Card(nil, {
+						{ type = "description", width = "full", color = "label",
+							text = "This module is switched off. The preview shows it, but it does nothing in the game until you enable it." },
+						{ type = "button", text = "Enable", primary = true,
+							onClick = function() m:SetEnabled(true) O:RefreshPageHead() O:RefreshSidebar() if ctx.page then ctx.page:Refresh() end end },
+					}, { hidden = function() return m.db.enabled end }),
+					-- what the self-check found outside this addon
+					O.Card("Needs attention", {
+						{ type = "description", width = "full", color = "danger", text = function()
+							local lines = {}
+							for _, issue in ipairs(XUI.Health.Issues(m)) do lines[#lines + 1] = "- " .. issue end
+							return table.concat(lines, "\n")
+						end },
+					}, { hidden = function() return #XUI.Health.Issues(m) == 0 end }),
+				}
+				local own
+				if build then
+					own = build(ctx, m, O.Groups)
+				else
+					own = { O.Card(nil, { { type = "description", text = "This module has no settings yet.", width = "full" } }) }
+				end
+				for _, c in ipairs(own) do cards[#cards + 1] = c end
+				return cards
 			end,
 		}
 	else
@@ -185,6 +210,12 @@ local function CreatePageHead(parent)
 	end)
 	f.state:SetPoint("RIGHT", f.test, "LEFT", -8, 0)
 
+	-- everything needed to understand a problem, as one text to copy
+	f.diag = HeadButton("search", "Diagnostics", 118, "A text with the game build, this module's status, its checks, recent errors and its own debug lines - copy it when something does not work.", function()
+		local m = f.module
+		if m then O:ShowText(m.name .. " - diagnostics", XUI.Health.Report(m)) end
+	end)
+
 	f.line = O:Rect(f, "line", "ARTWORK")
 	f.line:SetHeight(1)
 	f.line:SetPoint("BOTTOMLEFT")
@@ -211,6 +242,10 @@ function O:RefreshPageHead()
 		f.state:ClearAllPoints()
 		f.state:SetPoint("RIGHT", m.Test and f.test or f.preview, "LEFT", -8, 0)
 	end
+	local last = (states and f.state) or ((showModule and m.Test) and f.test) or f.preview
+	f.diag:SetShown(showModule)
+	f.diag:ClearAllPoints()
+	f.diag:SetPoint("RIGHT", last, "LEFT", -8, 0)
 	f.status:SetText("")
 	if m then
 		f.icon:SetTexture(XUI.ModuleIcon(m))
@@ -229,6 +264,9 @@ function O:RefreshPageHead()
 		elseif m.db.enabled and not ok then
 			f.status:SetTextColor(O:Color("danger"))
 			f.status:SetText("Not running: " .. (why or "unknown reason"))
+		elseif m.db.enabled and m.running and #XUI.Health.Issues(m) > 0 then
+			f.status:SetTextColor(1, 0.8, 0.2)
+			f.status:SetText("Running, but check this: " .. XUI.Health.Issues(m)[1] .. note)
 		elseif m.db.enabled and m.running then
 			f.status:SetTextColor(O:Accent())
 			f.status:SetText("Running." .. note)
@@ -265,6 +303,54 @@ function O:RefreshPageHead()
 		f.title:SetText(s and s.title or "")
 		f.desc:SetText(s and s.desc or "")
 	end
+end
+
+--------------------------------------------------------------------------------
+-- A window with a text to copy (Ctrl+A, Ctrl+C)
+--------------------------------------------------------------------------------
+local textPopup
+
+function O:ShowText(title, text)
+	if not textPopup then
+		local p = CreateFrame("Frame", "XUI_TextPopup", UIParent)
+		p:SetSize(640, 440)
+		p:SetFrameStrata("FULLSCREEN_DIALOG")
+		p:SetPoint("CENTER")
+		p:SetToplevel(true)
+		p:EnableMouse(true)
+		O:Skin(p, "window", "line")
+		tinsert(UISpecialFrames, "XUI_TextPopup")
+		p.title = O:Text(p, O.SIZE.heading, "text")
+		p.title:SetPoint("TOPLEFT", 16, -14)
+		p.hint = O:Text(p, O.SIZE.small, "muted")
+		p.hint:SetPoint("TOPLEFT", p.title, "BOTTOMLEFT", 0, -4)
+		p.hint:SetText("Press Ctrl+C to copy, then paste it where it is needed.")
+		local close = O:IconButton(p, "close", 26, nil, function() p:Hide() end)
+		close:SetPoint("TOPRIGHT", -8, -8)
+		local holder = CreateFrame("Frame", nil, p)
+		holder:SetPoint("TOPLEFT", 16, -62)
+		holder:SetPoint("BOTTOMRIGHT", -16, 16)
+		O:Skin(holder, "control", "controlLine")
+		local sf = CreateFrame("ScrollFrame", nil, holder, "ScrollFrameTemplate")
+		sf:SetPoint("TOPLEFT", 6, -6)
+		sf:SetPoint("BOTTOMRIGHT", -24, 6)
+		local box = CreateFrame("EditBox", nil, sf)
+		box:SetMultiLine(true)
+		box:SetWidth(580)
+		box:SetAutoFocus(false)
+		box:SetFont(O:FontPath(), O.SIZE.small, "")
+		box:SetTextColor(O:Color("text"))
+		box:SetScript("OnEscapePressed", function() p:Hide() end)
+		sf:SetScrollChild(box)
+		sf:SetScript("OnSizeChanged", function(_, w) box:SetWidth(w) end)
+		p.box = box
+		textPopup = p
+	end
+	textPopup.title:SetText(title or "")
+	textPopup.box:SetText(text or "")
+	textPopup:Show()
+	textPopup.box:SetFocus()
+	textPopup.box:HighlightText()
 end
 
 StaticPopupDialogs.XERIONUI_RESET_MODULE = {
@@ -354,7 +440,13 @@ function O:PaintItem(b)
 		b.dot:Show()
 		if m.db.enabled then
 			local ok = m:CanRun()
-			if ok and (m.errorCount or 0) == 0 then b.dot:SetVertexColor(ar, ag, ab) else b.dot:SetVertexColor(O:Color("danger")) end
+			if not ok or (m.errorCount or 0) > 0 then
+				b.dot:SetVertexColor(O:Color("danger"))
+			elseif #XUI.Health.Issues(m) > 0 then
+				b.dot:SetVertexColor(1, 0.8, 0.2)
+			else
+				b.dot:SetVertexColor(ar, ag, ab)
+			end
 		else
 			b.dot:SetVertexColor(O:Color("faint"))
 		end
@@ -635,13 +727,13 @@ local function CreateWindow()
 		O:RefreshPageHead()
 	end)
 	XUI:On("ModuleStateChanged", owner, function()
-		if frame:IsShown() then O:RefreshSidebar() O:RefreshPageHead() end
+		if frame:IsShown() then O:RefreshSidebar() O:RefreshPageHead() O:RefreshOverview() end
 	end)
 	XUI:On("PreviewChanged", owner, function()
-		if frame:IsShown() then O:RefreshPageHead() UpdateDockSoon() end
+		if frame:IsShown() then O:RefreshPageHead() UpdateDockSoon() O:RefreshOverview() end
 	end)
 	XUI:On("ModuleError", owner, function()
-		if frame:IsShown() then O:RefreshPageHead() O:RefreshSidebar() end
+		if frame:IsShown() then O:RefreshPageHead() O:RefreshSidebar() O:RefreshOverview() end
 	end)
 end
 

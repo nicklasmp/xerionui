@@ -53,6 +53,7 @@ local HELP = {
 	{ "/xui preview off", "end every module preview" },
 	{ "/xui version", "show the installed version" },
 	{ "/xui debug [module]", "why modules are or are not running, plus their live state" },
+	{ "/xui perf [on|off|reset]", "time spent in each module's code (on, play, then /xui perf)" },
 }
 
 -- /xui debug: one line per module (enabled, running, why not), and with a
@@ -101,6 +102,31 @@ local function Handle(msg)
 		for _, m in ipairs(XUI.modules) do m:SetPreview(false) end
 	elseif cmd == "debug" then
 		Debug(rest)
+	elseif cmd == "perf" then
+		rest = rest:lower()
+		if rest == "on" then
+			XUI.PerfReset()
+			XUI.perfOn = true
+			XUI.Print("timing every module's code. Play a while, then /xui perf for the result; /xui perf off stops.")
+		elseif rest == "off" then
+			XUI.perfOn = false
+			XUI.Print("timing stopped.")
+		elseif rest == "reset" then
+			XUI.PerfReset()
+			XUI.Print("timings cleared.")
+		else
+			local list = {}
+			for _, m in ipairs(XUI.modules) do
+				if m.perfCalls then list[#list + 1] = m end
+			end
+			table.sort(list, function(a, b) return a.perfMs > b.perfMs end)
+			local secs = XUI.perfSince and (GetTime() - XUI.perfSince) or 0
+			XUI.Print(("timing %s, %.0f s so far (inclusive per module, outermost call):"):format(XUI.perfOn and "ON" or "off", secs))
+			if #list == 0 then print("  nothing measured - use /xui perf on first") end
+			for _, m in ipairs(list) do
+				print(("  |cffffffff%-22s|r %s"):format(m.key, XUI.PerfLine(m)))
+			end
+		end
 	elseif cmd == "version" or cmd == "ver" then
 		XUI.Printf("version |cffffffff%s|r", XUI.version)
 	else

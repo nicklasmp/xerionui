@@ -32,6 +32,7 @@ Core\AutoProfile.lua
 Core\Widgets.lua
 Core\Movers.lua
 Core\Commands.lua
+Core\Health.lua
 
 # Integrations
 Integrations\EllesmereUI.lua

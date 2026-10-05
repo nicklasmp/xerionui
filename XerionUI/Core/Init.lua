@@ -116,9 +116,30 @@ function XUI.SafeCallFor(m, fn, ...)
 	if type(fn) ~= "function" then return false end
 	local previous = current
 	current = m
+	-- /xui perf: the time every module's calls take (outermost call only, so a
+	-- refresh inside an event is not counted twice)
+	local timed = XUI.perfOn and m and not m._perfBusy
+	local t0
+	if timed then m._perfBusy, t0 = true, debugprofilestop() end
 	local ok, a, b, c = xpcall(fn, ModuleErrorHandler, ...)
+	if timed then
+		local dt = debugprofilestop() - t0
+		m._perfBusy = false
+		m.perfMs, m.perfCalls = (m.perfMs or 0) + dt, (m.perfCalls or 0) + 1
+		if dt > (m.perfMax or 0) then m.perfMax = dt end
+	end
 	current = previous
 	return ok, a, b, c
+end
+
+function XUI.PerfLine(m)
+	if not m.perfCalls then return nil end
+	return ("cpu: %.1f ms in %d calls (avg %.3f, worst %.2f ms)"):format(m.perfMs, m.perfCalls, m.perfMs / m.perfCalls, m.perfMax or 0)
+end
+
+function XUI.PerfReset()
+	for _, m in ipairs(XUI.modules or {}) do m.perfMs, m.perfCalls, m.perfMax = nil, nil, nil end
+	XUI.perfSince = GetTime()
 end
 
 --------------------------------------------------------------------------------

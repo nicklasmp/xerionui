@@ -74,7 +74,7 @@ local function Exercise(control)
 	control:Refresh()
 end
 
-local pageKeys = { "style", "general", "profiles" }
+local pageKeys = { "overview", "style", "general", "profiles" }
 for _, m in ipairs(XUI.modules) do pageKeys[#pageKeys + 1] = m.key end
 for _, c in ipairs(XUI.Options.CLASSES) do pageKeys[#pageKeys + 1] = "class:" .. c.token end
 pageKeys[#pageKeys + 1] = "class:ANY"
@@ -176,6 +176,20 @@ Step("global style change reaches modules", function()
 	XUI.DB.style.font.outline = "THICKOUTLINE"
 	XUI:Fire("StyleChanged")
 	MOCK.Advance(0.1)
+end)
+
+Step("diagnostics, self-check and perf", function()
+	XUI.perfOn = true
+	local text = XUI.Health.Report()
+	assert(#text > 100, "report is empty")
+	for _, m in ipairs(XUI.modules) do
+		XUI.Health.Report(m)
+		XUI.Health.Issues(m, true)
+	end
+	XUI.Options:ShowText("test", text)
+	SlashCmdList.XERIONUI("perf")
+	SlashCmdList.XERIONUI("perf reset")
+	XUI.perfOn = false
 end)
 
 Step("close options + slash commands", function()
