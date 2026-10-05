@@ -555,7 +555,7 @@ end
 
 --------------------------------------------------------------------------------
 -- Preview: fake icons (the engine only fills a button for a real aura), with
--- real dispel colours so the border can be judged.
+-- real dispel colors so the border can be judged.
 --------------------------------------------------------------------------------
 local previewIcons = {}
 local TINTS = { { 0.8, 0, 0 }, { 0.2, 0.6, 1 }, { 0.6, 0, 1 }, { 0.6, 0.4, 0 }, { 0, 0.6, 0 } }

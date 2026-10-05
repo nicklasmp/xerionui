@@ -1,14 +1,14 @@
 --------------------------------------------------------------------------------
 -- CC Tracker
 -- Bars for the crowd control on enemies - how long the pack stays stunned -
--- coloured and named per spell, with a sound when one lands. Inside a key an
+-- colored and named per spell, with a sound when one lands. Inside a key an
 -- enemy's debuffs are secret, so Lua never learns the spell, the seconds or
 -- the mob: the engine draws all of it.
 --
 -- THE SPELL IS SETTLED BEFORE THE AURA EXISTS
 -- Every enemy's AuraContainer gets one display PER LISTED SPELL, filtered to
 -- that spell's ID; a button built for it can only ever show that spell, so
--- its initializer paints the spell's colour, name and icon, and the engine
+-- its initializer paints the spell's color, name and icon, and the engine
 -- binds only the fill and the seconds. (Spell-ID filters are honoured for
 -- harmful auras on units you cannot assist.)
 --
@@ -45,7 +45,7 @@ local MAX_SAMPLES = 12
 local GROUP_KEY, SLOT_KEY = "ccb", "ccbs"
 local LEVEL_STEP = 12
 
--- Short names, colours and the caster's class for the default list.
+-- Short names, colors and the caster's class for the default list.
 local BUILTIN = {
 	[372048] = { "Roar", 0.09, 0.75, 0.83, "EVOKER" },
 	[204490] = { "Silence", 0.09, 0.75, 0.83, "DEMONHUNTER" },
@@ -61,7 +61,7 @@ local BUILTIN = {
 
 local M = XUI:NewModule("CCTracker", {
 	name = "CC Tracker",
-	desc = "Bars for crowd control on enemies, coloured per spell.",
+	desc = "Bars for crowd control on enemies, colored per spell.",
 	category = "group",
 	icon = [[Interface\Icons\Spell_Frost_Stun]],
 	order = 60,

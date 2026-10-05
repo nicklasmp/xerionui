@@ -132,7 +132,7 @@ function Glow.StartAnts(owner, o)
 			E.count = count
 		end
 	end
-	-- colour every pass; start all dashes together so they stay in step
+	-- color every pass; start all dashes together so they stay in step
 	for _, E in ipairs(st.edges) do
 		for j = 1, E.count or 0 do
 			local s = E.segs[j]

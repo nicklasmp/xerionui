@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- Death Alert
--- "<Name> died" in the dead player's class colour when someone in your group
+-- "<Name> died" in the dead player's class color when someone in your group
 -- dies, with an optional sound or spoken alert. In a raid each role can be
 -- switched on or off on its own.
 -- Ported from ItruliaQoL (MIT, (c) Itrulia).

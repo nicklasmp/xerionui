@@ -10,7 +10,7 @@
 --     border = { useGlobal = true }                                  -- kind "border"
 --     glow   = { enabled = true, useGlobal = true }                  -- kind "glow"
 -- Resolve(kind, block) merges it over the global style (DB.style[kind]):
---   * useGlobal ~= false: only the element's LOCAL fields (size, colour,
+--   * useGlobal ~= false: only the element's LOCAL fields (size, color,
 --     enabled ...) come from the block, the rest is the global look.
 --   * useGlobal == false: every field in the block wins; anything it lacks
 --     still falls back to the global value.
@@ -279,7 +279,7 @@ function BorderMixin:Apply(block)
 		if self.outer then ShowEdges(self.outer, false) end
 		self.inset = t
 	elseif style == "DOUBLE" then
-		-- a 1px black outline, then the coloured line inside it
+		-- a 1px black outline, then the colored line inside it
 		local one = Style:Pixels(owner, 1)
 		local t = Style:Pixels(owner, px)
 		if not self.outer then

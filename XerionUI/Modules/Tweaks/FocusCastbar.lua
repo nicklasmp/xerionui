@@ -7,8 +7,8 @@
 -- StatusBar child, wherever and however it is anchored.
 --
 -- The background is the large texture behind the fill. Rather than painting it
--- once and hoping, the texture's own colour setters are hooked, so whenever
--- EllesmereUI recolours it (a rebuild, a new cast, a profile change) our colour
+-- once and hoping, the texture's own color setters are hooked, so whenever
+-- EllesmereUI recolors it (a rebuild, a new cast, a profile change) our color
 -- goes straight back on. The hook is installed once per texture and does
 -- nothing while the module is off.
 --------------------------------------------------------------------------------
@@ -16,7 +16,7 @@ local XUI = select(2, ...).XUI
 
 local M = XUI:NewModule("EUIFocusCastbar", {
 	name = "Focus Cast Bar",
-	desc = "A custom background colour for the Mythic+ Tools focus cast bar (not the unit frames' one).",
+	desc = "A custom background color for the Mythic+ Tools focus cast bar (not the unit frames' one).",
 	category = "tweaks",
 	icon = [[Interface\Icons\Spell_Nature_Polymorph]],
 	order = 30,

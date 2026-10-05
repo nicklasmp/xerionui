@@ -2,7 +2,7 @@
 -- Elemental Blast letters (Shaman)
 -- Elemental Blast leaves one of three buffs - Critical Strike, Haste or
 -- Mastery - and the Cooldown Manager tracks each as a buff of its own. This
--- puts a letter above each icon: C, H or M, with its own colour.
+-- puts a letter above each icon: C, H or M, with its own color.
 --
 -- It adds no icons: the letter hangs off the Cooldown Manager's own icon frame
 -- (BuffIconCooldownViewer), so it follows the icon wherever it is put and

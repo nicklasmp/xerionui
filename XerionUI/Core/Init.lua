@@ -21,7 +21,7 @@ XUI.OPTIONS_ADDON = ADDON_NAME .. "_Options"
 XUI.version = (C_AddOns and C_AddOns.GetAddOnMetadata(ADDON_NAME, "Version")) or "dev"
 XUI.MEDIA_PATH = [[Interface\AddOns\]] .. ADDON_NAME .. [[\Media\]]
 
--- Brand colours. ACCENT is the default; the live accent is read from the
+-- Brand colors. ACCENT is the default; the live accent is read from the
 -- database (XUI.DB.global.accent) once it exists, so code that paints with the
 -- accent calls XUI.GetAccent() rather than reading this table.
 XUI.ACCENT = { 1, 0.49, 0.04, 1 }
@@ -217,7 +217,7 @@ function XUI.Clamp(v, lo, hi)
 end
 
 --------------------------------------------------------------------------------
--- Colours are stored as { r, g, b, a } arrays everywhere in the addon.
+-- Colors are stored as { r, g, b, a } arrays everywhere in the addon.
 --------------------------------------------------------------------------------
 function XUI.UnpackColor(c, fr, fg, fb, fa)
 	if type(c) ~= "table" then return fr or 1, fg or 1, fb or 1, fa or 1 end

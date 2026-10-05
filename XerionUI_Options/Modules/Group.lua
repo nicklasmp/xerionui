@@ -82,8 +82,8 @@ O:RegisterModuleOptions("Interrupts", function(ctx, m, G)
 			{ type = "toggle", label = "Only in a group", path = "groupOnly" },
 			{ type = "toggle", label = "Hide in raids", path = "hideInRaid" },
 			{ type = "toggle", label = "Raid marker of the kicked mob", path = "showMark", hidden = barMode },
-			{ type = "toggle", label = "Icon", path = "showIcon", hidden = barMode },
-			{ type = "toggle", label = "Timer", path = "showTimer" },
+			{ type = "toggle", label = "Show icon", path = "showIcon", hidden = barMode },
+			{ type = "toggle", label = "Show timer", path = "showTimer" },
 		}),
 		Card("Bars", Join(G.Bar("bar"), {
 			{ type = "dropdown", label = "Grow", path = "growth", values = m.GROWTH },
@@ -138,7 +138,7 @@ O:RegisterModuleOptions("CoTank", function(ctx, m, G)
 			{ type = "dropdown", label = "Attach to bar", path = "debuffs.attach", values = XUI.Style.ANCHORS, disabled = noDebuffs },
 			{ type = "slider", label = "Offset X", path = "debuffs.x", min = -100, max = 100, step = 1, disabled = noDebuffs },
 			{ type = "slider", label = "Offset Y", path = "debuffs.y", min = -100, max = 100, step = 1, disabled = noDebuffs },
-			{ type = "toggle", label = "Dispel-colour border", path = "debuffs.dispelBorder", disabled = noDebuffs },
+			{ type = "toggle", label = "Dispel-color border", path = "debuffs.dispelBorder", disabled = noDebuffs },
 			{ type = "slider", label = "Border thickness (pixels)", path = "debuffs.borderSize", min = 1, max = 6, step = 1, disabled = noDebuffs },
 			{ type = "toggle", label = "Tooltip on hover", path = "debuffs.tooltip", disabled = noDebuffs },
 		}),
@@ -160,7 +160,7 @@ O:RegisterModuleOptions("Shroud", function(ctx, m, G)
 			{ type = "toggle", label = "Your own Shroud when you are the rogue", path = "selfBar", width = "full" },
 		}),
 		Card("Bar", Join(G.Bar("bar"), {
-			{ type = "toggle", label = "Icon", path = "showIcon" },
+			{ type = "toggle", label = "Show icon", path = "showIcon" },
 			{ type = "slider", label = "Gap between icon and bar", path = "iconGap", min = 0, max = 10, step = 1 },
 			{ type = "slider", label = "Gap between bars", path = "gap", min = 0, max = 20, step = 1 },
 		})),

@@ -583,7 +583,7 @@ function Controls.custom(parent, desc, ctx)
 end
 
 --------------------------------------------------------------------------------
--- Spell list: one row per spell ID (icon, name, ID), optional colour and
+-- Spell list: one row per spell ID (icon, name, ID), optional color and
 -- label per spell, optional reordering, and a box to add an ID.
 --   path        the list of IDs
 --   colors      path of an [id] = {r,g,b} table (optional)

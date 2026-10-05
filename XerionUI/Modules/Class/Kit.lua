@@ -46,7 +46,7 @@ end
 -- Settings it reads from M.db: icon, border, glow, timerText, showSwipe,
 -- position (all optional except icon/position).
 -- Adds M:Start(), M:Clear(), M:IsActive() and an OnRefresh that draws it;
--- a module may define M:OnTick(left, display) to recolour the text.
+-- a module may define M:OnTick(left, display) to recolor the text.
 --------------------------------------------------------------------------------
 function Kit.TimedIcon(M, opts)
 	local display, ticker

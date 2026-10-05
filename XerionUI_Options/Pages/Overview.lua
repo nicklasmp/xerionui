@@ -19,7 +19,7 @@ local function ClassSuffix(m)
 	return "  |cff777777" .. table.concat(names, ", ") .. "|r"
 end
 
--- short text, colour and the full sentence for the tooltip
+-- short text, color and the full sentence for the tooltip
 local function Status(m)
 	if (m.errorCount or 0) > 0 then
 		return "Errors", { O:Color("danger") }, ("%d Lua error(s); open the module and use Diagnostics."):format(m.errorCount)

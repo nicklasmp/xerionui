@@ -9,8 +9,8 @@
 --   G.Border(path, opts)      border style block
 --   G.Glow(path, opts)        glow style block
 --   G.Icon(path, opts)        icon size + crop
---   G.Bar(path, opts)         status bar size + texture + colours
---   G.Background(path, opts)  background texture + colour
+--   G.Bar(path, opts)         status bar size + texture + colors
+--   G.Background(path, opts)  background texture + color
 --   G.Alert(path, opts)       sound / text to speech
 --   G.Position(path, opts)    placement on screen
 --
@@ -291,7 +291,7 @@ end
 
 --------------------------------------------------------------------------------
 -- Bar
--- opts.color: show a fill colour (bars whose colour is not semantic)
+-- opts.color: show a fill color (bars whose color is not semantic)
 --------------------------------------------------------------------------------
 function G.Bar(path, opts)
 	opts = opts or {}
@@ -313,7 +313,7 @@ function G.Bar(path, opts)
 			type = "color", label = "Background color",
 		})
 	else
-		-- an element's own field (like the fill colour): it works without
+		-- an element's own field (like the fill color): it works without
 		-- leaving the global style, and shows the global one until set
 		items[#items + 1] = {
 			type = "color", label = "Background color", path = path .. ".bgColor",

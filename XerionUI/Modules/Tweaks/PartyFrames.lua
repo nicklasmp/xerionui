@@ -7,11 +7,11 @@
 -- width of their combined fill IS the percentage (100 units wide), and the
 -- text prints that width. Read one frame later, once the fills have settled.
 --
--- Colour by value: Lua cannot compare the total either, so the colour is
+-- Color by value: Lua cannot compare the total either, so the color is
 -- picked by clipping. A second, wider sensor pair puts the end of its fill K
 -- units right of the number's centre per percent; each step T has an edge
 -- K*T left of that end, and four clip frames between the edges each hold a
--- copy of the number in its band's colour - only one copy is ever visible.
+-- copy of the number in its band's color - only one copy is ever visible.
 --
 -- Debuff stack placement: wraps EllesmereUI's party debuff aura styles so the
 -- stack count can sit elsewhere (Top is centred just above the icon).
@@ -114,7 +114,7 @@ local function Build(btn)
 	return w
 end
 
--- half a percent early, so the colour changes where the rounded number does
+-- half a percent early, so the color changes where the rounded number does
 local function Edge(t) return -K * (t - 0.5) end
 
 local function LayoutBands(w, h)
@@ -513,7 +513,7 @@ function M:OnDisable()
 	if sample then sample:Hide() end
 end
 
--- The sample: the number in each colour step, so the thresholds and colours
+-- The sample: the number in each color step, so the thresholds and colors
 -- can be judged without a party in combat.
 local numbers
 local function PreviewNumbers()
@@ -536,7 +536,7 @@ local function PaintNumbers()
 	local h = M.db.health
 	local steps = { h.t1, h.t2, h.t3 }
 	table.sort(steps)
-	-- one value inside each colour band
+	-- one value inside each color band
 	local values = { math.max(1, steps[1] - 10), math.floor((steps[1] + steps[2]) / 2), math.floor((steps[2] + steps[3]) / 2), steps[3] + 15 }
 	n:ClearAllPoints()
 	n:SetPoint("CENTER", UIParent, "CENTER", 0, -200)
@@ -550,7 +550,7 @@ local function PaintNumbers()
 end
 
 -- The preview on the real party frames: each shows a number from a different
--- colour band, placed exactly where the live number goes.
+-- color band, placed exactly where the live number goes.
 local function PreviewValues()
 	local h = M.db.health
 	local steps = { h.t1, h.t2, h.t3 }

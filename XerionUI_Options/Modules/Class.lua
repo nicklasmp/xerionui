@@ -43,7 +43,7 @@ O:RegisterModuleOptions("BoilingPoint", function(ctx, m, G)
 	return {
 		Card("Bar", Join(G.Bar("bar", { color = true }), {
 			{ type = "toggle", label = "Also a bar while the proc is up", path = "procBar" },
-			{ type = "color", label = "Proc bar colour", path = "procColor" },
+			{ type = "color", label = "Proc bar color", path = "procColor" },
 		})),
 		Card("Border", G.Border("border")),
 		Card("Timer text", G.Font("timerText", { toggle = "Show timer" })),
@@ -76,8 +76,8 @@ end)
 O:RegisterModuleOptions("BloodBeast", function(ctx, m, G)
 	return {
 		Card("Text", Join(G.Font("font"), {
-			{ type = "color", label = "Label colour", path = "labelColor" },
-			{ type = "color", label = "Value colour", path = "valueColor" },
+			{ type = "color", label = "Label color", path = "labelColor" },
+			{ type = "color", label = "Value color", path = "valueColor" },
 		})),
 		Card("Position", G.Position("position")),
 	}
@@ -87,8 +87,8 @@ O:RegisterModuleOptions("ControlUndead", function(ctx, m, G)
 	return TimedIconCards(G, {
 		Card("When", {
 			{ type = "toggle", label = "Hide when the minion is gone", path = "hideOnPetLost" },
-			{ type = "slider", label = "Warn colour with seconds left", path = "warnAt", min = 0, max = 120, step = 5 },
-			{ type = "color", label = "Warn colour", path = "warnColor" },
+			{ type = "slider", label = "Warn color with seconds left", path = "warnAt", min = 0, max = 120, step = 5 },
+			{ type = "color", label = "Warn color", path = "warnColor" },
 		}),
 	})
 end)
@@ -115,7 +115,7 @@ O:RegisterModuleOptions("Blightfall", function(ctx, m, G)
 		Card("Icon", G.Icon("icon", { square = true })),
 		Card("Border", G.Border("border")),
 		Card("Glow in the last seconds", G.Glow("glow"), { previewState = "now" }),
-		Card("Countdown text", G.Font("timerText", { toggle = "Show countdown", anchor = true }), { previewState = "sr" }),
+		Card("Timer text", G.Font("timerText", { toggle = "Show timer", anchor = true }), { previewState = "sr" }),
 		Card("Position", G.Position("position")),
 	}
 end)
@@ -146,8 +146,8 @@ end)
 O:RegisterModuleOptions("SpellReflect", function(ctx, m, G)
 	return {
 		Card("Text", Join(G.Font("font"), {
-			{ type = "color", label = "Label colour", path = "labelColor" },
-			{ type = "color", label = "Value colour", path = "valueColor" },
+			{ type = "color", label = "Label color", path = "labelColor" },
+			{ type = "color", label = "Value color", path = "valueColor" },
 		})),
 		Card("Learned spells", {
 			{ type = "description", width = "full", text = "Which damage lines are yours is learned after fights without a reflect, per character." },
@@ -205,7 +205,7 @@ O:RegisterModuleOptions("FieryBrand", function(ctx, m, G)
 		})),
 		Card("Border on you (buff)", G.Border("buffBorder")),
 		Card("Border on the target (debuff)", G.Border("debuffBorder")),
-		Card("Seconds", G.Font("timerText", { toggle = "Show seconds", anchor = true })),
+		Card("Timer text", G.Font("timerText", { toggle = "Show timer", anchor = true })),
 		Card("Position", G.Position("position")),
 	}
 end)
@@ -216,7 +216,7 @@ O:RegisterModuleOptions("ReapersMark", function(ctx, m, G)
 			{ type = "toggle", label = "Cooldown swipe", path = "showSwipe" },
 		})),
 		Card("Border", G.Border("border")),
-		Card("Seconds", G.Font("timerText", { toggle = "Show seconds", anchor = true })),
+		Card("Timer text", G.Font("timerText", { toggle = "Show timer", anchor = true })),
 		Card("Stacks", G.Font("stackText", { toggle = "Show stacks", anchor = true, color = true })),
 		Card("Position", G.Position("position")),
 	}
@@ -227,7 +227,7 @@ O:RegisterModuleOptions("ForbiddenSacrifice", function(ctx, m, G)
 		Card("Bars", {
 			{ type = "dropdown", label = "Grow", path = "grow", values = m.GROW },
 			{ type = "slider", label = "Spacing", path = "spacing", min = 0, max = 20, step = 1 },
-			{ type = "toggle", label = "Icon", path = "showIcon" },
+			{ type = "toggle", label = "Show icon", path = "showIcon" },
 		}),
 		Card("Bar", G.Bar("bar", { color = true })),
 		Card("Border", G.Border("border")),
@@ -245,7 +245,7 @@ O:RegisterModuleOptions("ShiningLight", function(ctx, m, G)
 			{ type = "color", label = "Shield of the Righteous charges", path = "chargeColor" },
 		})),
 		Card("Border", G.Border("border")),
-		Card("Seconds", Join({ { type = "toggle", label = "Show seconds", path = "showTimers", width = "full" } }, G.Font("timerText")), { previewState = "full" }),
+		Card("Timer text", Join({ { type = "toggle", label = "Show timer", path = "showTimers", width = "full" } }, G.Font("timerText")), { previewState = "full" }),
 		Card("Position", G.Position("position")),
 	}
 end)
@@ -256,7 +256,7 @@ O:RegisterModuleOptions("ExpelHarmOrbs", function(ctx, m, G)
 			{ type = "slider", label = "Orb size", path = "orbSize", min = 6, max = 40, step = 1 },
 			{ type = "slider", label = "Arc radius", path = "orbRadius", min = 10, max = 120, step = 1 },
 			{ type = "slider", label = "Arc spread (degrees)", path = "orbSpread", min = 20, max = 240, step = 5 },
-			{ type = "color", label = "Colour", path = "orbColor" },
+			{ type = "color", label = "Color", path = "orbColor" },
 		}),
 		Card("Position", G.Position("position")),
 	}
@@ -279,7 +279,7 @@ O:RegisterModuleOptions("ElixirProc", function(ctx, m, G)
 			{ type = "toggle", label = "Cooldown swipe", path = "showSwipe" },
 		})),
 		Card("Border", G.Border("border")),
-		Card("Seconds", G.Font("timerText", { toggle = "Show seconds" })),
+		Card("Timer text", G.Font("timerText", { toggle = "Show timer" })),
 		Card("Position", G.Position("position")),
 	}
 end)
@@ -325,12 +325,12 @@ O:RegisterModuleOptions("Ironfur", function(ctx, m, G)
 			{ type = "description", width = "full", text = "Put Ironfur on a Cooldown Manager buff bar to get the glow there; or switch on the icon below." },
 		}, { previewState = true }),
 		Card("Glow", G.Glow("glow")),
-		Card("Voice or sound", G.Alert("alert", { fallbackText = "Ironfur" })),
+		Card("Alert", G.Alert("alert", { fallbackText = "Ironfur" })),
 		Card("Icon of its own", Join({
 			{ type = "toggle", label = "Show an icon with the seconds left", path = "showIcon", width = "full" },
 		}, G.Icon("icon", { square = true }))),
 		Card("Border", G.Border("border")),
-		Card("Seconds", G.Font("timerText", { toggle = "Show seconds" })),
+		Card("Timer text", G.Font("timerText", { toggle = "Show timer" })),
 		Card("Position", G.Position("position")),
 	}
 end)

@@ -41,8 +41,8 @@ end)
 O:RegisterModuleOptions("EUIFocusCastbar", function(ctx, m, G)
 	return {
 		Card("Background", {
-			{ type = "color", label = "Background colour", path = "color",
-				tip = "Tints the empty background behind the cast fill. The cast colour itself is unchanged." },
+			{ type = "color", label = "Background color", path = "color",
+				tip = "Tints the empty background behind the cast fill. The cast color itself is unchanged." },
 		}),
 	}
 end)
@@ -77,9 +77,9 @@ O:RegisterModuleOptions("EUIPartyFrames", function(ctx, m, G)
 			{ type = "slider", label = "Offset Y", path = "health.y", min = -30, max = 30, step = 1, disabled = off },
 		}),
 		Card("Text", G.Font("healthText"), { hidden = function() return off() or m.db.health.matchName end }),
-		Card("Colour", {
-			{ type = "toggle", label = "Colour by value", path = "health.byValue", width = "full", disabled = off },
-			{ type = "color", label = "Text colour", path = "health.color", hidden = single, disabled = off },
+		Card("Color", {
+			{ type = "toggle", label = "Color by value", path = "health.byValue", width = "full", disabled = off },
+			{ type = "color", label = "Text color", path = "health.color", hidden = single, disabled = off },
 			{ type = "color", label = "Below step 1", path = "health.c1", hidden = byValue, disabled = off },
 			{ type = "slider", label = "Step 1", path = "health.t1", min = 1, max = 200, step = 1, hidden = byValue, disabled = off },
 			{ type = "color", label = "Step 1 to 2", path = "health.c2", hidden = byValue, disabled = off },

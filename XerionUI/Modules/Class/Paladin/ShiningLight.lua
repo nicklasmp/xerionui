@@ -2,8 +2,8 @@
 -- Shining Light bar (Protection)
 -- An eight-segment bar of Shield of the Righteous: each free Shining Light
 -- (the proc that makes Word of Glory free) fills three segments in the free
--- colour, and the charge your own Shields of the Righteous build (up to two,
--- 29.5 seconds each) fills one segment per charge in the charge colour. The
+-- color, and the charge your own Shields of the Righteous build (up to two,
+-- 29.5 seconds each) fills one segment per charge in the charge color. The
 -- seconds left show at either end.
 --
 -- Where the numbers come from: the free procs are read off the Cooldown
