@@ -62,6 +62,18 @@ O:RegisterModuleOptions("EUICDMStackFont", function(ctx, m, G)
 	}
 end)
 
+O:RegisterModuleOptions("ZoneText", function(ctx, m, G)
+	return {
+		Card("Font", Join({
+			{ type = "slider", label = "Size", path = "scale", min = 50, max = 200, step = 5,
+				tip = "Percent of Blizzard's own size. The color of the text stays as the game sets it for the zone." },
+		}, G.Font("font", { noSize = true }))),
+		Card("Preview", {
+			{ type = "button", text = "Show sample", onClick = function() m:Test() end },
+		}),
+	}
+end)
+
 O:RegisterModuleOptions("EUIFocusCastbar", function(ctx, m, G)
 	return {
 		Card("Background", {
