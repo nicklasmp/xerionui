@@ -215,6 +215,42 @@ Step("close options + slash commands", function()
 	SlashCmdList.XERIONUI("version")
 end)
 
+Step("message bus survives listeners that add listeners", function()
+	local owner, late, hits = {}, {}, 0
+	XUI:On("XUITestMessage", owner, function()
+		hits = hits + 1
+		XUI:On("XUITestMessage", late, function() hits = hits + 100 end)
+	end)
+	XUI:Fire("XUITestMessage")
+	assert(hits == 1, "a listener added during Fire must wait for the next one, got " .. hits)
+	XUI:Fire("XUITestMessage")
+	assert(hits == 102, "the added listener runs on the next Fire, got " .. hits)
+	XUI:Off("XUITestMessage", owner)
+	XUI:Off("XUITestMessage", late)
+end)
+
+Step("media lists are sorted once and shared", function()
+	local a = XUI.Media:List("font")
+	assert(XUI.Media:List("font") == a, "the font list should be cached")
+	for i = 2, #a do
+		assert(a[i - 1]:lower() <= a[i]:lower(), "font list not sorted at " .. i)
+	end
+	local v = XUI.Media.version
+	XUI.Media.LSM:Register("font", "ZZ Test Font", [[Fonts\ARIALN.TTF]])
+	assert(XUI.Media.version == v + 1, "registering media should bump the list version")
+	local b = XUI.Media:List("font")
+	assert(b ~= a and b[#b] == "ZZ Test Font", "the new font should be listed last")
+end)
+
+Step("profile command ignores capitalisation", function()
+	XUI.DB:NewProfile("CaseTest", false)
+	XUI.DB:SetProfile("Default")
+	SlashCmdList.XERIONUI("profile casetest")
+	assert(XUI.DB:GetProfileName() == "CaseTest", "got " .. tostring(XUI.DB:GetProfileName()))
+	XUI.DB:SetProfile("Default")
+	XUI.DB:DeleteProfile("CaseTest")
+end)
+
 Step("logout strips defaults", function()
 	MOCK.Fire("PLAYER_LOGOUT")
 	local sv = _G.XerionUIDB

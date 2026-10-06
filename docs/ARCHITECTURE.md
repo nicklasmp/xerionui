@@ -19,7 +19,7 @@ Load order matters; each file builds on the ones above it.
 | `Midnight.lua` | secret-safe questions (`Ask`), `AuraPayloadChurns`, `Restricted`/`AuraSoundsBlocked`, AuraContainer helpers, duration text formatters, `PlayerIsTank`, `KeyActive`, `ClassColor` |
 | `Data.lua` | shared game data (interrupt spells, `Data.PlayerKick()`) |
 | `Database.lua` | `XUI.DB`: saved variables, profiles, defaults (inflate on activate, strip on logout), import/export |
-| `Media.lua` | `XUI.Media`: LibSharedMedia lookups with caching and fallbacks, sorted lists |
+| `Media.lua` | `XUI.Media`: LibSharedMedia lookups with caching and fallbacks, sorted lists (built once per registration, shared: read only, `Media.version` bumps when they change) |
 | `Glow.lua` | script-free glows (ants, pulse): AnimationGroups only, safe on engine aura buttons |
 | `Style.lua` | `XUI.Style`: resolves style blocks and applies fonts, borders, backgrounds, bars, icon crops and glows |
 | `Audio.lua` | `XUI.Audio`: sound / text-to-speech alert blocks |

@@ -92,6 +92,7 @@ function geterrorhandler()
 end
 function seterrorhandler() end
 function securecall(fn, ...) return fn(...) end
+securecallfunction = securecall
 function issecure() return false end
 function InCombatLockdown() return MOCK.inCombat or false end
 function GetTime() return MOCK.now end

@@ -57,6 +57,8 @@ end
 
 local function UnitFromGUID(guid)
 	if guid == nil or (hasanysecretvalues and hasanysecretvalues(guid)) or IsSecret(guid) then return nil end
+	-- UNIT_DIED fires for every mob that dies: only a player can be the group
+	if type(guid) ~= "string" or guid:sub(1, 7) ~= "Player-" then return nil end
 	local token = UnitTokenFromGUID and UnitTokenFromGUID(guid)
 	if token then return token end
 	if guid == UnitGUID("player") then return "player" end
