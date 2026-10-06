@@ -49,16 +49,9 @@ function O.CreatePageHead(parent)
 		end
 	end)
 
-	f.reset = O:IconButton(f, "reset", 28, "Reset to defaults", function()
-		local m = f.module
-		if not m then return end
-		StaticPopup_Show("XERIONUI_RESET_MODULE", m.name, nil, m)
-	end)
-	f.reset:SetPoint("RIGHT", f.enable, "LEFT", -12, 0)
-
 	f.preview = CreateFrame("Button", nil, f)
 	f.preview:SetSize(96, 28)
-	f.preview:SetPoint("RIGHT", f.reset, "LEFT", -8, 0)
+	f.preview:SetPoint("RIGHT", f.enable, "LEFT", -12, 0)
 	O:Skin(f.preview, "control", "controlLine")
 	f.preview.icon = O:Icon(f.preview, "eye", 16, "muted")
 	f.preview.icon:SetPoint("LEFT", 10, 0)
@@ -136,7 +129,6 @@ function O:RefreshPageHead()
 	f.module = m
 	local showModule = m ~= nil
 	f.enable:SetShown(showModule)
-	f.reset:SetShown(showModule)
 	f.preview:SetShown(showModule)
 	f.test:SetShown(showModule and m.Test ~= nil)
 	local states = showModule and m.PREVIEW_STATES
@@ -258,18 +250,3 @@ function O:ShowText(title, text)
 	textPopup.box:SetFocus()
 	textPopup.box:HighlightText()
 end
-
-StaticPopupDialogs.XERIONUI_RESET_MODULE = {
-	text = "Reset all settings of %s to their defaults?",
-	button1 = YES,
-	button2 = NO,
-	OnAccept = function(_, m)
-		m:Reset()
-		if S.pages[m.key] then S.pages[m.key]:Refresh() end
-		O:RefreshPageHead()
-	end,
-	timeout = 0,
-	whileDead = true,
-	hideOnEscape = true,
-	preferredIndex = 3,
-}

@@ -158,38 +158,6 @@ function O:CreatePage(parent, spec)
 	return page
 end
 
---------------------------------------------------------------------------------
--- A small reset mark on controls whose value differs from the module's default:
--- it shows what has been changed, and one click puts that one value back.
---------------------------------------------------------------------------------
-local RESETTABLE = { toggle = true, slider = true, color = true, dropdown = true, input = true }
-
-function O:AttachReset(control, desc, ctx)
-	local m = ctx.module
-	if not (m and desc.path and RESETTABLE[desc.type]) or desc.noReset then return end
-	local b = O:IconButton(control, "reset", 16, "Changed from the default - click to reset this value", function()
-		local default = XUI.GetPath(m.defaults, desc.path)
-		if default == nil then return end
-		XUI.SetPath(ctx:Root(), desc.path, XUI.CopyTable(default))
-		ctx:Changed(desc.path, default, desc)
-		control:Refresh()
-	end)
-	b:SetPoint("TOPRIGHT", control, "TOPRIGHT", 0, 2)
-	b:SetFrameLevel(control:GetFrameLevel() + 5)
-	b.icon:SetVertexColor(O:Accent())
-	b:Hide()
-	control.resetMark = b
-	local refresh = control.Refresh
-	function control:Refresh(...)
-		refresh(self, ...)
-		local default = XUI.GetPath(m.defaults, desc.path)
-		local current = XUI.GetPath(ctx:Root(), desc.path)
-		local changed = default ~= nil and current ~= nil and not XUI.DeepEqual(default, current)
-		b:SetShown(changed)
-		if changed then b.icon:SetVertexColor(O:Accent()) end
-	end
-end
-
 local function BuildCard(page, spec)
 	local card = { spec = spec, items = {} }
 	local f = CreateFrame("Frame", nil, page.child)
@@ -214,7 +182,6 @@ local function BuildCard(page, spec)
 		assert(make, "XerionUI options: unknown control type " .. tostring(desc.type))
 		local control = make(f, desc, page.ctx)
 		control.page = page
-		O:AttachReset(control, desc, page.ctx)
 		card.items[#card.items + 1] = control
 	end
 	return card

@@ -161,7 +161,7 @@ Prefer the widgets in `Widgets.lua` over hand-built frames: `CreateText`, `Creat
 
 ## Movers
 
-`XUI.Movers:Register(frame, module, "position")` once, `XUI.Movers:Apply(frame)` in `OnRefresh`. Positions are `CENTER`/`CENTER` offsets from UIParent, which is also EllesmereUI's format. `/xui unlock` opens EllesmereUI's unlock mode when it is installed (General → Unlock mode), otherwise ours (drag, arrow-key nudge, Shift = 10, right-click resets, optional grid snap). Both turn on previews for every enabled module.
+`XUI.Movers:Register(frame, module, "position")` once, `XUI.Movers:Apply(frame)` in `OnRefresh`. Positions are `CENTER`/`CENTER` offsets from UIParent, which is also EllesmereUI's format. `/xui unlock` opens EllesmereUI's unlock mode when it is installed (General → Unlock mode), otherwise ours (drag, arrow-key nudge of the clicked mover, Shift = 10, optional grid snap). Both turn on previews for every enabled module.
 
 ## Options (`XerionUI_Options`)
 
@@ -172,7 +172,7 @@ Prefer the widgets in `Widgets.lua` over hand-built frames: `CreateText`, `Creat
 | `Dropdown.lua` | the shared dropdown list (filter box, media previews, sound play buttons) |
 | `Page.lua` | contexts, cards, grid layout, scroll |
 | `Groups.lua` | the shared option groups (see below) |
-| `Panel.lua` | window, sidebar + search, page header (enable / preview / reset) |
+| `Panel.lua` | window, sidebar + search, page header (enable / preview) |
 | `Pages/*.lua` | Global Style, General, Profiles |
 | `Modules/*.lua` | one builder per module, grouped by category |
 
@@ -219,7 +219,6 @@ The harness (fengari, Lua 5.3) mocks the WoW API closely enough to load the TOCs
 | Preview follows the open page, window steps aside | `Panel.lua` (`SyncAutoPreview`, `UpdateDock`), General: `panel.autoPreview`, `panel.dock` |
 | Preview looks and card eye buttons | `module.PREVIEW_STATES`, `Module:SetPreviewState`, card option `previewState` |
 | Test button | optional `module:Test()` (use `self:RequireRunning()`) |
-| Reset mark on changed controls | `O:AttachReset` in `Page.lua` |
 | Style themes | Global Style page, `DB:SaveTheme/ApplyTheme` (account-wide) |
 | Automatic profile by content or spec | `Core/AutoProfile.lua`, Profiles page |
 | Attach a position to another frame | `position.attach` (+ `point`/`relPoint`), `Movers:Apply`, `G.Position` |
@@ -240,4 +239,4 @@ Add a check by putting a function in `Health.CHECKS[moduleKey]` that calls `prob
 
 ## Options window files
 
-`Panel.lua` (window, opening, page lookup, the shared state table `O.S`), `PageHead.lua` (page header, Diagnostics popup, reset dialog), `Sidebar.lua` (search, class folding, entries), `Preview.lua` (preview that follows the page, window docking). Aura-engine helpers shared by modules are in `Core/Engine.lua` (`XUI.Engine`).
+`Panel.lua` (window, opening, page lookup, the shared state table `O.S`), `PageHead.lua` (page header, Diagnostics popup), `Sidebar.lua` (search, class folding, entries), `Preview.lua` (preview that follows the page, window docking). Aura-engine helpers shared by modules are in `Core/Engine.lua` (`XUI.Engine`).

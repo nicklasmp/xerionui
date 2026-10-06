@@ -2,7 +2,7 @@
 -- XerionUI_Options - Panel.lua
 -- The window: header, sidebar (search, pages, modules by category) and the
 -- page area with its header (icon, title, description, and for modules the
--- enable switch, preview and reset).
+-- enable switch and preview).
 --------------------------------------------------------------------------------
 local XUI = _G.XerionUI
 local O = XUI and XUI.Options

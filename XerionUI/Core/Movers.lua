@@ -9,8 +9,8 @@
 -- and call XUI.Movers:Apply(frame) from OnRefresh.
 --
 -- Unlock mode (/xui unlock) previews every enabled module and lays a mover over
--- each registered frame: drag with the left button, nudge with the arrow keys
--- (Shift = 10px). The grid is on by default and can be switched off with the
+-- each registered frame: drag with the left button, click one and nudge it with
+-- the arrow keys (Shift = 10px). The grid is on by default and can be switched off with the
 -- Grid button (remembered).
 --------------------------------------------------------------------------------
 local XUI = select(2, ...).XUI
@@ -110,14 +110,6 @@ function Movers:SetOffset(entry, x, y)
 	self:Apply(entry.frame)
 end
 
-function Movers:Reset(entry)
-	local p, d = self:GetPosition(entry), self:GetDefaultPosition(entry)
-	if type(p) ~= "table" or type(d) ~= "table" then return end
-	p.point, p.relPoint, p.x, p.y, p.attach = d.point, d.relPoint, d.x, d.y, d.attach
-	self:Apply(entry.frame)
-	entry.module:RefreshSoon()
-end
-
 --------------------------------------------------------------------------------
 -- Unlock mode
 --------------------------------------------------------------------------------
@@ -129,9 +121,14 @@ local function Accent()
 	return XUI.UnpackColor(XUI.DB.global.accent)
 end
 
+local function Tint(ov)
+	local r, g, b = Accent()
+	ov.bg:SetColorTexture(r, g, b, (Movers.selected == ov or ov:IsMouseOver()) and 0.32 or 0.18)
+end
+
 local function UpdateLabel(ov)
 	local p = Movers:GetPosition(ov.entry)
-	if Movers.dragging == ov or ov:IsMouseOver() then
+	if Movers.dragging == ov or Movers.selected == ov or ov:IsMouseOver() then
 		ov.label:SetText(("%s\n|cffaaaaaa%d, %d|r"):format(ov.entry.label, p and p.x or 0, p and p.y or 0))
 	else
 		ov.label:SetText(ov.entry.label)
@@ -244,12 +241,56 @@ DragUpdate = function(ov)
 	UpdateLabel(ov)
 end
 
+-- The overlay the arrow keys move: the one last clicked, else the one under the mouse.
+function Movers:Select(ov)
+	local old = self.selected
+	self.selected = ov
+	if old and old ~= ov then Tint(old) UpdateLabel(old) end
+	if ov then Tint(ov) UpdateLabel(ov) end
+end
+
+local function KeyTarget()
+	if Movers.selected and Movers.selected:IsShown() then return Movers.selected end
+	for _, ov in pairs(overlays) do
+		if ov:IsShown() and ov:IsMouseOver() then return ov end
+	end
+end
+
+local function CreateKeys(parent)
+	local k = CreateFrame("Frame", nil, parent)
+	k:EnableKeyboard(true)
+	k:SetPropagateKeyboardInput(true)
+	k:SetScript("OnKeyDown", function(self, key)
+		local step = IsShiftKeyDown() and 10 or 1
+		local dx, dy = 0, 0
+		if key == "LEFT" then dx = -step
+		elseif key == "RIGHT" then dx = step
+		elseif key == "UP" then dy = step
+		elseif key == "DOWN" then dy = -step
+		else
+			self:SetPropagateKeyboardInput(true)
+			return
+		end
+		local ov = KeyTarget()
+		if not ov then
+			self:SetPropagateKeyboardInput(true)
+			return
+		end
+		self:SetPropagateKeyboardInput(false)
+		local p = Movers:GetPosition(ov.entry)
+		if p then
+			Movers:SetOffset(ov.entry, (p.x or 0) + dx, (p.y or 0) + dy)
+			UpdateLabel(ov)
+		end
+	end)
+	return k
+end
+
 local function CreateOverlay(entry)
 	local ov = CreateFrame("Frame", nil, UIParent)
 	ov.entry = entry
 	ov:SetFrameStrata("DIALOG")
 	ov:EnableMouse(true)
-	ov:EnableKeyboard(false)
 	ov:SetClampedToScreen(true)
 
 	local r, g, b = Accent()
@@ -268,6 +309,7 @@ local function CreateOverlay(entry)
 		if button ~= "LeftButton" then return end
 		local p = Movers:GetPosition(self.entry)
 		if type(p) ~= "table" then return end
+		Movers:Select(self)
 		local cx, cy = GetCursorPosition()
 		local us = UIParent:GetEffectiveScale()
 		self.drag = { cx = cx / us, cy = cy / us, x = p.x or 0, y = p.y or 0, moved = false }
@@ -294,40 +336,18 @@ local function CreateOverlay(entry)
 		end
 	end)
 	ov:SetScript("OnEnter", function(self)
-		self:EnableKeyboard(true)
-		local r, g, b = Accent()
-		self.bg:SetColorTexture(r, g, b, 0.32)
+		Tint(self)
 		UpdateLabel(self)
 		GameTooltip:SetOwner(self, "ANCHOR_TOP")
 		GameTooltip:AddLine(self.entry.label, 1, 1, 1)
-		GameTooltip:AddLine("Drag to move (hold Shift to turn snapping off). Arrow keys nudge (Shift: 10).", 0.7, 0.7, 0.7)
+		GameTooltip:AddLine("Drag to move (hold Shift to turn snapping off). Click it, then the arrow keys nudge (Shift: 10).", 0.7, 0.7, 0.7)
 		GameTooltip:AddLine("Double-click to open its settings.", 0.7, 0.7, 0.7)
 		GameTooltip:Show()
 	end)
 	ov:SetScript("OnLeave", function(self)
-		self:EnableKeyboard(false)
-		local r, g, b = Accent()
-		self.bg:SetColorTexture(r, g, b, 0.18)
+		Tint(self)
 		UpdateLabel(self)
 		GameTooltip:Hide()
-	end)
-	ov:SetScript("OnKeyDown", function(self, key)
-		local step = IsShiftKeyDown() and 10 or 1
-		local dx, dy = 0, 0
-		if key == "LEFT" then dx = -step
-		elseif key == "RIGHT" then dx = step
-		elseif key == "UP" then dy = step
-		elseif key == "DOWN" then dy = -step
-		else
-			self:SetPropagateKeyboardInput(true)
-			return
-		end
-		self:SetPropagateKeyboardInput(false)
-		local p = Movers:GetPosition(self.entry)
-		if p then
-			Movers:SetOffset(self.entry, (p.x or 0) + dx, (p.y or 0) + dy)
-			UpdateLabel(self)
-		end
 	end)
 	return ov
 end
@@ -436,6 +456,7 @@ local function CreateToolbar()
 		if on then grid:Build() grid:Show() else grid:Hide() end
 	end)
 	gridBtn:SetPoint("RIGHT", done, "LEFT", -6, 0)
+	f.keys = CreateKeys(f)
 	return f
 end
 
@@ -459,6 +480,7 @@ function XUI:SetUnlocked(on)
 		if toolbar then toolbar:Hide() end
 		if grid then grid:Hide() end
 		for _, ov in pairs(overlays) do ov:Hide() end
+		Movers.selected = nil
 	end
 end
 

@@ -129,16 +129,6 @@ O:RegisterSystemPage({
 			O.Card("Bars", G.Bar("bar", { global = true })),
 			O.Card("Backgrounds", G.Background("background", { global = true })),
 			O.Card("Icons", G.Icon("icon", { global = true })),
-			O.Card(nil, {
-				{
-					type = "button", text = "Reset global style",
-					onClick = function()
-						XUI.DB:ResetStyle()
-						XUI.Style:Invalidate()
-						XUI:Fire("StyleChanged")
-					end,
-				},
-			}),
 		}
 	end,
 })

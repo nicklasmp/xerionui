@@ -437,17 +437,6 @@ function G.Position(path, opts)
 		},
 		{ type = "spacer" },
 		{ type = "button", text = "Unlock frames", onClick = function() XUI:SetUnlocked(true) end },
-		{
-			type = "button", text = "Reset position",
-			onClick = function(ctx)
-				local m = ctx.module
-				local p, d = GetPath(ctx:Root(), path), m and GetPath(m.defaults, path)
-				if p and d then
-					p.point, p.relPoint, p.x, p.y, p.attach = d.point, d.relPoint, d.x, d.y, d.attach
-					ctx:Changed(path)
-				end
-			end,
-		},
 	}
 	return items
 end
