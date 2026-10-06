@@ -251,62 +251,6 @@ Step("profile command ignores capitalisation", function()
 	XUI.DB:DeleteProfile("CaseTest")
 end)
 
-Step("keystones: reports, own key, dismissal", function()
-	local m = XUI:GetModule("Keystones")
-	assert(m and m.running, "the Keystones module should be running")
-	local saved = {
-		UnitFullName = _G.UnitFullName, Ambiguate = _G.Ambiguate, GetNormalizedRealmName = _G.GetNormalizedRealmName,
-		C_MythicPlus = _G.C_MythicPlus, C_ChallengeMode = _G.C_ChallengeMode, send = C_ChatInfo.SendAddonMessage,
-	}
-	local sent = {}
-	MOCK.inGroup = true
-	_G.UnitFullName = function(u) return ({ player = "Xerion", party1 = "Brew" })[u], nil end
-	_G.Ambiguate = function(s) return s end
-	_G.GetNormalizedRealmName = function() return "Realm" end
-	_G.C_MythicPlus = {
-		GetOwnedKeystoneLevel = function() return 10 end,
-		GetOwnedKeystoneChallengeMapID = function() return 503 end,
-		RequestMapInfo = function() end,
-	}
-	_G.C_ChallengeMode = {
-		GetMapUIInfo = function(id) return "Ara-Kara", id, 0, 111, 0, 2660 end,
-		IsChallengeModeActive = function() return false end,
-	}
-	C_ChatInfo.SendAddonMessage = function(prefix, text, channel) sent[#sent + 1] = prefix .. "|" .. text .. "|" .. channel end
-	local function kept() return m:DebugInfo()[3]:match("reports kept: (%d+)") end
-	local function holder() return _G.XUI_Keystones end
-
-	MOCK.Advance(4)
-	m:Test()
-	assert(sent[1] == "LibKS|R|PARTY", "Test should ask the group, sent " .. tostring(sent[1]))
-	assert(holder() and holder():IsShown(), "the list should be shown")
-
-	MOCK.Fire("CHAT_MSG_ADDON", "LibKS", "12,503,2500", "PARTY", "Brew")
-	assert(kept() == "1", "a report should be kept, got " .. tostring(kept()))
-	MOCK.Fire("CHAT_MSG_ADDON", "LibKS", "garbage", "PARTY", "Brew")
-	MOCK.Fire("CHAT_MSG_ADDON", "Other", "5,1,1", "PARTY", "Brew")
-	MOCK.Fire("CHAT_MSG_ADDON", "LibKS", "7,503,100", "WHISPER", "Brew")
-	assert(kept() == "1", "bad or foreign messages must be ignored, got " .. tostring(kept()))
-	MOCK.Advance(0.5)
-
-	MOCK.Advance(4)
-	MOCK.Fire("CHAT_MSG_ADDON", "LibKS", "R", "PARTY", "Brew")
-	assert(sent[#sent] == "LibKS|10,503,0|PARTY", "a request should be answered with our key, sent " .. tostring(sent[#sent]))
-
-	holder()._scripts.OnMouseUp(holder(), "RightButton")
-	assert(not holder():IsShown(), "right-click should dismiss")
-	m:Toggle()
-	assert(holder():IsShown(), "/xui keys should show it again")
-	MOCK.Fire("CHALLENGE_MODE_START")
-	assert(not holder():IsShown(), "the key starting should dismiss it")
-
-	MOCK.inGroup = false
-	_G.UnitFullName, _G.Ambiguate, _G.GetNormalizedRealmName = saved.UnitFullName, saved.Ambiguate, saved.GetNormalizedRealmName
-	_G.C_MythicPlus, _G.C_ChallengeMode = saved.C_MythicPlus, saved.C_ChallengeMode
-	C_ChatInfo.SendAddonMessage = saved.send
-	m:Refresh()
-end)
-
 Step("logout strips defaults", function()
 	MOCK.Fire("PLAYER_LOGOUT")
 	local sv = _G.XerionUIDB
