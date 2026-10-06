@@ -38,6 +38,15 @@ O:RegisterModuleOptions("EUIFocusKick", function(ctx, m, G)
 	}
 end)
 
+O:RegisterModuleOptions("EUIFlyingBar", function(ctx, m, G)
+	return {
+		Card("Whirling Surge icon", {
+			{ type = "toggle", label = "Hide the icon", path = "hideIcon",
+				tip = "Removes the Whirling Surge icon beside the bars; the bars close up. Switching this module off puts EllesmereUI's own icon setting back." },
+		}),
+	}
+end)
+
 O:RegisterModuleOptions("EUIFocusCastbar", function(ctx, m, G)
 	return {
 		Card("Background", {

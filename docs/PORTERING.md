@@ -33,7 +33,7 @@ Melee Indicator, Death Alert, Externals, Party Interrupts, Co-Tank, Shroud/Mass 
 | Prevent Release | I | ⏳ | |
 | Cursor Circle | I | ❓ | EllesmereUI har selv cursor-features |
 | Misc (AH-filtre m.m.) | I | ⏳ | AH-filteret skriver Blizzards globale `AUCTION_HOUSE_DEFAULT_FILTERS` — tjek for taint |
-| Flying Bar | I | ❓ | Legacy havde en global-lækage (`OnEvent`) |
+| Flying Bar | I | ✅ | Nu tweaks til EllesmereUI's Skyriding-bar (`EUIFlyingBar`): skjul Whirling Surge-ikonet. Utestet i spillet |
 
 ## Fase 3 — gruppe og Mythic+
 

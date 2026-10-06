@@ -75,6 +75,7 @@ Modules\Tweaks\FocusKick.lua
 Modules\Tweaks\FocusCastbar.lua
 Modules\Tweaks\TargetedSpellBars.lua
 Modules\Tweaks\PartyFrames.lua
+Modules\Tweaks\FlyingBar.lua
 
 # The options window is the load-on-demand addon XerionUI_Options; it is
 # loaded the first time /xui is used, so nothing of it costs anything at login.
