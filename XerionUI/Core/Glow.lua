@@ -22,9 +22,12 @@ local function Level(frame, owner, offset)
 	if ok and type(lvl) == "number" then pcall(frame.SetFrameLevel, frame, lvl + offset) end
 end
 
--- The owner's size. A host that has no size yet (or one the client will not
--- tell, on an engine button) falls back to the size the caller passed in o.
+-- The owner's size. With o.fixed the caller's o.width/o.height rule: an engine
+-- button's host reads 0 or 1 until the engine has laid it out, and only the
+-- caller knows what the button is sized to. Otherwise a host that reads no size
+-- falls back to o.width/o.height, and the third answer says the size is fixed.
 local function Size(owner, o)
+	if o and o.fixed and o.width and o.height and o.width > 0 and o.height > 0 then return o.width, o.height, true end
 	local ok, w, h = pcall(owner.GetSize, owner)
 	local unknown = not ok or XUI.IsSecret(w) or XUI.IsSecret(h) or not w or w <= 0 or not h or h <= 0
 	if unknown and o and o.width and o.height and o.width > 0 and o.height > 0 then return o.width, o.height end
@@ -68,12 +71,17 @@ function Glow.StartAnts(owner, o)
 	f:SetPoint("TOPLEFT", owner, "TOPLEFT", -off, off)
 	f:SetPoint("BOTTOMRIGHT", owner, "BOTTOMRIGHT", off, -off)
 
-	local w, h = Size(owner, o)
+	local w, h, fixed = Size(owner, o)
 	if not w or w <= 0 or h <= 0 then
 		f:Hide()
 		return
 	end
 	w, h = w + 2 * off, h + 2 * off
+	if fixed then
+		f:ClearAllPoints()
+		f:SetPoint("TOPLEFT", owner, "TOPLEFT", -off, off)
+		f:SetSize(w, h)
+	end
 
 	local lines = max(1, floor(o.lines or 8))
 	local freq = o.frequency or 0.25
@@ -225,12 +233,18 @@ function Glow.StartShine(owner, o)
 	f:SetPoint("TOPLEFT", owner, "TOPLEFT", -off, off)
 	f:SetPoint("BOTTOMRIGHT", owner, "BOTTOMRIGHT", off, -off)
 
-	local w, h = Size(owner, o)
+	local w, h, fixed = Size(owner, o)
 	if not w or w <= 0 or h <= 0 then
 		f:Hide()
 		return
 	end
 	w, h = w + 2 * off, h + 2 * off
+	-- a fixed size is the frame's own: it no longer follows the host's
+	if fixed then
+		f:ClearAllPoints()
+		f:SetPoint("TOPLEFT", owner, "TOPLEFT", -off, off)
+		f:SetSize(w, h)
+	end
 	local n = max(1, floor(o.particles or 4))
 	local freq = abs(o.frequency or 0.25)
 	if freq == 0 then freq = 0.25 end

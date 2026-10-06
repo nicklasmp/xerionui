@@ -419,14 +419,16 @@ Step("nameplates: auto-cast shine overrides the dispel glow style", function()
 	m:OnEnable()
 
 	local host = CreateFrame("Frame")
-	-- no size of its own yet, as an engine button's host: the size comes with the call
+	-- an engine button's host reads 1x1 until the engine lays it out: the size comes with the call
+	host:SetSize(1, 1)
 	host._euiGlowActive = true
 	local spec = ns.GetDispelGlowSpec(nil, {})
 	assert(spec.xuiShine and spec.style == 3, "the spec should be flagged and fingerprinted as Auto-Cast")
 	Glows.StartSpecGlow(host, spec, 24, 24, "engine")
 	assert(#drawn == 0, "EllesmereUI's own glow must not be drawn while the shine is on")
 	assert(host.__xuiGlow ~= nil, "our shine should be on the host")
-	assert(host.__xuiShine and host.__xuiShine.frame:IsShown(), "the shine should be drawn at the size passed in, though the host reads none")
+	assert(host.__xuiShine and host.__xuiShine.frame:IsShown(), "the shine should be drawn, though the host reads almost no size")
+	assert(host.__xuiShine.frame:GetWidth() == 24 and host.__xuiShine.frame:GetHeight() == 24, "and at the size passed in, not the host's")
 	assert(host._euiGlowActive == false, "EllesmereUI's glow should be taken off the host first")
 
 	-- a changed look reaches EllesmereUI's fingerprint

@@ -452,7 +452,8 @@ function Style:ShowGlow(frame, block, engineSafe, fw, fh)
 	end
 	local ok, w, h = pcall(frame.GetSize, frame)
 	if not ok or XUI.IsSecret(w) then w, h = 0, 0 end
-	if (not w or w <= 0 or not h or h <= 0) and fw and fh then w, h = fw, fh end
+	local fixed = fw and fh and fw > 0 and fh > 0
+	if fixed then w, h = fw, fh end
 	local sig = GlowSignature(kind, g) .. "|" .. floor((w or 0) + 0.5) .. "x" .. floor((h or 0) + 0.5)
 	if frame.__xuiGlowSig == sig then return end
 	if frame.__xuiGlow and frame.__xuiGlow ~= kind then self:HideGlow(frame) end
@@ -463,14 +464,14 @@ function Style:ShowGlow(frame, block, engineSafe, fw, fh)
 		XUI.Glow.StartAnts(frame, {
 			color = color, lines = g.lines, frequency = g.frequency, offset = offset,
 			length = g.length, thickness = self:Pixels(frame, max(1, g.thickness or 2)),
-			width = w, height = h,
+			width = w, height = h, fixed = fixed,
 		})
 	elseif kind == "PULSE" then
 		XUI.Glow.StartPulse(frame, { color = color, frequency = g.frequency, thickness = g.thickness })
 	elseif kind == "SHINE" then
 		local ok, err = pcall(XUI.Glow.StartShine, frame, {
 			color = color, particles = g.particles, frequency = g.frequency, scale = g.scale, offset = offset,
-			width = w, height = h,
+			width = w, height = h, fixed = fixed,
 		})
 		if not ok then
 			-- never leave the frame without a glow: say why, and use the pixel one

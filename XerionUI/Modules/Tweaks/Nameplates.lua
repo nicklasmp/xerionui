@@ -92,6 +92,7 @@ end
 --     flagged spec, and takes it away again when it is not flagged.
 --------------------------------------------------------------------------------
 local shineGen = 0
+local shineStats = { flagged = 0, drawn = 0 } -- for /xui debug
 
 local function ShineOn()
 	return M.running and M.db.dispelShine
@@ -108,6 +109,7 @@ local function HookShine()
 			if type(out) ~= "table" then return out end
 			if ShineOn() then
 				out.xuiShine = true
+				shineStats.flagged = shineStats.flagged + 1
 				out.style = 3 -- Auto-Cast in EllesmereUI's shared list
 				out.speed = 10 + (shineGen % 100) * 0.01
 				out.r, out.g, out.b = XUI.UnpackColor(Style:Resolve("glow", M.db.dispelGlow).color)
@@ -130,6 +132,11 @@ local function HookShine()
 					-- the size EllesmereUI sized the button to: the host itself has none to read yet
 					Style:ShowGlow(wrapper, M.db.dispelGlow, true, w, h)
 					wrapper.__xuiDispelShine = true
+					shineStats.drawn = shineStats.drawn + 1
+					shineStats.passed = (w or "?") .. "x" .. (h or "?")
+					local okSize, hw, hh = pcall(wrapper.GetSize, wrapper)
+					shineStats.read = okSize and (XUI.IsSecret(hw) and "secret" or (tostring(hw) .. "x" .. tostring(hh))) or "error"
+					shineStats.glow = tostring(wrapper.__xuiGlow)
 					return 3, false
 				elseif wrapper.__xuiDispelShine then
 					Style:HideGlow(wrapper)
@@ -140,6 +147,21 @@ local function HookShine()
 		end
 		Glows.__xuiSpecHook = true
 	end
+end
+
+function M:DebugInfo()
+	local np = NP()
+	local magic, enrage
+	if np and type(np.GetOffensiveDispelTypes) == "function" then magic, enrage = np.GetOffensiveDispelTypes() end
+	local Glows = _G.EllesmereUI and _G.EllesmereUI.Glows
+	return {
+		("EllesmereUI nameplates: %s, Dispel Glow setting: %s, can dispel magic/enrage: %s/%s"):format(tostring(np ~= nil),
+			tostring(np and type(np.GetDispelGlow) == "function" and np.GetDispelGlow()), tostring(magic), tostring(enrage)),
+		("auto-cast shine: option %s, spec hook %s, draw hook %s"):format(tostring(self.db.dispelShine),
+			tostring(np and np.__xuiSpecHook == true), tostring(Glows and Glows.__xuiSpecHook == true)),
+		("dispel specs flagged: %d, shines drawn: %d"):format(shineStats.flagged, shineStats.drawn),
+		("last shine: size passed %s, host reads %s, glow state %s"):format(tostring(shineStats.passed), tostring(shineStats.read), tostring(shineStats.glow)),
+	}
 end
 
 -- a slider drags through many values: one reload per frame is enough
