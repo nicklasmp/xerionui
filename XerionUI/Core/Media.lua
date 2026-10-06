@@ -53,11 +53,22 @@ function Media:Has(kind, name)
 	return name ~= nil and LSM:Fetch(kind, name, true) ~= nil
 end
 
--- Sorted list of registered names for a media kind.
+-- Sorted list of registered names for a media kind. Built once and kept until
+-- LibSharedMedia registers something: the options ask on every refresh, and a
+-- pack can hold a thousand sounds. The list is shared, so callers only read it.
+local lists = {}
+Media.version = 0
+
 function Media:List(kind)
-	local out = {}
+	local out = lists[kind]
+	if out then return out end
+	out = {}
 	for _, name in ipairs(LSM:List(kind)) do out[#out + 1] = name end
-	table.sort(out, function(a, b) return a:lower() < b:lower() end)
+	-- lower-cased once per name, not once per comparison
+	local key = {}
+	for _, name in ipairs(out) do key[name] = name:lower() end
+	table.sort(out, function(a, b) return key[a] < key[b] end)
+	lists[kind] = out
 	return out
 end
 
@@ -65,6 +76,8 @@ local announce = XUI.Coalesce(function() XUI:Fire("MediaChanged") end)
 
 local function Invalidate()
 	for _, bucket in pairs(cache) do wipe(bucket) end
+	wipe(lists)
+	Media.version = Media.version + 1
 	announce()
 end
 

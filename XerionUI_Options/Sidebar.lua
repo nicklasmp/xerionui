@@ -134,6 +134,13 @@ local function Matches(hay)
 	return true
 end
 
+-- The index runs every module's options builder, so it is only built once
+-- somebody searches, not when the window opens.
+local function ModuleMatches(m, extra)
+	if S.searchText == "" then return true end
+	return Matches(ModuleWords(m) .. " " .. extra)
+end
+
 function O:RefreshSidebar()
 	if not S.sidebar then return end
 	local child = S.sidebar.child
@@ -204,7 +211,7 @@ function O:RefreshSidebar()
 			for _, c in ipairs(folded and {} or order) do
 				local mods, matching = O:ClassModules(c.token), {}
 				for _, m in ipairs(mods) do
-					if Matches(ModuleWords(m) .. " " .. c.name:lower()) then matching[#matching + 1] = m end
+					if ModuleMatches(m, c.name:lower()) then matching[#matching + 1] = m end
 				end
 				local classMatches = Matches(c.name:lower())
 				-- a class nothing has been made for yet stays out of the list
@@ -222,7 +229,7 @@ function O:RefreshSidebar()
 			list = {}
 		else
 		for _, m in ipairs(XUI:SortedModules(cat.key)) do
-			if m:IsAvailable() and Matches(ModuleWords(m) .. " " .. cat.name:lower()) then
+			if m:IsAvailable() and ModuleMatches(m, cat.name:lower()) then
 				list[#list + 1] = m
 			end
 		end

@@ -220,6 +220,8 @@ function Controls.slider(parent, desc, ctx)
 	box:SetScript("OnEnterPressed", Commit)
 	box:SetScript("OnEscapePressed", function() box:ClearFocus() f:Refresh() end)
 	box:SetScript("OnEditFocusLost", function() f:Refresh() end)
+	-- selected on entry, so typing replaces the number
+	box:SetScript("OnEditFocusGained", function(self) self:HighlightText() end)
 	AddTooltip(s, desc)
 
 	function f:Refresh()
@@ -266,9 +268,17 @@ local function Field(f)
 	return b
 end
 
+-- [media kind .. flags] = { version, list }: the entries of a media dropdown,
+-- rebuilt only when LibSharedMedia registered something since.
+local mediaValues = {}
+
 function O:DropdownValues(desc, ctx)
 	if desc.media then
+		local cacheKey = desc.media .. (desc.filesOnly and ":files" or "")
+		local hit = mediaValues[cacheKey]
+		if hit and hit.version == XUI.Media.version then return hit.list end
 		local list = {}
+		mediaValues[cacheKey] = { version = XUI.Media.version, list = list }
 		if desc.media == "border" then
 			for _, v in ipairs(XUI.Style.BORDER_STYLES) do list[#list + 1] = v end
 		end
