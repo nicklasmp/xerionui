@@ -9,8 +9,13 @@
 --      target(s) are remembered (name + icon, before they vanish).
 --   2. UNIT_AURA during the next moment: a removedAuraInstanceIDs entry that
 --      matches a remembered aura means it was taken off.
---   3. The cast SUCCEEDED and something was removed -> the alert shows. A cast
---      that dispelled nothing (no valid aura, resisted) stays silent.
+--   3. The cast SUCCEEDED and something was removed -> the alert shows.
+-- The aura payload can be secret in combat, so two fallbacks follow a cast that
+-- succeeded: the unit's aura list is compared with the one remembered, and
+-- failing that the cast itself is taken as the proof - a dispel with nothing to
+-- remove fails with "nothing to dispel" and never reaches SUCCEEDED. Only
+-- spells that succeed regardless (Mass Dispel, Revival, Restoral) need the
+-- aura to be seen going.
 -- Nothing is registered or scanned while idle; the window only exists for about
 -- a second after one of the listed spells. When the aura's name is secret the
 -- alert falls back to a plain "Successfully dispelled" (the icon still shows).
@@ -240,7 +245,7 @@ end
 --------------------------------------------------------------------------------
 -- Detection
 --------------------------------------------------------------------------------
-local seen = { sent = 0, auraEvents = 0, matched = 0, removals = 0, shown = 0 }
+local seen = { sent = 0, auraEvents = 0, matched = 0, removals = 0, shown = 0, byList = 0, assumed = 0, secretPayload = 0 }
 local last = "nothing yet"
 
 local function Finish(mine)
@@ -280,9 +285,12 @@ local function OnAura(_, _, unit, info)
 	end
 	if not entry then return end
 	seen.matched = seen.matched + 1
-	if type(info) ~= "table" or XUI.IsSecretTable(info) then return end
+	if IsSecret(info) or type(info) ~= "table" or XUI.IsSecretTable(info) then
+		seen.secretPayload = seen.secretPayload + 1
+		return
+	end
 	local removed = info.removedAuraInstanceIDs
-	if type(removed) ~= "table" or XUI.IsSecretTable(removed) then return end
+	if IsSecret(removed) or type(removed) ~= "table" or XUI.IsSecretTable(removed) then return end
 	for i = 1, #removed do
 		local id = removed[i]
 		if not IsSecret(id) then
@@ -326,11 +334,70 @@ end
 
 -- Any of our dispels succeeding counts: a talent can swap the spell the cast
 -- is reported under, so it need not be the id that was sent.
+-- spells that succeed whether or not anything was there to remove
+local NEEDS_PROOF = { [32375] = true, [115310] = true, [388615] = true }
+
+-- What the unit has now, by instance id; nil when the list cannot be read.
+local function CurrentIds(unit)
+	local ids, any = {}, false
+	local function Visit(a)
+		if not a then return end
+		local id = a.auraInstanceID
+		if id ~= nil and not IsSecret(id) then
+			ids[id] = true
+			any = true
+		end
+	end
+	local AU = AuraUtil
+	local ran = false
+	if AU and AU.ForEachAura then
+		local a = pcall(AU.ForEachAura, unit, "HELPFUL", nil, Visit, true)
+		local b = pcall(AU.ForEachAura, unit, "HARMFUL", nil, Visit, true)
+		ran = a and b
+	end
+	if not any then return ran and ids or nil end
+	return ids
+end
+
+-- The remembered list against the one now: an aura that is gone was taken off.
+local function CompareLists(mine)
+	if pending ~= mine or mine.hit then return end
+	for unit, entry in pairs(mine.snaps) do
+		if not entry.blind then
+			local now = CurrentIds(unit)
+			if now then
+				for id, rec in pairs(entry.ids) do
+					if not now[id] then
+						seen.byList = seen.byList + 1
+						mine.hit = rec
+						TryFinish(mine)
+						return
+					end
+				end
+			end
+		end
+	end
+end
+
+-- Nothing seen going, but the cast succeeded: that is the proof.
+local function AssumeFromCast(mine)
+	if pending ~= mine or mine.hit or NEEDS_PROOF[mine.castSpell] then return end
+	local icon = C_Spell and C_Spell.GetSpellTexture and XUI.Probe(C_Spell.GetSpellTexture, mine.castSpell)
+	seen.assumed = seen.assumed + 1
+	mine.hit = { icon = icon }
+	TryFinish(mine)
+end
+
 local function OnSucceeded(_, _, _, _, spellID)
 	local mine = pending
 	if mine and not IsSecret(spellID) and DISPELS[spellID] then
 		mine.ok = true
+		mine.castSpell = spellID
 		TryFinish(mine)
+		if not mine.hit then
+			M:After(0.15, function() CompareLists(mine) end)
+			M:After(0.4, function() AssumeFromCast(mine) end)
+		end
 	end
 end
 
@@ -370,6 +437,7 @@ function M:DebugInfo()
 		"tracked dispel spells: " .. n,
 		"watching a cast right now: " .. tostring(pending ~= nil),
 		("your dispels seen: %d, aura events on a watched unit: %d (of %d seen), auras removed: %d, alerts shown: %d"):format(seen.sent, seen.matched, seen.auraEvents, seen.removals, seen.shown),
+		("payload secret: %d times, found by list comparison: %d, taken from the cast alone: %d"):format(seen.secretPayload, seen.byList, seen.assumed),
 		"last cast: " .. last,
 	}
 end

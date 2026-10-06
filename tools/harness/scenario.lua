@@ -385,12 +385,31 @@ Step("dispel alert: recognises a dispel under another token", function()
 	assert(shown() and shown():find("Successfully dispelled", 1, true), "an unreadable list still counts: " .. tostring(shown()))
 	clear()
 
-	-- 4: a cast that removed nothing stays silent
+	-- 4: the payload says nothing (secret in combat), but the aura list shows it gone
 	auras({ { auraInstanceID = 10, name = "Renew", icon = 1 } })
 	MOCK.Fire("UNIT_SPELLCAST_SENT", "player", "Brew", "g4", 527)
+	auras({})
 	MOCK.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "g4", 527)
+	MOCK.Advance(0.2)
+	assert(shown() and shown():find("Renew", 1, true), "an aura missing from the list counts: " .. tostring(shown()))
+	clear()
+
+	-- 5: nothing can be read, but the cast succeeded: a dispel with nothing to
+	-- remove fails, so success is the proof
+	auras({ { auraInstanceID = 12, name = "Renew", icon = 1 } })
+	MOCK.Fire("UNIT_SPELLCAST_SENT", "player", "Brew", "g5", 527)
+	MOCK.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "g5", 527)
+	assert(shown() == nil, "not before the lists have been compared")
+	MOCK.Advance(0.5)
+	assert(shown() and shown():find("Successfully dispelled", 1, true), "a succeeded cast should show: " .. tostring(shown()))
+	clear()
+
+	-- 6: Mass Dispel succeeds whatever it removes, so it needs the aura seen going
+	auras({ { auraInstanceID = 13, name = "Renew", icon = 1 } })
+	MOCK.Fire("UNIT_SPELLCAST_SENT", "player", "Brew", "g6", 32375)
+	MOCK.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "g6", 32375)
 	MOCK.Advance(2)
-	assert(shown() == nil, "no aura went, so no alert")
+	assert(shown() == nil, "Mass Dispel without a removal seen stays silent")
 
 	MOCK.inGroup = false
 	_G.UnitName, _G.UnitExists, _G.UnitIsUnit, _G.AuraUtil = saved.UnitName, saved.UnitExists, saved.UnitIsUnit, saved.AuraUtil
