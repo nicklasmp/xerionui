@@ -276,8 +276,14 @@ end
 function XUI:Fire(message, ...)
 	local list = listeners[message]
 	if not list then return end
+	-- a snapshot: a listener may register or drop listeners while we iterate
+	local owners, fns, n = {}, {}, 0
 	for owner, fn in pairs(list) do
-		XUI.SafeCall(fn, owner, ...)
+		n = n + 1
+		owners[n], fns[n] = owner, fn
+	end
+	for i = 1, n do
+		if list[owners[i]] == fns[i] then XUI.SafeCall(fns[i], owners[i], ...) end
 	end
 end
 

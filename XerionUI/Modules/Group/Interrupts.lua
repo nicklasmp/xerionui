@@ -419,6 +419,9 @@ local function ShowRows()
 	holder:SetShown(ShouldShow())
 end
 
+-- several kicks can start or end in one frame: sort and lay out once
+local ShowRowsSoon = XUI.Coalesce(ShowRows)
+
 local Tick
 local function StartTicker()
 	if holder and not holder:GetScript("OnUpdate") then
@@ -451,7 +454,7 @@ local function SetReady(row)
 	SetMark(row, nil)
 	SetKicked(row, nil)
 	if not M.db.showReady and not M:IsPreview() then row:Hide() end
-	ShowRows()
+	ShowRowsSoon()
 end
 
 local function StartCooldown(row, start, dur)
@@ -464,7 +467,7 @@ local function StartCooldown(row, start, dur)
 	row.bar:SetMinMaxValues(0, dur)
 	row.bar:SetValue(dur - (GetTime() - start))
 	row:Show()
-	ShowRows()
+	ShowRowsSoon()
 	StartTicker()
 end
 

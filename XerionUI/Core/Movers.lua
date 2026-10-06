@@ -21,6 +21,8 @@ XUI.Movers = Movers
 
 local floor = math.floor
 local GetPath = XUI.GetPath
+-- the mover chrome keeps one fixed font, whatever face the user picked for the displays
+local UI_FONT = [[Fonts\ARIALN.TTF]]
 
 --------------------------------------------------------------------------------
 -- Registration and placement
@@ -301,7 +303,7 @@ local function CreateOverlay(entry)
 	border:Apply({ useGlobal = false, style = "SOLID", size = 1, color = { r, g, b, 0.9 } })
 
 	ov.label = ov:CreateFontString(nil, "OVERLAY")
-	ov.label:SetFont([[Fonts\ARIALN.TTF]], 11, "OUTLINE")
+	ov.label:SetFont(UI_FONT, 11, "OUTLINE")
 	ov.label:SetPoint("CENTER")
 	ov.label:SetTextColor(1, 1, 1)
 
@@ -426,7 +428,7 @@ local function CreateToolbar()
 	Style:Border(f):Apply({ useGlobal = false, style = "SOLID", size = 1, color = { 0.16, 0.16, 0.16, 1 } })
 
 	local title = f:CreateFontString(nil, "OVERLAY")
-	title:SetFont([[Fonts\ARIALN.TTF]], 13, "")
+	title:SetFont(UI_FONT, 13, "")
 	title:SetPoint("LEFT", 12, 0)
 	title:SetText(XUI.TITLE .. "  |cffaaaaaaunlocked|r")
 
@@ -438,7 +440,7 @@ local function CreateToolbar()
 		t:SetColorTexture(0.14, 0.14, 0.14, 1)
 		b.bg = t
 		local fs = b:CreateFontString(nil, "OVERLAY")
-		fs:SetFont([[Fonts\ARIALN.TTF]], 12, "")
+		fs:SetFont(UI_FONT, 12, "")
 		fs:SetPoint("CENTER")
 		fs:SetText(text)
 		b.text = fs

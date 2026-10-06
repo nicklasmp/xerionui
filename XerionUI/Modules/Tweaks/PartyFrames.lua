@@ -531,13 +531,18 @@ local function PreviewNumbers()
 	return numbers
 end
 
-local function PaintNumbers()
-	local n = PreviewNumbers()
+-- one value inside each color band
+local function PreviewValues()
 	local h = M.db.health
 	local steps = { h.t1, h.t2, h.t3 }
 	table.sort(steps)
-	-- one value inside each color band
-	local values = { math.max(1, steps[1] - 10), math.floor((steps[1] + steps[2]) / 2), math.floor((steps[2] + steps[3]) / 2), steps[3] + 15 }
+	return { math.max(1, steps[1] - 10), math.floor((steps[1] + steps[2]) / 2), math.floor((steps[2] + steps[3]) / 2), steps[3] + 15 }
+end
+
+local function PaintNumbers()
+	local n = PreviewNumbers()
+	local h = M.db.health
+	local values = PreviewValues()
 	n:ClearAllPoints()
 	n:SetPoint("CENTER", UIParent, "CENTER", 0, -200)
 	for i, fs in ipairs(n.fs) do
@@ -551,13 +556,6 @@ end
 
 -- The preview on the real party frames: each shows a number from a different
 -- color band, placed exactly where the live number goes.
-local function PreviewValues()
-	local h = M.db.health
-	local steps = { h.t1, h.t2, h.t3 }
-	table.sort(steps)
-	return { math.max(1, steps[1] - 10), math.floor((steps[1] + steps[2]) / 2), math.floor((steps[2] + steps[3]) / 2), steps[3] + 15 }
-end
-
 local function PreviewParty()
 	local rf = RF()
 	local list = rf and rf._partyAllButtons

@@ -208,7 +208,14 @@ function Module:After(delay, fn)
 end
 
 function Module:NewTicker(interval, fn, iterations)
-	local ticker = C_Timer.NewTicker(interval, function(t)
+	local left = iterations
+	local ticker
+	ticker = C_Timer.NewTicker(interval, function(t)
+		-- a finite ticker forgets itself after its last tick
+		if left then
+			left = left - 1
+			if left <= 0 and self._tickers then self._tickers[ticker] = nil end
+		end
 		SafeCallFor(self, fn, self, t)
 	end, iterations)
 	self._tickers = self._tickers or {}
