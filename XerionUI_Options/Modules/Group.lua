@@ -228,6 +228,40 @@ O:RegisterModuleOptions("AggroCheck", function(ctx, m, G)
 end)
 
 --------------------------------------------------------------------------------
+O:RegisterModuleOptions("Keystones", function(ctx, m, G)
+	local function noIcon() return not m.db.showIcon end
+	return {
+		Card("Show", {
+			{ type = "description", width = "full",
+				text = "Shown when you enter a dungeon, until the key starts. Right-click the list to dismiss it, or use /xui keys. Group members are only listed if they run an addon that shares keystones (BigWigs, EllesmereUI or XerionUI)." },
+			{ type = "toggle", label = "Members without a key", path = "showMissing",
+				tip = "Also lists members who have no key, or whose addon did not answer." },
+			{ type = "toggle", label = "Mythic+ rating", path = "showRating" },
+			{ type = "toggle", label = "Dungeon icon", path = "showIcon" },
+			{ type = "toggle", label = "Class colored names", path = "classColors" },
+			{ type = "toggle", label = "Highlight this dungeon's key", path = "highlightCurrent" },
+			{ type = "color", label = "Highlight color", path = "matchColor", hasAlpha = false,
+				disabled = function() return not m.db.highlightCurrent end },
+			{ type = "slider", label = "Hide after (seconds, 0 = until the key starts)", path = "autoHide", min = 0, max = 300, step = 5 },
+			{ type = "button", text = "Show now", onClick = function() m:Test() end,
+				tip = "Shows the list wherever you are and asks the group for their keys again.",
+				disabled = function() return not m.running end },
+		}),
+		Card("Layout", {
+			{ type = "slider", label = "Width", path = "width", min = 160, max = 600, step = 5 },
+			{ type = "slider", label = "Padding", path = "padding", min = 0, max = 24, step = 1 },
+			{ type = "slider", label = "Space between rows", path = "gap", min = 0, max = 16, step = 1 },
+		}),
+		Card("Icon", G.Icon("icon", { square = true }), { hidden = noIcon }),
+		Card("Background", G.Background("background")),
+		Card("Border", G.Border("border")),
+		Card("Name text", G.Font("nameText", { color = true })),
+		Card("Key text", G.Font("keyText", { color = true })),
+		Card("Position", G.Position("position")),
+	}
+end)
+
+--------------------------------------------------------------------------------
 O:RegisterModuleOptions("Bloodlust", function(ctx, m, G)
 	return {
 		Card("Alert when lust is ready again", G.Alert("alert", { test = function() m:TestAlert() end })),

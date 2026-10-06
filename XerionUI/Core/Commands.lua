@@ -50,6 +50,7 @@ local HELP = {
 	{ "/xui", "open the options" },
 	{ "/xui unlock", "move frames (also: /xui move)" },
 	{ "/xui profile <name>", "switch to a profile" },
+	{ "/xui keys", "show or hide who in the group has which keystone" },
 	{ "/xui preview off", "end every module preview" },
 	{ "/xui version", "show the installed version" },
 	{ "/xui debug [module]", "why modules are or are not running, plus their live state" },
@@ -107,6 +108,9 @@ local function Handle(msg)
 				XUI.Printf("no profile named |cffffffff%s|r", rest)
 			end
 		end
+	elseif cmd == "keys" or cmd == "key" then
+		local m = XUI:GetModule("Keystones")
+		if m then m:Toggle() end
 	elseif cmd == "preview" then
 		for _, m in ipairs(XUI.modules) do m:SetPreview(false) end
 	elseif cmd == "debug" then

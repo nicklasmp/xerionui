@@ -50,6 +50,7 @@ Modules\Group\Shroud.lua
 Modules\Group\CCTracker.lua
 Modules\Group\AggroCheck.lua
 Modules\Group\Bloodlust.lua
+Modules\Group\Keystones.lua
 Modules\Class\Kit.lua
 Modules\Class\DeathKnight\BoneShield.lua
 Modules\Class\DeathKnight\DRWSound.lua

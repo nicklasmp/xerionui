@@ -51,7 +51,8 @@ Melee Indicator, Death Alert, Externals, Party Interrupts, Co-Tank, Shroud/Mass 
 | Focus Target Marker | I | ⏳ | |
 | Healer Mana Indicator | I | ⏳ | |
 | Summon Helper | I | ⏳ | |
-| Keystone Lister | I | ⏳ | |
+| Keystone Lister (liste nøglen i gruppesøgeren) | I | ⏳ | Gammel knap-funktion; ikke samme som Keystones |
+| Keystones (hvem har nøglen) | N | ✅ | Nyt modul, utestet i spillet. Taler LibKS-protokollen (BigWigs/EllesmereUI) uden at kopiere kode; `/xui keys` |
 | LFG Improvements | I | ⏳ | |
 | Raid Frame Manager | I | ❓ | Erstatter Blizzards manager — stor |
 | Dungeon Teleports | I | ❓ | Du har allerede TeleportMenu installeret |
