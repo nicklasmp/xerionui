@@ -53,29 +53,6 @@ O:RegisterModuleOptions("EUIActionBarFont", function(ctx, m, G)
 	}
 end)
 
-O:RegisterModuleOptions("EUIPlayerAuraBars", function(ctx, m, G)
-	return {
-		Card("Bars", {
-			{ type = "toggle", label = "Buff bars", path = "buffs", width = "full" },
-			{ type = "toggle", label = "Debuff bars", path = "debuffs", width = "full" },
-		}),
-		Card("Icons", {
-			{ type = "toggle", label = "Cropped icons", path = "crop", width = "full",
-				tip = "Like Cropped on the action bars: the icon is lower than it is wide and trimmed top and bottom. Not used on a bar that has an icon shape." },
-			{ type = "slider", label = "Icon height (% of width)", path = "height", min = 50, max = 100, step = 1,
-				disabled = function() return not m.db.crop end },
-		}),
-		Card("Stacks", {
-			{ type = "toggle", label = "Stacks above the icon", path = "stackAbove", width = "full",
-				tip = "Centres the stack count just above the icon instead of using EllesmereUI's stack position." },
-			{ type = "slider", label = "Offset X", path = "stackX", min = -30, max = 30, step = 1,
-				disabled = function() return not m.db.stackAbove end },
-			{ type = "slider", label = "Offset Y", path = "stackY", min = -30, max = 30, step = 1,
-				disabled = function() return not m.db.stackAbove end },
-		}),
-	}
-end)
-
 O:RegisterModuleOptions("EUICDMStackFont", function(ctx, m, G)
 	return {
 		Card("Font", {
