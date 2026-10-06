@@ -71,7 +71,12 @@ function Kit.TimedIcon(M, opts)
 	local function Paint()
 		local left = expires - GetTime()
 		if left <= 0 then return end
-		display.timer:SetText((opts.format or Kit.FormatClock)(left))
+		-- the ticker runs four times a second, the text changes about once
+		local text = (opts.format or Kit.FormatClock)(left)
+		if text ~= display.__timerText then
+			display.__timerText = text
+			display.timer:SetText(text)
+		end
 		if M.OnTick then M:OnTick(left, display) end
 	end
 
@@ -129,6 +134,8 @@ function Kit.TimedIcon(M, opts)
 		elseif d.cooldown then
 			d.cooldown:Hide()
 		end
+		-- ApplyTimerText may have restyled the string: write the text afresh
+		d.__timerText = nil
 		if live then
 			Paint()
 		elseif preview then
