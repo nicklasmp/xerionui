@@ -47,6 +47,12 @@ O:RegisterModuleOptions("EUIFlyingBar", function(ctx, m, G)
 	}
 end)
 
+O:RegisterModuleOptions("EUIActionBarFont", function(ctx, m, G)
+	return {
+		Card("Font", G.Font("font", { noSize = true })),
+	}
+end)
+
 O:RegisterModuleOptions("EUIFocusCastbar", function(ctx, m, G)
 	return {
 		Card("Background", {
