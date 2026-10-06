@@ -140,6 +140,7 @@ O:RegisterModuleOptions("BearForm", function(ctx, m, G)
 			{ type = "color", label = "Color", path = "color" },
 		}, G.Font("font"))),
 		Card("Position", G.Position("position")),
+		Card("Alert", G.Alert("alert", { fallbackText = "Bear form" })),
 	}
 end)
 

@@ -2,7 +2,8 @@
 -- Bear Form reminder (Guardian)
 -- One line of text for as long as you are in combat, Guardian and not a bear:
 -- a Travel Form hop between packs or a stray form has dropped the armour and
--- the rage that make you the tank.
+-- the rage that make you the tank. The alert (speech or a sound) plays once
+-- each time the warning appears.
 --
 -- The form is GetShapeshiftFormID() (5 = Bear Form); should it ever come back
 -- secret the text stays hidden - a warning that fails open would shout at a
@@ -27,11 +28,13 @@ local M = XUI:NewModule("BearForm", {
 		color = { 1, 0.49, 0.04, 1 },
 		font = T.Font(32),
 		position = T.Position(0, 140, "HIGH"),
+		alert = T.Alert("NONE", { text = "Bear form" }),
 	},
 })
 
 local display
 local inCombat = false
+local warned = false -- the alert has played for this stretch of the warning
 
 local function Display()
 	if display then return display end
@@ -51,7 +54,14 @@ end
 function M:Update()
 	if not display then return end
 	local dead = XUI.Ask(UnitIsDeadOrGhost, "player") == true
-	display:SetShown(self:IsPreview() or (self.running and inCombat and not dead and NotBear()))
+	local warn = self.running and inCombat and not dead and NotBear()
+	display:SetShown(self:IsPreview() or warn)
+	if warn and not warned then
+		warned = true
+		XUI.Audio:Play(self.db.alert, "Bear form")
+	elseif not warn then
+		warned = false
+	end
 end
 
 function M:OnEnable()
