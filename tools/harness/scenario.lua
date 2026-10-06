@@ -330,6 +330,73 @@ Step("who has the key: lists this dungeon's keys", function()
 	m:Refresh()
 end)
 
+Step("dispel alert: recognises a dispel under another token", function()
+	local m = XUI:GetModule("DispelAlert")
+	assert(m and m.running, "the module should be running")
+	local saved = {
+		UnitName = _G.UnitName, UnitExists = _G.UnitExists, UnitIsUnit = _G.UnitIsUnit,
+		AuraUtil = _G.AuraUtil, GetUnitAuraInstanceIDs = C_UnitAuras and C_UnitAuras.GetUnitAuraInstanceIDs,
+	}
+	MOCK.inGroup = true
+	local named = { party1 = "Brew", mouseover = "Brew" }
+	_G.UnitName = function(u) return named[u] or "Other" end
+	_G.UnitExists = function(u) return u == "player" or u == "party1" or u == "mouseover" end
+	_G.UnitIsUnit = function(a, b)
+		local same = { party1 = "party1", mouseover = "party1" }
+		return a == b or (same[a] ~= nil and same[a] == same[b])
+	end
+	local function auras(list)
+		_G.AuraUtil = { ForEachAura = function(_, _, _, visit)
+			for _, a in ipairs(list) do visit(a) end
+		end }
+	end
+	local function shown()
+		local d = _G.XUI_DispelAlert
+		return d and d:IsShown() and d.text:GetText() or nil
+	end
+	local function clear()
+		MOCK.Advance(5)
+		local d = _G.XUI_DispelAlert
+		if d then d:Hide() end
+	end
+
+	-- 1: a raid-frame click, found by name, the event arrives under that token
+	auras({ { auraInstanceID = 7, name = "Renew", icon = 1 } })
+	MOCK.Fire("UNIT_SPELLCAST_SENT", "player", "Brew", "g1", 527)
+	MOCK.Fire("UNIT_AURA", "party1", { removedAuraInstanceIDs = { 7 } })
+	assert(shown() == nil, "nothing shows before the cast has succeeded")
+	MOCK.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "g1", 527)
+	assert(shown() and shown():find("Renew", 1, true), "the alert should show at once: " .. tostring(shown()))
+	clear()
+
+	-- 2: aimed by mouseover, the event names the unit by its group token
+	auras({ { auraInstanceID = 8, name = "Poison", icon = 2 } })
+	MOCK.Fire("UNIT_SPELLCAST_SENT", "player", "Brew", "g2", 527)
+	MOCK.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "g2", 527)
+	MOCK.Fire("UNIT_AURA", "party1", { removedAuraInstanceIDs = { 8 } })
+	assert(shown() and shown():find("Poison", 1, true), "a mouseover dispel should be recognised: " .. tostring(shown()))
+	clear()
+
+	-- 3: the aura list cannot be read, and the cast comes back as another spell
+	auras({})
+	MOCK.Fire("UNIT_SPELLCAST_SENT", "player", "Brew", "g3", 527)
+	MOCK.Fire("UNIT_AURA", "party1", { removedAuraInstanceIDs = { 9 } })
+	MOCK.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "g3", 528)
+	assert(shown() and shown():find("Successfully dispelled", 1, true), "an unreadable list still counts: " .. tostring(shown()))
+	clear()
+
+	-- 4: a cast that removed nothing stays silent
+	auras({ { auraInstanceID = 10, name = "Renew", icon = 1 } })
+	MOCK.Fire("UNIT_SPELLCAST_SENT", "player", "Brew", "g4", 527)
+	MOCK.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "g4", 527)
+	MOCK.Advance(2)
+	assert(shown() == nil, "no aura went, so no alert")
+
+	MOCK.inGroup = false
+	_G.UnitName, _G.UnitExists, _G.UnitIsUnit, _G.AuraUtil = saved.UnitName, saved.UnitExists, saved.UnitIsUnit, saved.AuraUtil
+	m:Refresh()
+end)
+
 Step("logout strips defaults", function()
 	MOCK.Fire("PLAYER_LOGOUT")
 	local sv = _G.XerionUIDB
