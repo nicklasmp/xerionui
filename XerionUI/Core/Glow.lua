@@ -22,8 +22,12 @@ local function Level(frame, owner, offset)
 	if ok and type(lvl) == "number" then pcall(frame.SetFrameLevel, frame, lvl + offset) end
 end
 
-local function Size(owner)
+-- The owner's size. A host that has no size yet (or one the client will not
+-- tell, on an engine button) falls back to the size the caller passed in o.
+local function Size(owner, o)
 	local ok, w, h = pcall(owner.GetSize, owner)
+	local unknown = not ok or XUI.IsSecret(w) or XUI.IsSecret(h) or not w or w <= 0 or not h or h <= 0
+	if unknown and o and o.width and o.height and o.width > 0 and o.height > 0 then return o.width, o.height end
 	if not ok or XUI.IsSecret(w) or XUI.IsSecret(h) then return nil end
 	return w, h
 end
@@ -64,7 +68,7 @@ function Glow.StartAnts(owner, o)
 	f:SetPoint("TOPLEFT", owner, "TOPLEFT", -off, off)
 	f:SetPoint("BOTTOMRIGHT", owner, "BOTTOMRIGHT", off, -off)
 
-	local w, h = Size(owner)
+	local w, h = Size(owner, o)
 	if not w or w <= 0 or h <= 0 then
 		f:Hide()
 		return
@@ -221,7 +225,7 @@ function Glow.StartShine(owner, o)
 	f:SetPoint("TOPLEFT", owner, "TOPLEFT", -off, off)
 	f:SetPoint("BOTTOMRIGHT", owner, "BOTTOMRIGHT", off, -off)
 
-	local w, h = Size(owner)
+	local w, h = Size(owner, o)
 	if not w or w <= 0 or h <= 0 then
 		f:Hide()
 		return

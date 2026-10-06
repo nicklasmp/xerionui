@@ -120,14 +120,15 @@ local function HookShine()
 	end
 	if not Glows.__xuiSpecHook and type(Glows.StartSpecGlow) == "function" then
 		local original = Glows.StartSpecGlow
-		Glows.StartSpecGlow = function(wrapper, spec, ...)
+		Glows.StartSpecGlow = function(wrapper, spec, w, h, ...)
 			if wrapper then
 				if type(spec) == "table" and spec.xuiShine and ShineOn() then
 					-- EllesmereUI's own glow off the host, ours on
 					if wrapper._euiGlowActive and type(Glows.StopGlow) == "function" then pcall(Glows.StopGlow, wrapper) end
 					wrapper._euiSpecSig = nil
 					wrapper:SetAlpha(1)
-					Style:ShowGlow(wrapper, M.db.dispelGlow, true)
+					-- the size EllesmereUI sized the button to: the host itself has none to read yet
+					Style:ShowGlow(wrapper, M.db.dispelGlow, true, w, h)
 					wrapper.__xuiDispelShine = true
 					return 3, false
 				elseif wrapper.__xuiDispelShine then
@@ -135,7 +136,7 @@ local function HookShine()
 					wrapper.__xuiDispelShine = nil
 				end
 			end
-			return original(wrapper, spec, ...)
+			return original(wrapper, spec, w, h, ...)
 		end
 		Glows.__xuiSpecHook = true
 	end
