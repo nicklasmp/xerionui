@@ -78,7 +78,7 @@ Modules\Tweaks\PartyFrames.lua
 Modules\Tweaks\FlyingBar.lua
 Modules\Tweaks\ActionBarFont.lua
 Modules\Tweaks\CDMStackFont.lua
-ModulesTweaksZoneText.lua
+Modules\Tweaks\ZoneText.lua
 
 # The options window is the load-on-demand addon XerionUI_Options; it is
 # loaded the first time /xui is used, so nothing of it costs anything at login.
