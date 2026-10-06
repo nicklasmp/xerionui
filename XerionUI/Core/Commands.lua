@@ -92,11 +92,20 @@ local function Handle(msg)
 	elseif cmd == "profile" then
 		if rest == "" then
 			XUI.Printf("active profile: |cffffffff%s|r", XUI.DB:GetProfileName())
-		elseif XUI.DB:ProfileExists(rest) then
-			XUI.DB:SetProfile(rest)
-			XUI.Printf("switched to profile |cffffffff%s|r", rest)
 		else
-			XUI.Printf("no profile named |cffffffff%s|r", rest)
+			-- the exact name first, then any capitalisation of it
+			local name = XUI.DB:ProfileExists(rest) and rest
+			if not name then
+				for _, existing in ipairs(XUI.DB:ListProfiles()) do
+					if existing:lower() == rest:lower() then name = existing break end
+				end
+			end
+			if name then
+				XUI.DB:SetProfile(name)
+				XUI.Printf("switched to profile |cffffffff%s|r", name)
+			else
+				XUI.Printf("no profile named |cffffffff%s|r", rest)
+			end
 		end
 	elseif cmd == "preview" then
 		for _, m in ipairs(XUI.modules) do m:SetPreview(false) end

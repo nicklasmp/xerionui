@@ -51,6 +51,14 @@ local function CreatePopup()
 	local icon = O:Icon(search, "search", 12, "muted")
 	icon:SetPoint("LEFT", 6, 0)
 	search:SetScript("OnEscapePressed", Close)
+	-- Enter takes the first match, so a typed filter can be answered from the keyboard
+	search:SetScript("OnEnterPressed", function()
+		local first = popup.filtered and popup.filtered[1]
+		local pick = popup.onPick
+		if not first then return end
+		Close()
+		if pick then pick(first.value) end
+	end)
 	search:SetScript("OnTextChanged", function(self, user)
 		if user then popup.offset = 0 popup:Render() end
 	end)
@@ -103,11 +111,19 @@ local function Row(i)
 	return r
 end
 
+-- Re-filtered only when the query or the list changed: scrolling renders again
+-- on every wheel step, and a sound pack can hold a thousand entries.
 local function Filter()
 	local q = (popup.search:IsShown() and popup.search:GetText() or ""):lower()
+	if popup.filtered and popup.filterQuery == q and popup.filterValues == popup.values then return end
+	popup.filterQuery, popup.filterValues = q, popup.values
+	if q == "" then
+		popup.filtered = popup.values
+		return
+	end
 	local out = {}
 	for _, v in ipairs(popup.values) do
-		if q == "" or tostring(v.text):lower():find(q, 1, true) then out[#out + 1] = v end
+		if tostring(v.text):lower():find(q, 1, true) then out[#out + 1] = v end
 	end
 	popup.filtered = out
 end
@@ -178,6 +194,7 @@ function O:OpenDropdown(anchor, desc, ctx, current, onPick)
 	popup.current = current
 	popup.onPick = onPick
 	popup.offset = 0
+	popup.filtered = nil
 	popup.search:SetText("")
 	popup.search:SetShown(#popup.values >= SEARCH_FROM)
 	popup:SetWidth(math.max(anchor:GetWidth(), 180))
