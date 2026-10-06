@@ -76,6 +76,15 @@ O:RegisterModuleOptions("EUIPlayerAuraBars", function(ctx, m, G)
 	}
 end)
 
+O:RegisterModuleOptions("EUICDMStackFont", function(ctx, m, G)
+	return {
+		Card("Font", {
+			{ type = "dropdown", label = "Stack font", path = "face", media = "font",
+				tip = "Used for stack and charge counts only. Size, outline and color stay as set in EllesmereUI." },
+		}),
+	}
+end)
+
 O:RegisterModuleOptions("EUIFocusCastbar", function(ctx, m, G)
 	return {
 		Card("Background", {
