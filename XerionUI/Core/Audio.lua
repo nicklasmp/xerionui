@@ -46,14 +46,21 @@ function Audio:Voices()
 	return out
 end
 
+-- voice name (lower case) -> voiceID; the installed voices do not change mid-session
+local voiceIDs = {}
+
 local function VoiceID(name)
 	local V = C_VoiceChat
 	if name and name ~= "" then
+		local wanted = name:lower()
+		if voiceIDs[wanted] then return voiceIDs[wanted] end
 		local voices = V.GetTtsVoices and XUI.Probe(V.GetTtsVoices)
 		if type(voices) == "table" then
-			local wanted = name:lower()
 			for _, voice in ipairs(voices) do
-				if voice.name and voice.name:lower() == wanted then return voice.voiceID end
+				if voice.name and voice.name:lower() == wanted then
+					voiceIDs[wanted] = voice.voiceID
+					return voice.voiceID
+				end
 			end
 		end
 	end

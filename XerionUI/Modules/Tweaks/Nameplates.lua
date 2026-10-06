@@ -33,6 +33,11 @@ local M = XUI:NewModule("EUINameplates", {
 
 local IsSecret = XUI.IsSecret
 local SHIELD_GAP = 3
+local IsPlateToken = setmetatable({}, { __index = function(t, unit)
+	local is = type(unit) == "string" and unit:sub(1, 9) == "nameplate"
+	t[unit] = is
+	return is
+end })
 local PREVIEW_AMOUNT = 5500000
 
 local function NP()
@@ -253,8 +258,9 @@ function M:OnEnable()
 		local plate = plates and plates[unit]
 		if plate then Stamp(plate, "added") else self:After(0, function() local p = NP().plates[unit] if p then Stamp(p, "added") end end) end
 	end)
+	-- fires for every unit in the group too: a memoised token test, no string made per event
 	self:RegisterEvent("UNIT_ABSORB_AMOUNT_CHANGED", function(_, _, unit)
-		if not (M.db.shield.enabled and unit) or unit:sub(1, 9) ~= "nameplate" then return end
+		if not (M.db.shield.enabled and unit) or not IsPlateToken[unit] then return end
 		local plates = NP() and NP().plates
 		if not plates then return end
 		local plate = plates[unit]

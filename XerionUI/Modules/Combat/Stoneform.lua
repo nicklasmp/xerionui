@@ -109,17 +109,23 @@ local function Ready()
 	return nil
 end
 
+local function CooldownDuration()
+	return C_Spell.GetSpellCooldownDuration and C_Spell.GetSpellCooldownDuration(STONEFORM)
+end
+
+local function AlphaFromDuration(c, duration)
+	c:SetAlphaFromBoolean(duration:IsZero())
+end
+
 local function ApplyCooldownAlpha(c)
 	local ready = Ready()
 	if ready ~= nil then
 		c:SetAlpha(ready and 1 or 0)
 		return
 	end
-	local ok, duration = pcall(function()
-		return C_Spell.GetSpellCooldownDuration and C_Spell.GetSpellCooldownDuration(STONEFORM)
-	end)
+	local ok, duration = pcall(CooldownDuration)
 	if ok and not IsSecret(duration) and duration ~= nil and c.SetAlphaFromBoolean then
-		if pcall(function() c:SetAlphaFromBoolean(duration:IsZero()) end) then return end
+		if pcall(AlphaFromDuration, c, duration) then return end
 	end
 	c:SetAlpha(1)
 end
@@ -190,6 +196,8 @@ end
 local function Gate()
 	if container then ApplyCooldownAlpha(container) end
 end
+-- the event also fires on every global cooldown: one pass per frame
+local GateSoon = XUI.Coalesce(function() if M.running then Gate() end end)
 
 -- the engine just showed the bleed button: a bleed arrived (even if secret)
 function M:BleedShown()
@@ -227,8 +235,10 @@ function M:OnEnable()
 			stylePending = not pcall(StyleLive)
 		end
 	end)
-	-- the cooldown gate follows Stoneform's cooldown
-	self:NewTicker(0.2, Gate)
+	-- the cooldown gate follows Stoneform's cooldown: the cooldown event moves
+	-- it, a slow ticker is the net for an event the client does not send
+	self:RegisterEvent("SPELL_UPDATE_COOLDOWN", GateSoon)
+	self:NewTicker(1, Gate)
 	Gate()
 end
 

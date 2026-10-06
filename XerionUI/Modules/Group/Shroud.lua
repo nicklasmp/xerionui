@@ -248,17 +248,18 @@ local function EnsureContainer(t)
 	t.container = c
 end
 
+local function RestyleOne(rec, t, w, h)
+	rec.frame:SetSize(w, h)
+	StyleBar(rec.p, rec.frame, t)
+end
+
 -- in combat the engine may refuse; the change waits for the fight to end
 local function RestyleButtons()
 	stylePending = false
 	local w, h = BarSize(M.db)
 	for _, t in ipairs(TRACKS) do
 		for _, rec in ipairs(t.buttons) do
-			local ok = pcall(function()
-				rec.frame:SetSize(w, h)
-				StyleBar(rec.p, rec.frame, t)
-			end)
-			if not ok then stylePending = true end
+			if not pcall(RestyleOne, rec, t, w, h) then stylePending = true end
 		end
 		local c = t.container
 		if c and not pcall(c.SetAuraGroupLayout, c, t.key, { elementWidth = w, elementHeight = h, elementSpacing = 0, lineSpacing = 0 }) then
