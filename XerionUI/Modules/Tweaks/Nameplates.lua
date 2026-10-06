@@ -6,6 +6,9 @@
 -- supported, so its engine-filtered groups still mark them (in keys too).
 -- EllesmereUI's own Dispel Glow setting still switches the glow on and off.
 --
+-- Dispel glow style: can be overridden with an Auto-Cast shine of our own,
+-- which EllesmereUI cannot draw on its aura icons.
+--
 -- Shield amount: the mob's absorb as a number right after EllesmereUI's
 -- health text. The amount is secret in keys; it never touches Lua arithmetic
 -- - it goes straight into AbbreviateNumbers, SetText and StatusBar:SetValue.
@@ -26,6 +29,8 @@ local M = XUI:NewModule("EUINameplates", {
 	requires = "EllesmereUINameplates",
 	defaults = {
 		dispelAlways = true,
+		dispelShine = false,
+		dispelGlow = T.Glow(true, { useGlobal = false, type = "AUTOCAST", color = { 1, 0.82, 0.25, 1 } }),
 		shield = { enabled = false, enemyOnly = true, offX = 0, offY = 0 },
 		shieldText = T.Font(11, { color = { 1, 0.82, 0.25, 1 } }),
 	},
@@ -72,6 +77,73 @@ end
 --------------------------------------------------------------------------------
 -- Shield text
 --------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+-- Dispel glow style: an Auto-Cast shine of our own
+-- EllesmereUI's engine hosts (the aura icons) cannot draw Auto-Cast: it needs
+-- an OnUpdate script and the engine buttons never run one, so EllesmereUI
+-- swaps it for Modern WoW Glow. Our shine is animation-only (Core/Glow.lua),
+-- so it can sit on the very same host.
+--
+-- Two hooks, both inert while the option is off or the module is not running:
+--   * GetDispelGlowSpec flags the dispel glow's spec and changes what
+--     EllesmereUI fingerprints (style, colour, a counter in `speed`), so a change
+--     here makes it restyle its buttons;
+--   * Glows.StartSpecGlow draws our shine instead of EllesmereUI's glow for a
+--     flagged spec, and takes it away again when it is not flagged.
+--------------------------------------------------------------------------------
+local shineGen = 0
+
+local function ShineOn()
+	return M.running and M.db.dispelShine
+end
+
+local function HookShine()
+	local np = NP()
+	local Glows = _G.EllesmereUI and _G.EllesmereUI.Glows
+	if not (np and type(Glows) == "table") then return end
+	if not np.__xuiSpecHook and type(np.GetDispelGlowSpec) == "function" then
+		local original = np.GetDispelGlowSpec
+		np.GetDispelGlowSpec = function(...)
+			local out = original(...)
+			if type(out) ~= "table" then return out end
+			if ShineOn() then
+				out.xuiShine = true
+				out.style = 3 -- Auto-Cast in EllesmereUI's shared list
+				out.speed = 10 + (shineGen % 100) * 0.01
+				out.r, out.g, out.b = XUI.UnpackColor(Style:Resolve("glow", M.db.dispelGlow).color)
+			else
+				out.xuiShine = nil
+			end
+			return out
+		end
+		np.__xuiSpecHook = true
+	end
+	if not Glows.__xuiSpecHook and type(Glows.StartSpecGlow) == "function" then
+		local original = Glows.StartSpecGlow
+		Glows.StartSpecGlow = function(wrapper, spec, ...)
+			if wrapper then
+				if type(spec) == "table" and spec.xuiShine and ShineOn() then
+					-- EllesmereUI's own glow off the host, ours on
+					if wrapper._euiGlowActive and type(Glows.StopGlow) == "function" then pcall(Glows.StopGlow, wrapper) end
+					wrapper._euiSpecSig = nil
+					wrapper:SetAlpha(1)
+					Style:ShowGlow(wrapper, M.db.dispelGlow, true)
+					wrapper.__xuiDispelShine = true
+					return 3, false
+				elseif wrapper.__xuiDispelShine then
+					Style:HideGlow(wrapper)
+					wrapper.__xuiDispelShine = nil
+				end
+			end
+			return original(wrapper, spec, ...)
+		end
+		Glows.__xuiSpecHook = true
+	end
+end
+
+-- a slider drags through many values: one reload per frame is enough
+local ReloadSoon = XUI.Coalesce(function() ReloadPlates() end)
+
 local preview = false
 local gen = 0
 
@@ -245,6 +317,7 @@ end
 --------------------------------------------------------------------------------
 function M:OnEnable()
 	HookDispel()
+	HookShine()
 	ReloadPlates()
 	local np = NP()
 	if np and type(np.RefreshAllSettings) == "function" then
@@ -285,5 +358,9 @@ end
 
 function M:OnSettingChanged(path)
 	if path == "dispelAlways" then ReloadPlates() end
+	if path == "dispelShine" or path:find("^dispelGlow") then
+		shineGen = shineGen + 1
+		ReloadSoon()
+	end
 	self:RefreshSoon()
 end

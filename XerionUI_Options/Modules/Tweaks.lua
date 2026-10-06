@@ -14,7 +14,10 @@ O:RegisterModuleOptions("EUINameplates", function(ctx, m, G)
 		Card("Dispel glow", {
 			{ type = "toggle", label = "Show the glow without purge or soothe", path = "dispelAlways", width = "full",
 				tip = "EllesmereUI's own Dispel Glow setting still switches the glow on and off." },
+			{ type = "toggle", label = "Auto-Cast shine instead of EllesmereUI's style", path = "dispelShine", width = "full",
+				tip = "EllesmereUI cannot draw Auto-Cast on its aura icons (it swaps in Modern WoW Glow). This draws an Auto-Cast shine there instead, in the look set below. EllesmereUI's Dispel Glow setting still decides when a buff glows." },
 		}),
+		Card("Auto-Cast shine", G.Glow("dispelGlow"), { hidden = function() return not m.db.dispelShine end }),
 		Card("Shield amount", Join({
 			{ type = "toggle", label = "Show the shield amount", path = "shield.enabled" },
 			{ type = "toggle", label = "Enemies only", path = "shield.enemyOnly", disabled = off },

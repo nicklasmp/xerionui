@@ -397,6 +397,60 @@ Step("dispel alert: recognises a dispel under another token", function()
 	m:Refresh()
 end)
 
+Step("nameplates: auto-cast shine overrides the dispel glow style", function()
+	local m = XUI:GetModule("EUINameplates")
+	local reloads, drawn = 0, {}
+	_G.EllesmereNameplates_NS = {
+		plates = {},
+		NPC_ReloadAll = function() reloads = reloads + 1 end,
+		GetDispelGlowSpec = function(_, out)
+			out = out or {}
+			out.style, out.r, out.g, out.b, out.speed = 2, 0.2, 0.6, 1, 4
+			return out
+		end,
+	}
+	_G.EllesmereUI = { Glows = {
+		StartSpecGlow = function(wrapper, spec) drawn[#drawn + 1] = "eui:" .. tostring(spec.style) return spec.style, false end,
+		StopGlow = function(wrapper) wrapper._euiGlowActive = false end,
+	} }
+	local ns, Glows = _G.EllesmereNameplates_NS, _G.EllesmereUI.Glows
+	m.running = true
+	m.db.dispelShine = true
+	m:OnEnable()
+
+	local host = CreateFrame("Frame")
+	host:SetSize(24, 24)
+	host._euiGlowActive = true
+	local spec = ns.GetDispelGlowSpec(nil, {})
+	assert(spec.xuiShine and spec.style == 3, "the spec should be flagged and fingerprinted as Auto-Cast")
+	Glows.StartSpecGlow(host, spec, 24, 24, "engine")
+	assert(#drawn == 0, "EllesmereUI's own glow must not be drawn while the shine is on")
+	assert(host.__xuiGlow ~= nil, "our shine should be on the host")
+	assert(host._euiGlowActive == false, "EllesmereUI's glow should be taken off the host first")
+
+	-- a changed look reaches EllesmereUI's fingerprint
+	local before = ns.GetDispelGlowSpec(nil, {}).speed
+	m.db.dispelGlow.color = { 1, 0, 0, 1 }
+	XUI:NotifySettingChanged(m, "dispelGlow.color")
+	MOCK.Advance(0.5)
+	local after = ns.GetDispelGlowSpec(nil, {})
+	assert(reloads >= 1, "a setting change should reload the plates")
+	assert(after.speed ~= before and after.r == 1 and after.g == 0, "the fingerprint should follow the shine's look")
+
+	-- off again: EllesmereUI's glow is used and ours is gone
+	m.db.dispelShine = false
+	XUI:NotifySettingChanged(m, "dispelShine")
+	local plain = ns.GetDispelGlowSpec(nil, {})
+	assert(not plain.xuiShine and plain.style == 2, "the spec should be EllesmereUI's own again")
+	Glows.StartSpecGlow(host, plain, 24, 24, "engine")
+	assert(drawn[1] == "eui:2" and host.__xuiGlow == nil, "EllesmereUI draws again and our shine is removed")
+
+	m.running = true
+	m.db.dispelShine = false
+	XUI:UpdateModuleState(m)
+	_G.EllesmereNameplates_NS, _G.EllesmereUI = nil, nil
+end)
+
 Step("logout strips defaults", function()
 	MOCK.Fire("PLAYER_LOGOUT")
 	local sv = _G.XerionUIDB
