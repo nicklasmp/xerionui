@@ -26,6 +26,8 @@ local M = XUI:NewModule("BearForm", {
 	defaults = {
 		text = "BEAR FORM",
 		color = { 1, 0.49, 0.04, 1 },
+		pulse = true,
+		pulseSpeed = 0.45,
 		font = T.Font(32),
 		position = T.Position(0, 140, "HIGH"),
 		alert = T.Alert("NONE", { text = "Bear form" }),
@@ -40,8 +42,32 @@ local function Display()
 	if display then return display end
 	display = XUI.Widgets:CreateText("XUI_BearForm")
 	display:Hide()
+	-- the pulse is on the text, like the Melee Indicator's, and C-side: no Lua per frame
+	local group = display.text:CreateAnimationGroup()
+	group:SetLooping("BOUNCE")
+	local a = group:CreateAnimation("Alpha")
+	a:SetFromAlpha(1)
+	a:SetToAlpha(0.2)
+	a:SetSmoothing("IN_OUT")
+	display.pulse, display.pulseAnim = group, a
 	XUI.Movers:Register(display, M, "position")
 	return display
+end
+
+-- Runs while the warning is up and stops with it; started afresh each time it
+-- shows, as a hidden frame does not keep its animation going.
+local function SyncPulse(shown)
+	local d = display
+	if not d then return end
+	if shown and M.db.pulse then
+		if not d.pulse:IsPlaying() then
+			d.pulseAnim:SetDuration(math.max(0.1, M.db.pulseSpeed))
+			d.pulse:Play()
+		end
+	else
+		d.pulse:Stop()
+		d.text:SetAlpha(1)
+	end
 end
 
 local function NotBear()
@@ -55,7 +81,9 @@ function M:Update()
 	if not display then return end
 	local dead = XUI.Ask(UnitIsDeadOrGhost, "player") == true
 	local warn = self.running and inCombat and not dead and NotBear()
-	display:SetShown(self:IsPreview() or warn)
+	local shown = self:IsPreview() or warn
+	display:SetShown(shown)
+	SyncPulse(shown)
 	if warn and not warned then
 		warned = true
 		XUI.Audio:Play(self.db.alert, "Bear form")
@@ -81,5 +109,7 @@ function M:OnRefresh()
 	d:ApplyStyle(db.font)
 	d:SetText(db.text)
 	d:SetTextColor(XUI.UnpackColor(db.color))
+	-- the speed may have changed under a running pulse
+	d.pulseAnim:SetDuration(math.max(0.1, db.pulseSpeed))
 	self:Update()
 end

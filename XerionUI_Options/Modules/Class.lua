@@ -138,6 +138,9 @@ O:RegisterModuleOptions("BearForm", function(ctx, m, G)
 		Card("Text", Join({
 			{ type = "input", label = "Text", path = "text" },
 			{ type = "color", label = "Color", path = "color" },
+			{ type = "toggle", label = "Pulse", path = "pulse", tip = "Fades the text in and out while you are not in Bear Form, so it is harder to miss." },
+			{ type = "slider", label = "Pulse speed (seconds per fade)", path = "pulseSpeed", min = 0.15, max = 1.5, step = 0.05,
+				disabled = function() return not m.db.pulse end },
 		}, G.Font("font"))),
 		Card("Position", G.Position("position")),
 		Card("Alert", G.Alert("alert", { fallbackText = "Bear form" })),
