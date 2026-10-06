@@ -444,7 +444,7 @@ end
 --------------------------------------------------------------------------------
 MOCK.loaded = {}
 C_AddOns = {
-	GetAddOnMetadata = function(name, key) if key == "Version" then return "2.0.0-test" end end,
+	GetAddOnMetadata = function(name, key) if key == "Version" then return "2.0.0" end end,
 	IsAddOnLoaded = function(name) return MOCK.loaded[name] or false end,
 	LoadAddOn = function(name)
 		if MOCK.loaded[name] then return true end
