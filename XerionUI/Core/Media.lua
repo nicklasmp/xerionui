@@ -48,11 +48,6 @@ function Media:Fetch(kind, name)
 	return path
 end
 
--- True when `name` is registered for `kind` (false when Fetch would fall back).
-function Media:Has(kind, name)
-	return name ~= nil and LSM:Fetch(kind, name, true) ~= nil
-end
-
 -- Sorted list of registered names for a media kind. Built once and kept until
 -- LibSharedMedia registers something: the options ask on every refresh, and a
 -- pack can hold a thousand sounds. The list is shared, so callers only read it.

@@ -267,7 +267,6 @@ end
 --------------------------------------------------------------------------------
 function Module:IsRunning() return self.running end
 function Module:IsPreview() return self.preview or XUI.unlockActive and self.db.enabled end
-function Module:IsEnabled() return self.db.enabled end
 
 function Module:Refresh()
 	if self.OnRefresh then SafeCallFor(self, self.OnRefresh, self) end

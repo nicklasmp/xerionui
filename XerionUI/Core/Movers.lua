@@ -51,10 +51,6 @@ function Movers:GetPosition(entry)
 	return GetPath(entry.module.db, entry.path)
 end
 
-function Movers:GetDefaultPosition(entry)
-	return GetPath(entry.module.defaults, entry.path)
-end
-
 -- The frame a position is attached to by name (position.attach), if there is
 -- one, it exists and it is not the frame itself.
 local function AttachTarget(p, frame)

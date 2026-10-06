@@ -200,10 +200,7 @@ function Kit.Meter(M, opts)
 		return display
 	end
 
-	local function Hex(c)
-		local r, g, b = XUI.UnpackColor(c)
-		return ("%02x%02x%02x"):format(floor(r * 255 + 0.5), floor(g * 255 + 0.5), floor(b * 255 + 0.5))
-	end
+	local Hex = XUI.ColorHex
 
 	local function Paint(value)
 		local d, db = Display(), M.db

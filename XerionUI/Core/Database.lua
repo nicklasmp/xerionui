@@ -281,11 +281,6 @@ function DB:ResetModuleDB(key)
 	return t
 end
 
-function DB:ResetStyle()
-	wipe(self.style)
-	Inflate(self.style, self.STYLE_DEFAULTS)
-end
-
 --------------------------------------------------------------------------------
 -- Profiles
 --------------------------------------------------------------------------------
