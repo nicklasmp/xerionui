@@ -36,7 +36,7 @@ local M = XUI:NewModule("MeleeIndicator", {
 		interval = 0.25,
 		alert = T.Alert("NONE", { text = "Out of range" }),
 		repeatEvery = 0,
-		pulse = false,
+		pulse = true,
 		pulseSpeed = 0.45,
 		font = T.Font(28),
 		position = T.Position(0, -40),
@@ -100,12 +100,30 @@ local function Alert(out)
 	end
 end
 
+-- The pulse runs while the marker is up and stops with it: a frame that was
+-- hidden does not keep its animation going, so it is started afresh each time
+-- the marker shows. Cheap to call on every check (a running pulse is left be).
+local function SyncPulse(shown)
+	local d = display
+	if not d then return end
+	if shown and M.db.pulse then
+		if not d.pulse:IsPlaying() then
+			d.pulseAnim:SetDuration(math.max(0.1, M.db.pulseSpeed))
+			d.pulse:Play()
+		end
+	else
+		d.pulse:Stop()
+		d.text:SetAlpha(1)
+	end
+end
+
 local function Check()
 	local d = display
 	if not d then return end
 	if not spellID or not UnitExists("target") or XUI.Ask(UnitCanAttack, "player", "target") == false or not FormReady() then
 		last = "no attackable target (or wrong form)"
 		d:Hide()
+		SyncPulse(false)
 		Alert(false)
 		return
 	end
@@ -114,12 +132,14 @@ local function Check()
 		last = "secret answer: alpha follows it"
 		d:Show()
 		d:SetAlphaFromBoolean(inRange, 0, 1)
+		SyncPulse(true)
 		return
 	end
 	last = "answer " .. tostring(inRange)
 	d:SetAlpha(1)
 	-- nil means the client could not tell (no valid target for the spell)
 	d:SetShown(inRange == false)
+	SyncPulse(inRange == false)
 	Alert(inRange == false)
 end
 
@@ -133,7 +153,10 @@ function M:StopChecking()
 	wasOut = false
 	self:CancelTicker(ticker)
 	ticker = nil
-	if display and not self:IsPreview() then display:Hide() end
+	if display and not self:IsPreview() then
+		display:Hide()
+		SyncPulse(false)
+	end
 end
 
 function M:OnEnable()
@@ -157,20 +180,17 @@ function M:OnRefresh()
 	d:ApplyStyle(db.font)
 	d:SetText(db.text)
 	d:SetTextColor(XUI.UnpackColor(db.color))
-	if db.pulse then
-		d.pulseAnim:SetDuration(math.max(0.1, db.pulseSpeed))
-		if not d.pulse:IsPlaying() then d.pulse:Play() end
-	else
-		d.pulse:Stop()
-		d.text:SetAlpha(1)
-	end
+	-- the speed may have changed under a running pulse
+	d.pulseAnim:SetDuration(math.max(0.1, db.pulseSpeed))
 	if self:IsPreview() then
 		d:SetAlpha(1)
 		d:Show()
+		SyncPulse(true)
 	elseif ticker and self:IsRunning() then
 		self:StartChecking() -- the interval may have changed
 	else
 		d:Hide()
+		SyncPulse(false)
 	end
 end
 
@@ -181,8 +201,14 @@ function M:Test()
 	self:Refresh()
 	d:SetAlpha(1)
 	d:Show()
+	SyncPulse(true)
 	XUI.Audio:Play(self.db.alert, "Out of range", true)
-	self:After(3, function() if not ticker and not self:IsPreview() then d:Hide() end end)
+	self:After(3, function()
+		if not ticker and not self:IsPreview() then
+			d:Hide()
+			SyncPulse(false)
+		end
+	end)
 end
 
 function M:DebugInfo()
