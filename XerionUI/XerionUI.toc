@@ -77,7 +77,6 @@ Modules\Tweaks\TargetedSpellBars.lua
 Modules\Tweaks\PartyFrames.lua
 Modules\Tweaks\FlyingBar.lua
 Modules\Tweaks\ActionBarFont.lua
-Modules\Tweaks\PlayerAuraBars.lua
 Modules\Tweaks\CDMStackFont.lua
 
 # The options window is the load-on-demand addon XerionUI_Options; it is
