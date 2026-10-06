@@ -251,6 +251,85 @@ Step("profile command ignores capitalisation", function()
 	XUI.DB:DeleteProfile("CaseTest")
 end)
 
+Step("who has the key: lists this dungeon's keys", function()
+	local m = XUI:GetModule("InstanceKeys")
+	assert(m and m.running, "the module should be running")
+	local saved = {
+		UnitFullName = _G.UnitFullName, Ambiguate = _G.Ambiguate, GetNormalizedRealmName = _G.GetNormalizedRealmName,
+		GetInstanceInfo = _G.GetInstanceInfo, C_MythicPlus = _G.C_MythicPlus, C_ChallengeMode = _G.C_ChallengeMode,
+		send = C_ChatInfo.SendAddonMessage,
+	}
+	local sent = {}
+	MOCK.inGroup = true
+	local names = { player = "Xerion", party1 = "Brew", party2 = "Cleric" }
+	_G.UnitFullName = function(u) return names[u], nil end
+	_G.Ambiguate = function(s) return s end
+	_G.GetNormalizedRealmName = function() return "Realm" end
+	_G.GetInstanceInfo = function() return "Ara-Kara", "party", 23, "", 5, 0, false, 2660 end
+	_G.C_MythicPlus = {
+		GetOwnedKeystoneLevel = function() return 10 end,
+		GetOwnedKeystoneChallengeMapID = function() return 503 end,
+		RequestMapInfo = function() end,
+	}
+	_G.C_ChallengeMode = {
+		GetMapUIInfo = function(id) return id == 503 and "Ara-Kara" or "Dawnbreaker", id, 0, 0, 0, id == 503 and 2660 or 9999 end,
+		IsChallengeModeActive = function() return false end,
+	}
+	C_ChatInfo.SendAddonMessage = function(prefix, text, channel) sent[#sent + 1] = prefix .. "|" .. text .. "|" .. channel end
+	local function text()
+		local d = _G.XUI_InstanceKeys
+		return d and d:IsShown() and d.text:GetText() or nil
+	end
+
+	MOCK.Advance(4)
+	MOCK.Fire("PLAYER_ENTERING_WORLD")
+	MOCK.Advance(0.5)
+	assert(sent[1] == "LibKS|R|PARTY", "entering a Mythic dungeon should ask the group, sent " .. tostring(sent[1]))
+	assert(text() and text():find("Xerion", 1, true) and text():find("+10", 1, true), "your own key should be listed: " .. tostring(text()))
+
+	MOCK.Fire("CHAT_MSG_ADDON", "LibKS", "12,503,2500", "PARTY", "Brew")
+	MOCK.Fire("CHAT_MSG_ADDON", "LibKS", "11,504,1000", "PARTY", "Cleric")
+	MOCK.Fire("CHAT_MSG_ADDON", "LibKS", "garbage", "PARTY", "Brew")
+	MOCK.Fire("CHAT_MSG_ADDON", "Other", "5,503,1", "PARTY", "Brew")
+	MOCK.Advance(0.5)
+	local shown = text()
+	assert(shown:find("Brew", 1, true) and shown:find("+12", 1, true), "a member with this dungeon's key should be listed: " .. shown)
+	assert(not shown:find("Cleric", 1, true), "a key for another dungeon must not be listed: " .. shown)
+	assert(shown:find("Xerion", 1, true) < shown:find("Brew", 1, true), "lowest key first: " .. shown)
+	assert(shown:find("Who has a key?", 1, true), "the title should show")
+
+	m.db.showAll = true
+	m:Refresh()
+	shown = text()
+	assert(shown:find("Cleric", 1, true) and shown:find("(Dawnbreaker)", 1, true), "showAll lists other dungeons' keys, named: " .. shown)
+	m.db.showAll = false
+
+	MOCK.Advance(4)
+	MOCK.Fire("CHAT_MSG_ADDON", "LibKS", "R", "PARTY", "Brew")
+	assert(sent[#sent] == "LibKS|10,503,0|PARTY", "a request should be answered with our key, sent " .. tostring(sent[#sent]))
+
+	MOCK.Fire("PLAYER_REGEN_DISABLED")
+	assert(text() == nil, "combat should hide it")
+	MOCK.Fire("PLAYER_REGEN_ENABLED")
+	MOCK.Advance(10.5)
+	assert(text() ~= nil, "it should return ten seconds after the fight")
+	MOCK.Fire("ENCOUNTER_START")
+	assert(text() == nil, "a boss fight should dismiss it")
+
+	-- not a Mythic dungeon: nothing is asked, nothing shown
+	_G.GetInstanceInfo = function() return "World", "none", 0, "", 0, 0, false, 1 end
+	local before = #sent
+	MOCK.Fire("PLAYER_ENTERING_WORLD")
+	MOCK.Advance(0.5)
+	assert(text() == nil and #sent == before, "outside a Mythic dungeon nothing should happen")
+
+	MOCK.inGroup = false
+	_G.UnitFullName, _G.Ambiguate, _G.GetNormalizedRealmName = saved.UnitFullName, saved.Ambiguate, saved.GetNormalizedRealmName
+	_G.GetInstanceInfo, _G.C_MythicPlus, _G.C_ChallengeMode = saved.GetInstanceInfo, saved.C_MythicPlus, saved.C_ChallengeMode
+	C_ChatInfo.SendAddonMessage = saved.send
+	m:Refresh()
+end)
+
 Step("logout strips defaults", function()
 	MOCK.Fire("PLAYER_LOGOUT")
 	local sv = _G.XerionUIDB

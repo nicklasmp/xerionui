@@ -228,6 +228,26 @@ O:RegisterModuleOptions("AggroCheck", function(ctx, m, G)
 end)
 
 --------------------------------------------------------------------------------
+O:RegisterModuleOptions("InstanceKeys", function(ctx, m, G)
+	return {
+		Card("Show", {
+			{ type = "description", width = "full",
+				text = "Shown when you enter a Mythic dungeon: the group members whose keystone is for it. It goes away when you leave, when a boss fight or the key starts. Members are only listed if they run an addon that shares keystones (BigWigs, EllesmereUI or XerionUI)." },
+			{ type = "toggle", label = "Title", path = "showTitle" },
+			{ type = "toggle", label = "Hide in combat", path = "hideInCombat",
+				tip = "Hidden while you fight, back ten seconds after (three fights at most)." },
+			{ type = "toggle", label = "Show every player's key", path = "showAll", width = "full",
+				tip = "Also lists keys that belong to other dungeons, dimmed and with the dungeon's name." },
+			{ type = "dropdown", label = "Align", path = "align", values = XUI.Style.JUSTIFY },
+			{ type = "color", label = "Other dungeon color", path = "otherColor", hasAlpha = false,
+				disabled = function() return not m.db.showAll end },
+		}),
+		Card("Text", G.Font("text", { color = true })),
+		Card("Position", G.Position("position")),
+	}
+end)
+
+--------------------------------------------------------------------------------
 O:RegisterModuleOptions("Bloodlust", function(ctx, m, G)
 	return {
 		Card("Alert when lust is ready again", G.Alert("alert", { test = function() m:TestAlert() end })),

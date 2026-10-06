@@ -493,7 +493,11 @@ function CreateColor(r, g, b, a)
 	function c:GetRGBA() return self.r, self.g, self.b, self.a end
 	return c
 end
-function IsInGroup() return MOCK.inGroup or false end
+-- the instance category (an LFG group) is its own question
+function IsInGroup(category)
+	if category == 2 then return MOCK.inInstanceGroup or false end
+	return MOCK.inGroup or false
+end
 function IsInRaid() return MOCK.inRaid or false end
 function UnitExists(u) return u == "player" or (MOCK.inGroup and u:match("^party%d$") ~= nil) end
 function UnitIsUnit(a, b) return a == b end
