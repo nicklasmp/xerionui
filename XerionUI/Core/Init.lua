@@ -77,6 +77,13 @@ function XUI.Probe(fn, ...)
 	return v
 end
 
+-- A value as text for a trace line: secrets are named, never read.
+function XUI.Describe(v)
+	if issecretvalue and issecretvalue(v) then return "<secret>" end
+	if type(v) == "table" then return "table" end
+	return tostring(v)
+end
+
 --------------------------------------------------------------------------------
 -- Error isolation
 -- Module code runs through SafeCall so one broken feature never takes the

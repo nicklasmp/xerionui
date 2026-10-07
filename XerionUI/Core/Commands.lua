@@ -53,6 +53,7 @@ local HELP = {
 	{ "/xui preview off", "end every module preview" },
 	{ "/xui version", "show the installed version" },
 	{ "/xui debug [module]", "why modules are or are not running, plus their live state" },
+	{ "/xui trace <module>", "print what a module sees as it happens (again to stop)" },
 	{ "/xui perf [on|off|reset]", "time spent in each module's code (on, play, then /xui perf)" },
 }
 
@@ -111,6 +112,18 @@ local function Handle(msg)
 		for _, m in ipairs(XUI.modules) do m:SetPreview(false) end
 	elseif cmd == "debug" then
 		Debug(rest)
+	elseif cmd == "trace" then
+		local want = rest:lower()
+		local found
+		for _, m in ipairs(XUI.modules) do
+			if want ~= "" and (m.key:lower() == want or m.name:lower() == want) then found = m end
+		end
+		if found then
+			found.trace = not found.trace
+			XUI.Printf("tracing %s: |cffffffff%s|r", found.name, found.trace and "on" or "off")
+		else
+			XUI.Print("trace which module? Use its key, e.g. /xui trace DispelAlert or /xui trace EUINameplates")
+		end
 	elseif cmd == "perf" then
 		rest = rest:lower()
 		if rest == "on" then

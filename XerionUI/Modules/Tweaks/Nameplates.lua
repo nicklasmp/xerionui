@@ -95,6 +95,13 @@ local shineGen = 0
 local shineStats = { flagged = 0, drawn = 0, prewarmed = 0 } -- for /xui debug
 local SHINE_SPARKS = 6 -- the most sparks an aura icon's shine can have
 
+-- Trace lines for calls that are not ours to count: the first few only.
+local traced = {}
+local function TraceFew(key, fmt, ...)
+	traced[key] = (traced[key] or 0) + 1
+	if traced[key] <= 6 then M:Trace(fmt, ...) end
+end
+
 local function ShineOn()
 	return M.running and M.db.dispelShine
 end
@@ -111,6 +118,7 @@ local function HookShine()
 			if ShineOn() then
 				out.xuiShine = true
 				shineStats.flagged = shineStats.flagged + 1
+				TraceFew("spec", "dispel glow spec asked for by EllesmereUI: now flagged for the shine")
 				out.style = 3 -- Auto-Cast in EllesmereUI's shared list
 				out.speed = 10 + (shineGen % 100) * 0.01
 				out.r, out.g, out.b = XUI.UnpackColor(Style:Resolve("glow", M.db.dispelGlow).color)
@@ -132,7 +140,11 @@ local function HookShine()
 			if M.db and M.db.enabled and host then
 				local ok, caller = pcall(debugstack, 2, 1, 0)
 				if not ok or type(caller) ~= "string" or caller:find("EllesmereUINameplates", 1, true) then
-					if pcall(XUI.Glow.PrewarmShine, host, SHINE_SPARKS) then shineStats.prewarmed = shineStats.prewarmed + 1 end
+					local made = pcall(XUI.Glow.PrewarmShine, host, SHINE_SPARKS)
+					if made then shineStats.prewarmed = shineStats.prewarmed + 1 end
+					TraceFew("prewarm", "a nameplate host was made: shine prepared %s", made)
+				else
+					TraceFew("prewarmother", "a host was made by someone else: %s", caller:sub(1, 70))
 				end
 			end
 			return a, b
@@ -152,6 +164,7 @@ local function HookShine()
 					Style:ShowGlow(wrapper, M.db.dispelGlow, true, w, h)
 					wrapper.__xuiDispelShine = true
 					shineStats.drawn = shineStats.drawn + 1
+					M:Trace("shine drawn: size passed %sx%s, host has the shine regions: %s, glow state: %s", w, h, wrapper.__xuiShine ~= nil and wrapper.__xuiShine.locked == true, wrapper.__xuiGlow)
 					shineStats.passed = (w or "?") .. "x" .. (h or "?")
 					local okSize, hw, hh = pcall(wrapper.GetSize, wrapper)
 					shineStats.read = okSize and (XUI.IsSecret(hw) and "secret" or (tostring(hw) .. "x" .. tostring(hh))) or "error"
@@ -160,6 +173,8 @@ local function HookShine()
 				elseif wrapper.__xuiDispelShine then
 					Style:HideGlow(wrapper)
 					wrapper.__xuiDispelShine = nil
+				else
+					TraceFew("plain", "a glow EllesmereUI draws itself: style %s, flagged %s, shine option on %s, running %s", type(spec) == "table" and spec.style or "?", type(spec) == "table" and spec.xuiShine == true, M.db.dispelShine, M.running)
 				end
 			end
 			return original(wrapper, spec, w, h, ...)
@@ -365,6 +380,7 @@ end
 function M:OnEnable()
 	HookDispel()
 	HookShine()
+	M:Trace("hooks: spec %s, draw %s, prewarm %s", NP() and NP().__xuiSpecHook == true, _G.EllesmereUI and _G.EllesmereUI.Glows and _G.EllesmereUI.Glows.__xuiSpecHook == true, _G.EllesmereUI and _G.EllesmereUI.Glows and _G.EllesmereUI.Glows.__xuiPrewarmHook == true)
 	ReloadPlates()
 	local np = NP()
 	if np and type(np.RefreshAllSettings) == "function" then

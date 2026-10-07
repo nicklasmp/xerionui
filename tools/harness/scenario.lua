@@ -394,22 +394,14 @@ Step("dispel alert: recognises a dispel under another token", function()
 	assert(shown() and shown():find("Renew", 1, true), "an aura missing from the list counts: " .. tostring(shown()))
 	clear()
 
-	-- 5: nothing can be read, but the cast succeeded: a dispel with nothing to
-	-- remove fails, so success is the proof
+	-- 5: nothing can be read, and a dispel that succeeds proves nothing on this
+	-- client (it succeeds with nothing to remove): no alert
 	auras({ { auraInstanceID = 12, name = "Renew", icon = 1 } })
 	MOCK.Fire("UNIT_SPELLCAST_SENT", "player", "Brew", "g5", 527)
+	auras({ { auraInstanceID = 12, name = "Renew", icon = 1 } })
 	MOCK.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "g5", 527)
-	assert(shown() == nil, "not before the lists have been compared")
-	MOCK.Advance(0.5)
-	assert(shown() and shown():find("Successfully dispelled", 1, true), "a succeeded cast should show: " .. tostring(shown()))
-	clear()
-
-	-- 6: Mass Dispel succeeds whatever it removes, so it needs the aura seen going
-	auras({ { auraInstanceID = 13, name = "Renew", icon = 1 } })
-	MOCK.Fire("UNIT_SPELLCAST_SENT", "player", "Brew", "g6", 32375)
-	MOCK.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "g6", 32375)
 	MOCK.Advance(2)
-	assert(shown() == nil, "Mass Dispel without a removal seen stays silent")
+	assert(shown() == nil, "a succeeded cast with every aura still there must stay silent: " .. tostring(shown()))
 
 	-- 7: the aura list comes through C_UnitAuras.GetUnitAuras, the other route
 	auras({})

@@ -362,6 +362,15 @@ function XUI:NotifySettingChanged(m, path)
 	end
 end
 
+-- /xui trace <module> switches this on: every Trace line is printed, so what a
+-- module sees in the game can be read off the chat and sent along.
+function Module:Trace(fmt, ...)
+	if not self.trace then return end
+	local args, n = { ... }, select("#", ...)
+	for i = 1, n do args[i] = XUI.Describe(args[i]) end
+	self:Print("|cff7fbfff" .. fmt:format(unpack(args, 1, n)) .. "|r")
+end
+
 function Module:Print(...)
 	XUI.Print(("|cffaaaaaa%s:|r"):format(self.name), ...)
 end
