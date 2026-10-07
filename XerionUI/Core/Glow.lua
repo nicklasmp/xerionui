@@ -218,6 +218,40 @@ end
 --------------------------------------------------------------------------------
 local SPARK = [[Interface\Artifacts\Blizzard_Spark]]
 
+-- One spark: its texture and the looping chain of five translations.
+local function NewSpark(f)
+	local sp = { tex = f:CreateTexture(nil, "OVERLAY", nil, 7) }
+	sp.tex:SetTexture(SPARK)
+	sp.tex:SetBlendMode("ADD")
+	sp.ag = sp.tex:CreateAnimationGroup()
+	sp.ag:SetLooping("REPEAT")
+	sp.moves = {}
+	for k = 1, 5 do
+		local m = sp.ag:CreateAnimation("Translation")
+		m:SetSmoothing("NONE")
+		m:SetOrder(k)
+		sp.moves[k] = m
+	end
+	sp.tex:Hide()
+	return sp
+end
+
+-- Makes every region the shine will ever need, hidden. An engine button's
+-- subtree is closed to addon code once the button has been created, so on a
+-- host that sits in one this has to run in the creation window; StartShine then
+-- only configures (and draws at most `count` sparks).
+function Glow.PrewarmShine(owner, count)
+	local st = owner.__xuiShine
+	if not st then
+		st = { sparks = {} }
+		st.frame = CreateFrame("Frame", nil, owner)
+		st.frame:Hide()
+		owner.__xuiShine = st
+	end
+	for i = #st.sparks + 1, count or 4 do st.sparks[i] = NewSpark(st.frame) end
+	st.locked = true
+end
+
 -- o: color, particles (sparks), frequency (laps per second), scale, offset
 function Glow.StartShine(owner, o)
 	local st = owner.__xuiShine
@@ -246,6 +280,8 @@ function Glow.StartShine(owner, o)
 		f:SetSize(w, h)
 	end
 	local n = max(1, floor(o.particles or 4))
+	-- a prewarmed host cannot make another spark
+	if st.locked then n = min(n, #st.sparks) end
 	local freq = abs(o.frequency or 0.25)
 	if freq == 0 then freq = 0.25 end
 	local period = 1 / freq
@@ -263,18 +299,7 @@ function Glow.StartShine(owner, o)
 		for i = 1, n do
 			local sp = st.sparks[i]
 			if not sp then
-				sp = { tex = f:CreateTexture(nil, "OVERLAY", nil, 7) }
-				sp.tex:SetTexture(SPARK)
-				sp.tex:SetBlendMode("ADD")
-				sp.ag = sp.tex:CreateAnimationGroup()
-				sp.ag:SetLooping("REPEAT")
-				sp.moves = {}
-				for k = 1, 5 do
-					local m = sp.ag:CreateAnimation("Translation")
-					m:SetSmoothing("NONE")
-					m:SetOrder(k)
-					sp.moves[k] = m
-				end
+				sp = NewSpark(f)
 				st.sparks[i] = sp
 			end
 			sp.ag:Stop()

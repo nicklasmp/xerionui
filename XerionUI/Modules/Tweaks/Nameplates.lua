@@ -92,7 +92,8 @@ end
 --     flagged spec, and takes it away again when it is not flagged.
 --------------------------------------------------------------------------------
 local shineGen = 0
-local shineStats = { flagged = 0, drawn = 0 } -- for /xui debug
+local shineStats = { flagged = 0, drawn = 0, prewarmed = 0 } -- for /xui debug
+local SHINE_SPARKS = 6 -- the most sparks an aura icon's shine can have
 
 local function ShineOn()
 	return M.running and M.db.dispelShine
@@ -119,6 +120,24 @@ local function HookShine()
 			return out
 		end
 		np.__xuiSpecHook = true
+	end
+	-- EllesmereUI's aura buttons are closed to addon code once created, so the
+	-- shine's regions are made in the same window as its own (the prewarm of a
+	-- host) - for the nameplates' hosts only.
+	if not Glows.__xuiPrewarmHook and type(Glows.PrewarmEngineHost) == "function" then
+		local original = Glows.PrewarmEngineHost
+		Glows.PrewarmEngineHost = function(host, ...)
+			local a, b = original(host, ...)
+			-- enabled, not yet running: the buttons may be made before login
+			if M.db and M.db.enabled and host then
+				local ok, caller = pcall(debugstack, 2, 1, 0)
+				if not ok or type(caller) ~= "string" or caller:find("EllesmereUINameplates", 1, true) then
+					if pcall(XUI.Glow.PrewarmShine, host, SHINE_SPARKS) then shineStats.prewarmed = shineStats.prewarmed + 1 end
+				end
+			end
+			return a, b
+		end
+		Glows.__xuiPrewarmHook = true
 	end
 	if not Glows.__xuiSpecHook and type(Glows.StartSpecGlow) == "function" then
 		local original = Glows.StartSpecGlow
@@ -159,10 +178,15 @@ function M:DebugInfo()
 			tostring(np and type(np.GetDispelGlow) == "function" and np.GetDispelGlow()), tostring(magic), tostring(enrage)),
 		("auto-cast shine: option %s, spec hook %s, draw hook %s"):format(tostring(self.db.dispelShine),
 			tostring(np and np.__xuiSpecHook == true), tostring(Glows and Glows.__xuiSpecHook == true)),
-		("dispel specs flagged: %d, shines drawn: %d"):format(shineStats.flagged, shineStats.drawn),
+		("dispel specs flagged: %d, shines drawn: %d, hosts prepared for the shine: %d (hooks: %s)"):format(shineStats.flagged, shineStats.drawn, shineStats.prewarmed, tostring(Glows and Glows.__xuiPrewarmHook == true)),
 		("last shine: size passed %s, host reads %s, glow state %s"):format(tostring(shineStats.passed), tostring(shineStats.read), tostring(shineStats.glow)),
 	}
 end
+
+-- Hooked as soon as this file loads: EllesmereUI makes its aura buttons at its
+-- own login, before ours, and a button made without the shine's regions cannot
+-- get them afterwards. Every hook is inert until the module is enabled.
+HookShine()
 
 -- a slider drags through many values: one reload per frame is enough
 local ReloadSoon = XUI.Coalesce(function() ReloadPlates() end)

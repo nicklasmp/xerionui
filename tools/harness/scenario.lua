@@ -429,15 +429,23 @@ Step("nameplates: auto-cast shine overrides the dispel glow style", function()
 		end,
 	}
 	_G.EllesmereUI = { Glows = {
+		PrewarmEngineHost = function() end,
 		StartSpecGlow = function(wrapper, spec) drawn[#drawn + 1] = "eui:" .. tostring(spec.style) return spec.style, false end,
 		StopGlow = function(wrapper) wrapper._euiGlowActive = false end,
 	} }
 	local ns, Glows = _G.EllesmereNameplates_NS, _G.EllesmereUI.Glows
+	-- the caller of the prewarm: EllesmereUI's nameplate aura code
+	local savedStack = _G.debugstack
+	_G.debugstack = function() return "[EllesmereUINameplates/EUI_Nameplates_AuraContainers.lua]:326: in function ApplyNPBuffExtra" end
 	m.running = true
+	m.db.enabled = true
 	m.db.dispelShine = true
 	m:OnEnable()
 
 	local host = CreateFrame("Frame")
+	-- the host is prepared in EllesmereUI's creation window, before anything is drawn
+	Glows.PrewarmEngineHost(host, 24, 24, nil)
+	assert(host.__xuiShine and host.__xuiShine.locked and #host.__xuiShine.sparks == 6, "the shine's regions should be made with the host")
 	-- an engine button's host reads 1x1 until the engine lays it out: the size comes with the call
 	host:SetSize(1, 1)
 	host._euiGlowActive = true
@@ -449,6 +457,13 @@ Step("nameplates: auto-cast shine overrides the dispel glow style", function()
 	assert(host.__xuiShine and host.__xuiShine.frame:IsShown(), "the shine should be drawn, though the host reads almost no size")
 	assert(host.__xuiShine.frame:GetWidth() == 24 and host.__xuiShine.frame:GetHeight() == 24, "and at the size passed in, not the host's")
 	assert(host._euiGlowActive == false, "EllesmereUI's glow should be taken off the host first")
+
+	-- a prewarmed host cannot grow more sparks, however many are asked for
+	m.db.dispelGlow.particles = 16
+	XUI:NotifySettingChanged(m, "dispelGlow.particles")
+	Glows.StartSpecGlow(host, ns.GetDispelGlowSpec(nil, {}), 24, 24, "engine")
+	assert(#host.__xuiShine.sparks == 6, "no spark may be created after the host was made")
+	m.db.dispelGlow.particles = nil
 
 	-- a changed look reaches EllesmereUI's fingerprint
 	local before = ns.GetDispelGlowSpec(nil, {}).speed
@@ -469,8 +484,10 @@ Step("nameplates: auto-cast shine overrides the dispel glow style", function()
 
 	m.running = true
 	m.db.dispelShine = false
+	m.db.enabled = false
 	XUI:UpdateModuleState(m)
 	_G.EllesmereNameplates_NS, _G.EllesmereUI = nil, nil
+	_G.debugstack = savedStack
 end)
 
 Step("logout strips defaults", function()
