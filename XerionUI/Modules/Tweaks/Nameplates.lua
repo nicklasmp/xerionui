@@ -30,7 +30,7 @@ local M = XUI:NewModule("EUINameplates", {
 	defaults = {
 		dispelAlways = true,
 		dispelShine = false,
-		dispelGlow = T.Glow(true, { useGlobal = false, type = "AUTOCAST", color = { 1, 0.82, 0.25, 1 } }),
+		dispelGlow = T.Glow(true, { useGlobal = false, type = "AUTOCAST", color = { 1, 0.82, 0.25, 1 }, particles = 8, scale = 1.6 }),
 		shield = { enabled = false, enemyOnly = true, offX = 0, offY = 0 },
 		shieldText = T.Font(11, { color = { 1, 0.82, 0.25, 1 } }),
 	},
@@ -93,7 +93,7 @@ end
 --------------------------------------------------------------------------------
 local shineGen = 0
 local shineStats = { flagged = 0, drawn = 0, prewarmed = 0 } -- for /xui debug
-local SHINE_SPARKS = 6 -- the most sparks an aura icon's shine can have
+local SHINE_SPARKS = 8 -- the most sparks an aura icon's shine can have
 
 -- Trace lines for calls that are not ours to count: the first few only.
 local traced = {}

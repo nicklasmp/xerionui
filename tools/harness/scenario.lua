@@ -356,10 +356,12 @@ Step("nameplates: auto-cast shine overrides the dispel glow style", function()
 	m.db.dispelShine = true
 	m:OnEnable()
 
+	m.db.dispelGlow.particles = 4
+	XUI:NotifySettingChanged(m, "dispelGlow.particles")
 	local host = CreateFrame("Frame")
 	-- the host is prepared in EllesmereUI's creation window, before anything is drawn
 	Glows.PrewarmEngineHost(host, 24, 24, nil)
-	assert(host.__xuiShine and host.__xuiShine.locked and #host.__xuiShine.sparks == 6, "the shine's regions should be made with the host")
+	assert(host.__xuiShine and host.__xuiShine.locked and #host.__xuiShine.sparks == 8, "the shine's regions should be made with the host")
 	-- an engine button's host reads 1x1 until the engine lays it out: the size comes with the call
 	host:SetSize(1, 1)
 	host._euiGlowActive = true
@@ -379,7 +381,7 @@ Step("nameplates: auto-cast shine overrides the dispel glow style", function()
 	m.db.dispelGlow.particles = 16
 	XUI:NotifySettingChanged(m, "dispelGlow.particles")
 	Glows.StartSpecGlow(host, ns.GetDispelGlowSpec(nil, {}), 24, 24, "engine")
-	assert(#host.__xuiShine.sparks == 6, "no spark may be created after the host was made")
+	assert(#host.__xuiShine.sparks == 8, "no spark may be created after the host was made")
 	m.db.dispelGlow.particles = nil
 
 	-- a changed look reaches EllesmereUI's fingerprint

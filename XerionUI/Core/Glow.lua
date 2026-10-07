@@ -296,7 +296,7 @@ function Glow.StartShine(owner, o)
 	local freq = abs(o.frequency or 0.25)
 	if freq == 0 then freq = 0.25 end
 	local period = 1 / freq
-	local size = max(5, 7 * (o.scale or 1))
+	local size = max(6, 8 * (o.scale or 1))
 	local r, g, b, a = XUI.UnpackColor(o.color)
 	local sig = ("%.2f:%.2f:%d:%.3f:%.2f"):format(w, h, n, period, size)
 	local rebuild = st.sig ~= sig
