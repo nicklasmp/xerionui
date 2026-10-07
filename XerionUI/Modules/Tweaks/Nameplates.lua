@@ -165,8 +165,13 @@ local function HookShine()
 					wrapper._euiSpecSig = nil
 					wrapper:SetAlpha(1)
 					-- the size EllesmereUI sized the button to: the host itself has none to read yet
-					Style:ShowGlow(wrapper, M.db.dispelGlow, true, w, h)
+					local okShow, errShow = pcall(Style.ShowGlow, Style, wrapper, M.db.dispelGlow, true, w, h)
+					if not okShow then
+						shineStats.error = tostring(errShow)
+						M:Trace("drawing the shine failed: %s", shineStats.error)
+					end
 					wrapper.__xuiDispelShine = true
+					if wrapper.__xuiShine and wrapper.__xuiShine.locked then shineStats.preparedDraws = (shineStats.preparedDraws or 0) + 1 else shineStats.otherDraws = (shineStats.otherDraws or 0) + 1 end
 					shineStats.drawn = shineStats.drawn + 1
 					TraceFew("drawn", "shine drawn: size passed %sx%s, host was prepared when made: %s, glow state: %s", w, h, wrapper.__xuiShine ~= nil and wrapper.__xuiShine.locked == true, wrapper.__xuiGlow)
 					shineStats.passed = (w or "?") .. "x" .. (h or "?")
@@ -199,6 +204,7 @@ function M:DebugInfo()
 			tostring(np and np.__xuiSpecHook == true), tostring(Glows and Glows.__xuiSpecHook == true)),
 		("dispel specs flagged: %d, shines drawn: %d, hosts prepared for the shine: %d (hooks: %s)"):format(shineStats.flagged, shineStats.drawn, shineStats.prewarmed, tostring(Glows and Glows.__xuiPrewarmHook == true)),
 		("last shine: size passed %s, host reads %s, glow state %s"):format(tostring(shineStats.passed), tostring(shineStats.read), tostring(shineStats.glow)),
+		("draws on hosts prepared when made: %d, on others: %d, last error: %s"):format(shineStats.preparedDraws or 0, shineStats.otherDraws or 0, tostring(shineStats.error)),
 	}
 end
 

@@ -368,8 +368,11 @@ Step("nameplates: auto-cast shine overrides the dispel glow style", function()
 	Glows.StartSpecGlow(host, spec, 24, 24, "engine")
 	assert(#drawn == 0, "EllesmereUI's own glow must not be drawn while the shine is on")
 	assert(host.__xuiGlow ~= nil, "our shine should be on the host")
-	assert(host.__xuiShine and host.__xuiShine.frame:IsShown(), "the shine should be drawn, though the host reads almost no size")
-	assert(host.__xuiShine.frame:GetWidth() == 24 and host.__xuiShine.frame:GetHeight() == 24, "and at the size passed in, not the host's")
+	local st = host.__xuiShine
+	assert(st and st.direct and st.frame == host, "the sparks should be textures of the host itself, with no frame between")
+	assert(st.sparks[1].tex:IsShown() and st.sparks[4].tex:IsShown(), "the sparks should be shown, though the host reads almost no size")
+	assert(not st.sparks[5].tex:IsShown(), "only as many sparks as asked for (4)")
+	assert(host:GetWidth() == 1 and host:GetHeight() == 1, "and the host itself must not be resized or moved")
 	assert(host._euiGlowActive == false, "EllesmereUI's glow should be taken off the host first")
 
 	-- a prewarmed host cannot grow more sparks, however many are asked for

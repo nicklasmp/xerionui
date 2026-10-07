@@ -243,9 +243,10 @@ end
 function Glow.PrewarmShine(owner, count)
 	local st = owner.__xuiShine
 	if not st then
-		st = { sparks = {} }
-		st.frame = CreateFrame("Frame", nil, owner)
-		st.frame:Hide()
+		-- the sparks are textures of the host itself, with no frame of their own
+		-- in between: that is how EllesmereUI draws on these hosts, and a child
+		-- frame is shown and hidden where the engine does not like it
+		st = { sparks = {}, frame = owner, direct = true }
 		owner.__xuiShine = st
 	end
 	for i = #st.sparks + 1, count or 4 do st.sparks[i] = NewSpark(st.frame) end
@@ -261,24 +262,29 @@ function Glow.StartShine(owner, o)
 		owner.__xuiShine = st
 	end
 	local f = st.frame
-	Level(f, owner, 4)
+	local direct = st.direct
 	local off = o.offset or 0
-	f:ClearAllPoints()
-	f:SetPoint("TOPLEFT", owner, "TOPLEFT", -off, off)
-	f:SetPoint("BOTTOMRIGHT", owner, "BOTTOMRIGHT", off, -off)
+	if not direct then
+		Level(f, owner, 4)
+		f:ClearAllPoints()
+		f:SetPoint("TOPLEFT", owner, "TOPLEFT", -off, off)
+		f:SetPoint("BOTTOMRIGHT", owner, "BOTTOMRIGHT", off, -off)
+	end
 
 	local w, h, fixed = Size(owner, o)
 	if not w or w <= 0 or h <= 0 then
-		f:Hide()
+		if direct then Glow.StopShine(owner) else f:Hide() end
 		return
 	end
 	w, h = w + 2 * off, h + 2 * off
 	-- a fixed size is the frame's own: it no longer follows the host's
-	if fixed then
+	if fixed and not direct then
 		f:ClearAllPoints()
 		f:SetPoint("TOPLEFT", owner, "TOPLEFT", -off, off)
 		f:SetSize(w, h)
 	end
+	-- sparks hang off the host's own corner: the glow reaches `off` outside it
+	local ox, oy = direct and -off or 0, direct and off or 0
 	local n = max(1, floor(o.particles or 4))
 	-- a prewarmed host cannot make another spark
 	if st.locked then n = min(n, #st.sparks) end
@@ -315,7 +321,7 @@ function Glow.StartShine(owner, o)
 			else sx, sy = 0, -(h - into) end
 			sp.tex:SetSize(size, size)
 			sp.tex:ClearAllPoints()
-			sp.tex:SetPoint("CENTER", f, "TOPLEFT", sx, sy)
+			sp.tex:SetPoint("CENTER", f, "TOPLEFT", sx + ox, sy + oy)
 			-- the rest of this side, the three after it, then the part already walked
 			local function Move(k, length, ddx, ddy)
 				sp.moves[k]:SetOffset(ddx * length, ddy * length)
@@ -340,7 +346,7 @@ function Glow.StartShine(owner, o)
 		sp.tex:Show()
 		if rebuild or not sp.ag:IsPlaying() then sp.ag:Play() end
 	end
-	f:Show()
+	if not direct then f:Show() end
 end
 
 function Glow.StopShine(owner)
@@ -350,5 +356,5 @@ function Glow.StopShine(owner)
 		sp.ag:Stop()
 		sp.tex:Hide()
 	end
-	st.frame:Hide()
+	if not st.direct then st.frame:Hide() end
 end
