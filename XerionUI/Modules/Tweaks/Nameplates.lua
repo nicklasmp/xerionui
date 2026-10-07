@@ -6,9 +6,6 @@
 -- supported, so its engine-filtered groups still mark them (in keys too).
 -- EllesmereUI's own Dispel Glow setting still switches the glow on and off.
 --
--- Dispel glow style: can be overridden with an Auto-Cast shine of our own,
--- which EllesmereUI cannot draw on its aura icons.
---
 -- Shield amount: the mob's absorb as a number right after EllesmereUI's
 -- health text. The amount is secret in keys; it never touches Lua arithmetic
 -- - it goes straight into AbbreviateNumbers, SetText and StatusBar:SetValue.
@@ -29,8 +26,6 @@ local M = XUI:NewModule("EUINameplates", {
 	requires = "EllesmereUINameplates",
 	defaults = {
 		dispelAlways = true,
-		dispelShine = false,
-		dispelGlow = T.Glow(true, { useGlobal = false, type = "AUTOCAST", color = { 1, 0.82, 0.25, 1 }, particles = 8, scale = 1.6 }),
 		shield = { enabled = false, enemyOnly = true, offX = 0, offY = 0 },
 		shieldText = T.Font(11, { color = { 1, 0.82, 0.25, 1 } }),
 	},
@@ -77,178 +72,6 @@ end
 --------------------------------------------------------------------------------
 -- Shield text
 --------------------------------------------------------------------------------
---------------------------------------------------------------------------------
--- Dispel glow style: an Auto-Cast shine of our own
--- EllesmereUI's engine hosts (the aura icons) cannot draw Auto-Cast: it needs
--- an OnUpdate script and the engine buttons never run one, so EllesmereUI
--- swaps it for Modern WoW Glow. Our shine is animation-only (Core/Glow.lua),
--- so it can sit on the very same host.
---
--- Two hooks, both inert while the option is off or the module is not running:
---   * GetDispelGlowSpec flags the dispel glow's spec and changes what
---     EllesmereUI fingerprints (style, colour, a counter in `speed`), so a change
---     here makes it restyle its buttons;
---   * Glows.StartSpecGlow draws our shine instead of EllesmereUI's glow for a
---     flagged spec, and takes it away again when it is not flagged.
---------------------------------------------------------------------------------
-local shineGen = 0
-local shineStats = { flagged = 0, drawn = 0, prewarmed = 0 } -- for /xui debug
-local SHINE_SPARKS = 8 -- the most sparks an aura icon's shine can have
-
--- Trace lines for calls that are not ours to count: the first few only.
-local traced = {}
-local function TraceFew(key, fmt, ...)
-	traced[key] = (traced[key] or 0) + 1
-	if traced[key] <= 6 then M:Trace(fmt, ...) end
-end
-
--- What the client says about a host's first spark half a second after the shine
--- was drawn on it: shown, how opaque, whether its animation runs and whether it
--- has a place on screen at all. Read out by /xui debug.
-local function Probe(host)
-	local function Say(fn, ...)
-		local ok, a, b, c, d = pcall(fn, ...)
-		if not ok then return "error" end
-		if XUI.IsSecret(a) then return "<secret>" end
-		if b ~= nil then return table.concat({ tostring(a), tostring(b), tostring(c), tostring(d) }, ",") end
-		return tostring(a)
-	end
-	local st = host.__xuiShine
-	local sp = st and st.sparks and st.sparks[1]
-	if not sp then
-		shineStats.probe = "the host has no spark"
-		return
-	end
-	local parent = host.GetParent and host:GetParent()
-	shineStats.probe = ("host: visible %s, alpha %s, rect %s | parent rect %s | spark: shown %s, alpha %s, visible %s, animation playing %s, texture %s, rect %s")
-		:format(Say(host.IsVisible, host), Say(host.GetAlpha, host), Say(host.GetRect, host),
-			parent and Say(parent.GetRect, parent) or "none",
-			Say(sp.tex.IsShown, sp.tex), Say(sp.tex.GetAlpha, sp.tex), Say(sp.tex.IsVisible, sp.tex),
-			Say(sp.ag.IsPlaying, sp.ag), Say(sp.tex.GetTexture, sp.tex), Say(sp.tex.GetRect, sp.tex))
-end
-
-local function ShineOn()
-	return M.running and M.db.dispelShine
-end
-
-local function HookShine()
-	local np = NP()
-	local Glows = _G.EllesmereUI and _G.EllesmereUI.Glows
-	if not (np and type(Glows) == "table") then return end
-	if not np.__xuiSpecHook and type(np.GetDispelGlowSpec) == "function" then
-		local original = np.GetDispelGlowSpec
-		np.GetDispelGlowSpec = function(...)
-			local out = original(...)
-			if type(out) ~= "table" then return out end
-			if ShineOn() then
-				out.xuiShine = true
-				shineStats.flagged = shineStats.flagged + 1
-				TraceFew("spec", "dispel glow spec asked for by EllesmereUI: now flagged for the shine")
-				out.style = 3 -- Auto-Cast in EllesmereUI's shared list
-				out.speed = 10 + (shineGen % 100) * 0.01
-				out.r, out.g, out.b = XUI.UnpackColor(Style:Resolve("glow", M.db.dispelGlow).color)
-			else
-				out.xuiShine = nil
-			end
-			return out
-		end
-		np.__xuiSpecHook = true
-	end
-	-- EllesmereUI's aura buttons are closed to addon code once created, so the
-	-- shine's regions are made in the same window as its own (the prewarm of a
-	-- host) - for the nameplates' hosts only.
-	if not Glows.__xuiPrewarmHook and type(Glows.PrewarmEngineHost) == "function" then
-		local original = Glows.PrewarmEngineHost
-		Glows.PrewarmEngineHost = function(host, ...)
-			local a, b = original(host, ...)
-			-- the buttons are made before this addon's database is ready as well as
-			-- after it: a database that is not there yet counts as enabled
-			if host and (M.db == nil or M.db.enabled) then
-				local ok, caller = pcall(debugstack, 2, 1, 0)
-				-- only another EllesmereUI module's hosts are left alone
-				local other = ok and type(caller) == "string" and (caller:find("RaidFrames", 1, true) or caller:find("UnitFrames", 1, true)
-					or caller:find("CooldownManager", 1, true) or caller:find("ActionBars", 1, true))
-				if not other then
-					local made = pcall(XUI.Glow.PrewarmShine, host, SHINE_SPARKS)
-					if made then shineStats.prewarmed = shineStats.prewarmed + 1 end
-					TraceFew("prewarm", "a host was made: shine prepared %s (caller: %s)", made, ok and type(caller) == "string" and caller:sub(1, 90) or "?")
-				else
-					TraceFew("prewarmother", "a host of another module was left alone: %s", caller:sub(1, 70))
-				end
-			end
-			return a, b
-		end
-		Glows.__xuiPrewarmHook = true
-	end
-	if not Glows.__xuiSpecHook and type(Glows.StartSpecGlow) == "function" then
-		local original = Glows.StartSpecGlow
-		Glows.StartSpecGlow = function(wrapper, spec, w, h, ...)
-			if wrapper then
-				if type(spec) == "table" and spec.xuiShine and ShineOn() then
-					-- EllesmereUI's own glow off the host, ours on
-					if wrapper._euiGlowActive and type(Glows.StopGlow) == "function" then pcall(Glows.StopGlow, wrapper) end
-					wrapper._euiSpecSig = nil
-					wrapper:SetAlpha(1)
-					-- the size EllesmereUI sized the button to: the host itself has none to read yet
-					local okShow, errShow = pcall(Style.ShowGlow, Style, wrapper, M.db.dispelGlow, true, w, h)
-					if not okShow then
-						shineStats.error = tostring(errShow)
-						M:Trace("drawing the shine failed: %s", shineStats.error)
-					end
-					wrapper.__xuiDispelShine = true
-					if not shineStats.probed then
-						shineStats.probed = true
-						C_Timer.After(0.5, function()
-							shineStats.probed = false
-							Probe(wrapper)
-						end)
-					end
-					if wrapper.__xuiShine and wrapper.__xuiShine.locked then shineStats.preparedDraws = (shineStats.preparedDraws or 0) + 1 else shineStats.otherDraws = (shineStats.otherDraws or 0) + 1 end
-					shineStats.drawn = shineStats.drawn + 1
-					TraceFew("drawn", "shine drawn: size passed %sx%s, host was prepared when made: %s, glow state: %s", w, h, wrapper.__xuiShine ~= nil and wrapper.__xuiShine.locked == true, wrapper.__xuiGlow)
-					shineStats.passed = (w or "?") .. "x" .. (h or "?")
-					local okSize, hw, hh = pcall(wrapper.GetSize, wrapper)
-					shineStats.read = okSize and (XUI.IsSecret(hw) and "secret" or (tostring(hw) .. "x" .. tostring(hh))) or "error"
-					shineStats.glow = tostring(wrapper.__xuiGlow)
-					return 3, false
-				elseif wrapper.__xuiDispelShine then
-					Style:HideGlow(wrapper)
-					wrapper.__xuiDispelShine = nil
-				else
-					TraceFew("plain", "a glow EllesmereUI draws itself: style %s, flagged %s, shine option on %s, running %s", type(spec) == "table" and spec.style or "?", type(spec) == "table" and spec.xuiShine == true, M.db.dispelShine, M.running)
-				end
-			end
-			return original(wrapper, spec, w, h, ...)
-		end
-		Glows.__xuiSpecHook = true
-	end
-end
-
-function M:DebugInfo()
-	local np = NP()
-	local magic, enrage
-	if np and type(np.GetOffensiveDispelTypes) == "function" then magic, enrage = np.GetOffensiveDispelTypes() end
-	local Glows = _G.EllesmereUI and _G.EllesmereUI.Glows
-	return {
-		("EllesmereUI nameplates: %s, Dispel Glow setting: %s, can dispel magic/enrage: %s/%s"):format(tostring(np ~= nil),
-			tostring(np and type(np.GetDispelGlow) == "function" and np.GetDispelGlow()), tostring(magic), tostring(enrage)),
-		("auto-cast shine: option %s, spec hook %s, draw hook %s"):format(tostring(self.db.dispelShine),
-			tostring(np and np.__xuiSpecHook == true), tostring(Glows and Glows.__xuiSpecHook == true)),
-		("dispel specs flagged: %d, shines drawn: %d, hosts prepared for the shine: %d (hooks: %s)"):format(shineStats.flagged, shineStats.drawn, shineStats.prewarmed, tostring(Glows and Glows.__xuiPrewarmHook == true)),
-		("last shine: size passed %s, host reads %s, glow state %s"):format(tostring(shineStats.passed), tostring(shineStats.read), tostring(shineStats.glow)),
-		"probe of a shine: " .. tostring(shineStats.probe),
-		("draws on hosts prepared when made: %d, on others: %d, last error: %s"):format(shineStats.preparedDraws or 0, shineStats.otherDraws or 0, tostring(shineStats.error)),
-	}
-end
-
--- Hooked as soon as this file loads: EllesmereUI makes its aura buttons at its
--- own login, before ours, and a button made without the shine's regions cannot
--- get them afterwards. Every hook is inert until the module is enabled.
-HookShine()
-
--- a slider drags through many values: one reload per frame is enough
-local ReloadSoon = XUI.Coalesce(function() ReloadPlates() end)
-
 local preview = false
 local gen = 0
 
@@ -422,8 +245,6 @@ end
 --------------------------------------------------------------------------------
 function M:OnEnable()
 	HookDispel()
-	HookShine()
-	M:Trace("hooks: spec %s, draw %s, prewarm %s", NP() and NP().__xuiSpecHook == true, _G.EllesmereUI and _G.EllesmereUI.Glows and _G.EllesmereUI.Glows.__xuiSpecHook == true, _G.EllesmereUI and _G.EllesmereUI.Glows and _G.EllesmereUI.Glows.__xuiPrewarmHook == true)
 	ReloadPlates()
 	local np = NP()
 	if np and type(np.RefreshAllSettings) == "function" then
@@ -464,9 +285,5 @@ end
 
 function M:OnSettingChanged(path)
 	if path == "dispelAlways" then ReloadPlates() end
-	if path == "dispelShine" or path:find("^dispelGlow") then
-		shineGen = shineGen + 1
-		ReloadSoon()
-	end
 	self:RefreshSoon()
 end

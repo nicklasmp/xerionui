@@ -22,15 +22,8 @@ local function Level(frame, owner, offset)
 	if ok and type(lvl) == "number" then pcall(frame.SetFrameLevel, frame, lvl + offset) end
 end
 
--- The owner's size. With o.fixed the caller's o.width/o.height rule: an engine
--- button's host reads 0 or 1 until the engine has laid it out, and only the
--- caller knows what the button is sized to. Otherwise a host that reads no size
--- falls back to o.width/o.height, and the third answer says the size is fixed.
-local function Size(owner, o)
-	if o and o.fixed and o.width and o.height and o.width > 0 and o.height > 0 then return o.width, o.height, true end
+local function Size(owner)
 	local ok, w, h = pcall(owner.GetSize, owner)
-	local unknown = not ok or XUI.IsSecret(w) or XUI.IsSecret(h) or not w or w <= 0 or not h or h <= 0
-	if unknown and o and o.width and o.height and o.width > 0 and o.height > 0 then return o.width, o.height end
 	if not ok or XUI.IsSecret(w) or XUI.IsSecret(h) then return nil end
 	return w, h
 end
@@ -71,17 +64,12 @@ function Glow.StartAnts(owner, o)
 	f:SetPoint("TOPLEFT", owner, "TOPLEFT", -off, off)
 	f:SetPoint("BOTTOMRIGHT", owner, "BOTTOMRIGHT", off, -off)
 
-	local w, h, fixed = Size(owner, o)
+	local w, h = Size(owner)
 	if not w or w <= 0 or h <= 0 then
 		f:Hide()
 		return
 	end
 	w, h = w + 2 * off, h + 2 * off
-	if fixed then
-		f:ClearAllPoints()
-		f:SetPoint("TOPLEFT", owner, "TOPLEFT", -off, off)
-		f:SetSize(w, h)
-	end
 
 	local lines = max(1, floor(o.lines or 8))
 	local freq = o.frequency or 0.25
@@ -221,43 +209,6 @@ end
 local SPARK = [[Interface\Artifacts\Artifacts]]
 local SPARK_COORDS = { 0.3984375, 0.4453125, 0.40234375, 0.44921875 }
 
--- One spark: its texture and the looping chain of five translations.
-local function NewSpark(f)
-	local sp = { tex = f:CreateTexture(nil, "OVERLAY", nil, 7) }
-	sp.tex:SetTexture(SPARK)
-	sp.tex:SetTexCoord(SPARK_COORDS[1], SPARK_COORDS[2], SPARK_COORDS[3], SPARK_COORDS[4])
-	sp.tex:SetDesaturated(true) -- the colour is ours: tinted from white
-	sp.tex:SetBlendMode("ADD")
-	sp.ag = sp.tex:CreateAnimationGroup()
-	sp.ag:SetLooping("REPEAT")
-	sp.moves = {}
-	for k = 1, 5 do
-		local m = sp.ag:CreateAnimation("Translation")
-		m:SetSmoothing("NONE")
-		m:SetOrder(k)
-		sp.moves[k] = m
-	end
-	sp.tex:Hide()
-	return sp
-end
-
--- Makes every region the shine will ever need, hidden. An engine button's
--- subtree is closed to addon code once the button has been created, so on a
--- host that sits in one this has to run in the creation window; StartShine then
--- only configures (and draws at most `count` sparks).
-function Glow.PrewarmShine(owner, count)
-	local st = owner.__xuiShine
-	if not st then
-		-- the sparks are textures of the host itself, with no frame of their own
-		-- in between: that is how EllesmereUI draws on these hosts, and a child
-		-- frame is shown and hidden where the engine does not like it
-		st = { sparks = {}, frame = owner, direct = true }
-		owner.__xuiShine = st
-	end
-	for i = #st.sparks + 1, count or 4 do st.sparks[i] = NewSpark(st.frame) end
-	st.locked = true
-end
-
 -- o: color, particles (sparks), frequency (laps per second), scale, offset
 function Glow.StartShine(owner, o)
 	local st = owner.__xuiShine
@@ -267,36 +218,23 @@ function Glow.StartShine(owner, o)
 		owner.__xuiShine = st
 	end
 	local f = st.frame
-	local direct = st.direct
+	Level(f, owner, 4)
 	local off = o.offset or 0
-	if not direct then
-		Level(f, owner, 4)
-		f:ClearAllPoints()
-		f:SetPoint("TOPLEFT", owner, "TOPLEFT", -off, off)
-		f:SetPoint("BOTTOMRIGHT", owner, "BOTTOMRIGHT", off, -off)
-	end
+	f:ClearAllPoints()
+	f:SetPoint("TOPLEFT", owner, "TOPLEFT", -off, off)
+	f:SetPoint("BOTTOMRIGHT", owner, "BOTTOMRIGHT", off, -off)
 
-	local w, h, fixed = Size(owner, o)
+	local w, h = Size(owner)
 	if not w or w <= 0 or h <= 0 then
-		if direct then Glow.StopShine(owner) else f:Hide() end
+		f:Hide()
 		return
 	end
 	w, h = w + 2 * off, h + 2 * off
-	-- a fixed size is the frame's own: it no longer follows the host's
-	if fixed and not direct then
-		f:ClearAllPoints()
-		f:SetPoint("TOPLEFT", owner, "TOPLEFT", -off, off)
-		f:SetSize(w, h)
-	end
-	-- sparks hang off the host's own corner: the glow reaches `off` outside it
-	local ox, oy = direct and -off or 0, direct and off or 0
 	local n = max(1, floor(o.particles or 4))
-	-- a prewarmed host cannot make another spark
-	if st.locked then n = min(n, #st.sparks) end
 	local freq = abs(o.frequency or 0.25)
 	if freq == 0 then freq = 0.25 end
 	local period = 1 / freq
-	local size = max(6, 8 * (o.scale or 1))
+	local size = max(6, 9 * (o.scale or 1))
 	local r, g, b, a = XUI.UnpackColor(o.color)
 	local sig = ("%.2f:%.2f:%d:%.3f:%.2f"):format(w, h, n, period, size)
 	local rebuild = st.sig ~= sig
@@ -310,7 +248,20 @@ function Glow.StartShine(owner, o)
 		for i = 1, n do
 			local sp = st.sparks[i]
 			if not sp then
-				sp = NewSpark(f)
+				sp = { tex = f:CreateTexture(nil, "OVERLAY", nil, 7) }
+				sp.tex:SetTexture(SPARK)
+				sp.tex:SetTexCoord(SPARK_COORDS[1], SPARK_COORDS[2], SPARK_COORDS[3], SPARK_COORDS[4])
+				sp.tex:SetDesaturated(true) -- the colour is ours: tinted from white
+				sp.tex:SetBlendMode("ADD")
+				sp.ag = sp.tex:CreateAnimationGroup()
+				sp.ag:SetLooping("REPEAT")
+				sp.moves = {}
+				for k = 1, 5 do
+					local m = sp.ag:CreateAnimation("Translation")
+					m:SetSmoothing("NONE")
+					m:SetOrder(k)
+					sp.moves[k] = m
+				end
 				st.sparks[i] = sp
 			end
 			sp.ag:Stop()
@@ -326,7 +277,7 @@ function Glow.StartShine(owner, o)
 			else sx, sy = 0, -(h - into) end
 			sp.tex:SetSize(size, size)
 			sp.tex:ClearAllPoints()
-			sp.tex:SetPoint("CENTER", f, "TOPLEFT", sx + ox, sy + oy)
+			sp.tex:SetPoint("CENTER", f, "TOPLEFT", sx, sy)
 			-- the rest of this side, the three after it, then the part already walked
 			local function Move(k, length, ddx, ddy)
 				sp.moves[k]:SetOffset(ddx * length, ddy * length)
@@ -351,7 +302,7 @@ function Glow.StartShine(owner, o)
 		sp.tex:Show()
 		if rebuild or not sp.ag:IsPlaying() then sp.ag:Play() end
 	end
-	if not direct then f:Show() end
+	f:Show()
 end
 
 function Glow.StopShine(owner)
@@ -361,5 +312,5 @@ function Glow.StopShine(owner)
 		sp.ag:Stop()
 		sp.tex:Hide()
 	end
-	if not st.direct then st.frame:Hide() end
+	st.frame:Hide()
 end
