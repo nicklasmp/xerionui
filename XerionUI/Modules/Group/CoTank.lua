@@ -342,6 +342,16 @@ local function ApplyGrowth(db)
 	container:SetPoint(corner, holder, corner, 0, 0)
 end
 
+-- The row sits OUTSIDE the bar, at the point of the bar that is picked: the left
+-- or right edge puts it beside the bar, the top or bottom edge above or below
+-- it, a corner above or below it aligned to that corner. So the row's own
+-- anchor is the opposite one (the same point on both would lay the row over the
+-- bar). X and Y then nudge it.
+local OUTSIDE = {
+	LEFT = "RIGHT", RIGHT = "LEFT", TOP = "BOTTOM", BOTTOM = "TOP", CENTER = "CENTER",
+	TOPLEFT = "BOTTOMLEFT", TOPRIGHT = "BOTTOMRIGHT", BOTTOMLEFT = "TOPLEFT", BOTTOMRIGHT = "TOPRIGHT",
+}
+
 local function SizeHolder(db)
 	local d = db.debuffs
 	local n = math.max(1, d.max)
@@ -352,7 +362,7 @@ local function SizeHolder(db)
 		holder:SetSize(n * w + (n - 1) * d.spacing, h)
 	end
 	holder:ClearAllPoints()
-	holder:SetPoint(d.attach, frame, d.attach, d.x, d.y)
+	holder:SetPoint(OUTSIDE[d.attach] or "TOPLEFT", frame, OUTSIDE[d.attach] and d.attach or "BOTTOMLEFT", d.x, d.y)
 end
 
 local function ApplyDebuffLook()
