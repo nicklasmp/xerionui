@@ -10,11 +10,13 @@
 --   2. UNIT_AURA during the next moment: a removedAuraInstanceIDs entry that
 --      matches a remembered aura means it was taken off.
 --   3. The cast SUCCEEDED and something was removed -> the alert shows.
--- The aura payload can be secret in combat, so after a cast that succeeded the
--- unit's aura list is also compared with the one remembered. The cast alone is
--- no proof: on this client a dispel with nothing to remove still succeeds, so
--- an aura has to be seen going or nothing shows. /xui trace DispelAlert prints
--- each step.
+-- On this client the aura lists cannot be read at all, and the ids in a
+-- UNIT_AURA payload are secret. What does come through is whether anything was
+-- removed: removedAuraInstanceIDs is nil when nothing went and a (secret) table
+-- when something did. So a removal on the unit while the dispel is in flight is
+-- the proof; what was removed is only known when the lists can be read. The cast
+-- alone proves nothing - a dispel with nothing to remove still succeeds.
+-- /xui trace DispelAlert prints each step.
 -- Nothing is registered or scanned while idle; the window only exists for about
 -- a second after one of the listed spells. When the aura's name is secret the
 -- alert falls back to a plain "Successfully dispelled" (the icon still shows).
@@ -217,7 +219,12 @@ local function Candidates(targetName)
 	end
 	local name = XUI.Readable(targetName)
 	if type(name) ~= "string" or name == "" then
-		for i = 1, #FIXED do add(FIXED[i]) end
+		-- the name is secret: every unit it may be, but you only when nobody else
+		-- is there - an aura running out on you would otherwise pass for the dispel
+		for i = 1, #FIXED do
+			if FIXED[i] ~= "player" then add(FIXED[i]) end
+		end
+		if #out == 0 then add("player") end
 		return out
 	end
 	-- the cast names a unit of another realm "Name-Realm", a unit token does not
@@ -312,6 +319,8 @@ local function Finish(mine)
 	end
 	seen.shown = seen.shown + 1
 	last = "shown"
+	-- what was removed is not always known; the dispel spell's own icon would
+	-- say the wrong thing, so without an icon of the aura there is none
 	M:Show(rec.name, rec.icon)
 	local name = XUI.Readable(rec.name)
 	XUI.Audio:Play(M.db.alert, type(name) == "string" and (name .. " dispelled") or M.db.textUnknown)
@@ -344,8 +353,29 @@ local function OnAura(_, _, unit, info)
 		return
 	end
 	local removed = info.removedAuraInstanceIDs
-	M:Trace("  removed ids: %s", IsSecret(removed) and "<secret>" or (type(removed) == "table" and #removed or removed))
-	if IsSecret(removed) or type(removed) ~= "table" or XUI.IsSecretTable(removed) then return end
+	if M.trace then
+		local added = info.addedAuras
+		local a1 = type(added) == "table" and not IsSecret(added) and not XUI.IsSecretTable(added) and added[1] or nil
+		local function N(t) return IsSecret(t) and "<secret>" or (type(t) == "table" and (XUI.IsSecretTable(t) and "<secret table>" or #t) or tostring(t)) end
+		M:Trace("  removed: %s, added: %s, updated: %s, full: %s", N(removed), N(added), N(info.updatedAuraInstanceIDs), info.isFullUpdate)
+		if type(a1) == "table" then M:Trace("  first added aura: id %s, name %s, icon %s", a1.auraInstanceID, a1.name, a1.icon) end
+	end
+	-- nothing was removed in this update
+	if removed == nil then return end
+	if IsSecret(removed) or type(removed) ~= "table" or XUI.IsSecretTable(removed) then
+		-- the ids are unreadable, but something went off this unit
+		seen.removals = seen.removals + 1
+		local friendly = XUI.Ask(UnitIsFriend, "player", unit)
+		local db = M.db
+		local wanted
+		if friendly == nil then wanted = db.friendly or db.enemy else wanted = (friendly and db.friendly) or (not friendly and db.enemy) end
+		M:Trace("  something was removed from %s (ids unreadable); wanted: %s", unit, wanted)
+		if wanted then
+			mine.hit = {}
+			TryFinish(mine)
+		end
+		return
+	end
 	for i = 1, #removed do
 		local id = removed[i]
 		if not IsSecret(id) then
