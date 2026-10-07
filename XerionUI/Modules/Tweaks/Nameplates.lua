@@ -102,6 +102,31 @@ local function TraceFew(key, fmt, ...)
 	if traced[key] <= 6 then M:Trace(fmt, ...) end
 end
 
+-- What the client says about a host's first spark half a second after the shine
+-- was drawn on it: shown, how opaque, whether its animation runs and whether it
+-- has a place on screen at all. Read out by /xui debug.
+local function Probe(host)
+	local function Say(fn, ...)
+		local ok, a, b, c, d = pcall(fn, ...)
+		if not ok then return "error" end
+		if XUI.IsSecret(a) then return "<secret>" end
+		if b ~= nil then return table.concat({ tostring(a), tostring(b), tostring(c), tostring(d) }, ",") end
+		return tostring(a)
+	end
+	local st = host.__xuiShine
+	local sp = st and st.sparks and st.sparks[1]
+	if not sp then
+		shineStats.probe = "the host has no spark"
+		return
+	end
+	local parent = host.GetParent and host:GetParent()
+	shineStats.probe = ("host: visible %s, alpha %s, rect %s | parent rect %s | spark: shown %s, alpha %s, visible %s, animation playing %s, texture %s, rect %s")
+		:format(Say(host.IsVisible, host), Say(host.GetAlpha, host), Say(host.GetRect, host),
+			parent and Say(parent.GetRect, parent) or "none",
+			Say(sp.tex.IsShown, sp.tex), Say(sp.tex.GetAlpha, sp.tex), Say(sp.tex.IsVisible, sp.tex),
+			Say(sp.ag.IsPlaying, sp.ag), Say(sp.tex.GetTexture, sp.tex), Say(sp.tex.GetRect, sp.tex))
+end
+
 local function ShineOn()
 	return M.running and M.db.dispelShine
 end
@@ -171,6 +196,13 @@ local function HookShine()
 						M:Trace("drawing the shine failed: %s", shineStats.error)
 					end
 					wrapper.__xuiDispelShine = true
+					if not shineStats.probed then
+						shineStats.probed = true
+						C_Timer.After(0.5, function()
+							shineStats.probed = false
+							Probe(wrapper)
+						end)
+					end
 					if wrapper.__xuiShine and wrapper.__xuiShine.locked then shineStats.preparedDraws = (shineStats.preparedDraws or 0) + 1 else shineStats.otherDraws = (shineStats.otherDraws or 0) + 1 end
 					shineStats.drawn = shineStats.drawn + 1
 					TraceFew("drawn", "shine drawn: size passed %sx%s, host was prepared when made: %s, glow state: %s", w, h, wrapper.__xuiShine ~= nil and wrapper.__xuiShine.locked == true, wrapper.__xuiGlow)
@@ -204,6 +236,7 @@ function M:DebugInfo()
 			tostring(np and np.__xuiSpecHook == true), tostring(Glows and Glows.__xuiSpecHook == true)),
 		("dispel specs flagged: %d, shines drawn: %d, hosts prepared for the shine: %d (hooks: %s)"):format(shineStats.flagged, shineStats.drawn, shineStats.prewarmed, tostring(Glows and Glows.__xuiPrewarmHook == true)),
 		("last shine: size passed %s, host reads %s, glow state %s"):format(tostring(shineStats.passed), tostring(shineStats.read), tostring(shineStats.glow)),
+		"probe of a shine: " .. tostring(shineStats.probe),
 		("draws on hosts prepared when made: %d, on others: %d, last error: %s"):format(shineStats.preparedDraws or 0, shineStats.otherDraws or 0, tostring(shineStats.error)),
 	}
 end

@@ -171,6 +171,7 @@ local function OnAddon(_, _, prefix, msg, channel, sender)
 	if not name then return end
 	counts.got = counts.got + 1
 	reported[name] = { level = tonumber(level), map = tonumber(map) }
+	M:Trace("report from %s (kept as %s): +%s, map %s, channel %s", sender, name, level, map, channel)
 	M:RefreshSoon()
 end
 
@@ -253,6 +254,19 @@ local function Display()
 	return display
 end
 
+-- The frame is as large as the text, and the text has that width to itself: a
+-- string measured while its frame is hidden, or before the font is in place,
+-- reads too short and the client cuts the text off with "...". So it is shown
+-- first, measured again a frame later, and given its width outright.
+local function Refit(d)
+	d.text:SetWidth(0)
+	local ok, w = pcall(d.text.GetUnboundedStringWidth, d.text)
+	local h = d.text:GetStringHeight()
+	if not ok or IsSecret(w) or not w or w <= 0 then return end
+	d.text:SetWidth(w + 8)
+	d:SetSize(w + 8, math.max(1, h or 1))
+end
+
 function M:OnRefresh()
 	if not (display or self:IsPreview()) then return end
 	local d, db = Display(), self.db
@@ -273,8 +287,10 @@ function M:OnRefresh()
 	local lines = {}
 	if db.showTitle then lines[1] = TITLE end
 	for _, item in ipairs(items) do lines[#lines + 1] = Line(db, item) end
-	d:SetText(table.concat(lines, "\n"))
 	d:Show()
+	d:SetText(table.concat(lines, "\n"))
+	Refit(d)
+	self:After(0, function() if display and display:IsShown() then Refit(display) end end)
 end
 
 --------------------------------------------------------------------------------
@@ -286,6 +302,7 @@ local function Deactivate()
 	combatHidden, combatHides = false, 0
 	wipe(reported)
 	M:UnregisterEvent("UNIT_CONNECTION")
+	M:UnregisterEvent("GROUP_ROSTER_UPDATE")
 	M:UnregisterEvent("PLAYER_REGEN_ENABLED")
 	M:UnregisterEvent("PLAYER_REGEN_DISABLED")
 	M:Refresh()
@@ -318,7 +335,13 @@ local function Activate(id)
 	M:RegisterEvent("UNIT_CONNECTION", function(self, _, _, isConnected)
 		if isConnected == true then self:After(1, Request) end
 	end)
+	M:RegisterEvent("GROUP_ROSTER_UPDATE", function(self) self:After(1, Request) end)
 	Request()
+	-- the others' clients are still loading when the first request goes out, and
+	-- an answer sent before this client listens is gone: ask again a few times
+	for _, delay in ipairs({ 2, 5, 10, 20 }) do
+		M:After(delay, function() if active then Request() end end)
+	end
 	M:Refresh()
 end
 
@@ -366,5 +389,22 @@ function M:DebugInfo()
 		("reports kept: %d (received %d, requests sent %d, own reports sent %d)"):format(known, counts.got, counts.asked, counts.sent),
 		("LibKeystone loaded (answers for us): %s"):format(tostring(LibStub("LibKeystone", true) ~= nil)),
 		("hidden for combat: %s (%d of %d)"):format(tostring(combatHidden), combatHides, COMBAT_HIDES),
+		"reports: " .. (function()
+			local out = {}
+			for name, r in pairs(reported) do out[#out + 1] = ("%s +%d (map %d)"):format(name, r.level, r.map) end
+			return #out > 0 and table.concat(out, "; ") or "none"
+		end)(),
+		"group: " .. (function()
+			local out = {}
+			for _, unit in ipairs(UNITS) do
+				if UnitExists(unit) then
+					local name, realm = UnitFullName(unit)
+					local key = Qualified(name, realm)
+					local r = key and reported[key]
+					out[#out + 1] = ("%s=%s%s"):format(unit, tostring(key), r and "" or " (no report)")
+				end
+			end
+			return table.concat(out, "; ")
+		end)(),
 	}
 end
