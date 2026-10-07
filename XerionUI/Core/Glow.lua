@@ -216,12 +216,17 @@ end
 -- began and the sparks stay evenly spaced. This is the Autocast shine on the
 -- engine's aura buttons, where LibCustomGlow's OnUpdate version cannot run.
 --------------------------------------------------------------------------------
-local SPARK = [[Interface\Artifacts\Blizzard_Spark]]
+-- one small spark cut out of the artifact sheet: the same cell LibCustomGlow draws
+-- its Autocast Shine with (the whole sheet shows as a smudge)
+local SPARK = [[Interface\Artifacts\Artifacts]]
+local SPARK_COORDS = { 0.3984375, 0.4453125, 0.40234375, 0.44921875 }
 
 -- One spark: its texture and the looping chain of five translations.
 local function NewSpark(f)
 	local sp = { tex = f:CreateTexture(nil, "OVERLAY", nil, 7) }
 	sp.tex:SetTexture(SPARK)
+	sp.tex:SetTexCoord(SPARK_COORDS[1], SPARK_COORDS[2], SPARK_COORDS[3], SPARK_COORDS[4])
+	sp.tex:SetDesaturated(true) -- the colour is ours: tinted from white
 	sp.tex:SetBlendMode("ADD")
 	sp.ag = sp.tex:CreateAnimationGroup()
 	sp.ag:SetLooping("REPEAT")
@@ -291,7 +296,7 @@ function Glow.StartShine(owner, o)
 	local freq = abs(o.frequency or 0.25)
 	if freq == 0 then freq = 0.25 end
 	local period = 1 / freq
-	local size = max(6, 9 * (o.scale or 1))
+	local size = max(5, 7 * (o.scale or 1))
 	local r, g, b, a = XUI.UnpackColor(o.color)
 	local sig = ("%.2f:%.2f:%d:%.3f:%.2f"):format(w, h, n, period, size)
 	local rebuild = st.sig ~= sig
