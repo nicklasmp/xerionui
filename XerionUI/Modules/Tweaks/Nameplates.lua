@@ -136,15 +136,19 @@ local function HookShine()
 		local original = Glows.PrewarmEngineHost
 		Glows.PrewarmEngineHost = function(host, ...)
 			local a, b = original(host, ...)
-			-- enabled, not yet running: the buttons may be made before login
-			if M.db and M.db.enabled and host then
+			-- the buttons are made before this addon's database is ready as well as
+			-- after it: a database that is not there yet counts as enabled
+			if host and (M.db == nil or M.db.enabled) then
 				local ok, caller = pcall(debugstack, 2, 1, 0)
-				if not ok or type(caller) ~= "string" or caller:find("EllesmereUINameplates", 1, true) then
+				-- only another EllesmereUI module's hosts are left alone
+				local other = ok and type(caller) == "string" and (caller:find("RaidFrames", 1, true) or caller:find("UnitFrames", 1, true)
+					or caller:find("CooldownManager", 1, true) or caller:find("ActionBars", 1, true))
+				if not other then
 					local made = pcall(XUI.Glow.PrewarmShine, host, SHINE_SPARKS)
 					if made then shineStats.prewarmed = shineStats.prewarmed + 1 end
-					TraceFew("prewarm", "a nameplate host was made: shine prepared %s", made)
+					TraceFew("prewarm", "a host was made: shine prepared %s (caller: %s)", made, ok and type(caller) == "string" and caller:sub(1, 90) or "?")
 				else
-					TraceFew("prewarmother", "a host was made by someone else: %s", caller:sub(1, 70))
+					TraceFew("prewarmother", "a host of another module was left alone: %s", caller:sub(1, 70))
 				end
 			end
 			return a, b
@@ -164,7 +168,7 @@ local function HookShine()
 					Style:ShowGlow(wrapper, M.db.dispelGlow, true, w, h)
 					wrapper.__xuiDispelShine = true
 					shineStats.drawn = shineStats.drawn + 1
-					M:Trace("shine drawn: size passed %sx%s, host has the shine regions: %s, glow state: %s", w, h, wrapper.__xuiShine ~= nil and wrapper.__xuiShine.locked == true, wrapper.__xuiGlow)
+					TraceFew("drawn", "shine drawn: size passed %sx%s, host was prepared when made: %s, glow state: %s", w, h, wrapper.__xuiShine ~= nil and wrapper.__xuiShine.locked == true, wrapper.__xuiGlow)
 					shineStats.passed = (w or "?") .. "x" .. (h or "?")
 					local okSize, hw, hh = pcall(wrapper.GetSize, wrapper)
 					shineStats.read = okSize and (XUI.IsSecret(hw) and "secret" or (tostring(hw) .. "x" .. tostring(hh))) or "error"

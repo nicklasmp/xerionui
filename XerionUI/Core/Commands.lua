@@ -122,7 +122,7 @@ local function Handle(msg)
 			found.trace = not found.trace
 			XUI.Printf("tracing %s: |cffffffff%s|r", found.name, found.trace and "on" or "off")
 		else
-			XUI.Print("trace which module? Use its key, e.g. /xui trace DispelAlert or /xui trace EUINameplates")
+			XUI.Print("trace which module? Use its key, e.g. /xui trace EUINameplates")
 		end
 	elseif cmd == "perf" then
 		rest = rest:lower()

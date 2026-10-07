@@ -41,7 +41,6 @@ Integrations\EllesmereUI.lua
 # Modules
 Modules\Combat\MeleeIndicator.lua
 Modules\Combat\Stoneform.lua
-Modules\Combat\DispelAlert.lua
 Modules\Group\DeathAlert.lua
 Modules\Group\Externals.lua
 Modules\Group\Interrupts.lua
