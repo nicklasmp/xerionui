@@ -411,6 +411,19 @@ Step("dispel alert: recognises a dispel under another token", function()
 	MOCK.Advance(2)
 	assert(shown() == nil, "Mass Dispel without a removal seen stays silent")
 
+	-- 7: the aura list comes through C_UnitAuras.GetUnitAuras, the other route
+	auras({})
+	local savedGet = C_UnitAuras.GetUnitAuras
+	C_UnitAuras.GetUnitAuras = function(_, filter)
+		return filter == "HARMFUL" and { { auraInstanceID = 14, name = "Curse of Doom", icon = 3 } } or {}
+	end
+	MOCK.Fire("UNIT_SPELLCAST_SENT", "player", "Brew", "g7", 2782)
+	MOCK.Fire("UNIT_AURA", "party1", { removedAuraInstanceIDs = { 14 } })
+	MOCK.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "g7", 2782)
+	C_UnitAuras.GetUnitAuras = savedGet
+	assert(shown() and shown():find("Curse of Doom", 1, true), "the other route should name the aura too: " .. tostring(shown()))
+	clear()
+
 	MOCK.inGroup = false
 	_G.UnitName, _G.UnitExists, _G.UnitIsUnit, _G.AuraUtil = saved.UnitName, saved.UnitExists, saved.UnitIsUnit, saved.AuraUtil
 	m:Refresh()

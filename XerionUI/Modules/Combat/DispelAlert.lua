@@ -80,6 +80,8 @@ local WINDOW = 1       -- seconds the aura events are watched after a cast
 local MAX_UNITS = 12
 
 local display
+local seen = { sent = 0, auraEvents = 0, matched = 0, removals = 0, shown = 0, byList = 0, assumed = 0, secretPayload = 0, auras = 0, secretNames = 0, route = "no cast yet" }
+local last = "nothing yet"
 local pending          -- { snaps = { [unit] = { ids = { [auraInstanceID] = rec }, blind } }, spell, ok, hit }
 
 local function Display()
@@ -101,31 +103,64 @@ end
 --------------------------------------------------------------------------------
 -- Snapshots
 --------------------------------------------------------------------------------
+-- Calls visit(aura) for every aura of `unit` the client will show. Two routes
+-- are tried in turn, since which of them answers differs between builds and
+-- between restricted and open content. Answers the route that produced
+-- auras (nil when none did) and whether a route ran at all.
+local function Collect(unit, visit)
+	local count, ran = 0, false
+	local function Each(a)
+		if a ~= nil and not IsSecret(a) and type(a) == "table" then
+			count = count + 1
+			visit(a)
+		end
+	end
+	local api = C_UnitAuras
+	if api and api.GetUnitAuras then
+		for _, filter in ipairs({ "HELPFUL", "HARMFUL" }) do
+			local ok, list = pcall(api.GetUnitAuras, unit, filter)
+			if ok then
+				ran = true
+				if type(list) == "table" and not IsSecret(list) and not XUI.IsSecretTable(list) then
+					for i = 1, #list do Each(list[i]) end
+				end
+			end
+		end
+		if count > 0 then return "GetUnitAuras", true end
+	end
+	local AU = AuraUtil
+	if AU and AU.ForEachAura then
+		local a = pcall(AU.ForEachAura, unit, "HELPFUL", nil, Each, true)
+		local b = pcall(AU.ForEachAura, unit, "HARMFUL", nil, Each, true)
+		ran = ran or (a and b)
+		if count > 0 then return "ForEachAura", true end
+	end
+	return nil, ran
+end
+
 -- The auras of `unit` by instance id, so a removal can be told from the rest.
 -- The second answer is false when the list could not be read at all (secret
--- aura data): the unit is then watched "blind" and any removal counts.
+-- aura data): the unit is then watched "blind" and any removal counts. Names
+-- and icons may be secret; they are kept all the same, because a secret
+-- string or texture can still be shown.
 local function Snapshot(unit)
 	local snap, any = {}, false
-	local function Visit(a)
-		if not a then return end
+	local route = Collect(unit, function(a)
 		local id = a.auraInstanceID
 		if id ~= nil and not IsSecret(id) then
 			snap[id] = { name = a.name, icon = a.icon }
 			any = true
+			seen.auras = seen.auras + 1
+			if IsSecret(a.name) then seen.secretNames = seen.secretNames + 1 end
 		end
-	end
-	local AU = AuraUtil
-	if AU and AU.ForEachAura then
-		pcall(AU.ForEachAura, unit, "HELPFUL", nil, Visit, true)
-		pcall(AU.ForEachAura, unit, "HARMFUL", nil, Visit, true)
-	end
+	end)
 	if not any then
 		-- no readable aura data: the ids alone still say that something went
 		local api = C_UnitAuras
 		if api and api.GetUnitAuraInstanceIDs then
 			for _, filter in ipairs({ "HELPFUL", "HARMFUL" }) do
 				local ok, ids = pcall(api.GetUnitAuraInstanceIDs, unit, filter)
-				if ok and type(ids) == "table" and not XUI.IsSecretTable(ids) then
+				if ok and type(ids) == "table" and not IsSecret(ids) and not XUI.IsSecretTable(ids) then
 					for i = 1, #ids do
 						local id = ids[i]
 						if not IsSecret(id) then
@@ -135,8 +170,10 @@ local function Snapshot(unit)
 					end
 				end
 			end
+			if any then route = "GetUnitAuraInstanceIDs (ids only)" end
 		end
 	end
+	seen.route = route or "none could be read"
 	return snap, any
 end
 
@@ -213,18 +250,36 @@ end
 --------------------------------------------------------------------------------
 -- Message
 --------------------------------------------------------------------------------
+-- The text for a dispelled aura. A readable name is coloured and put in; a
+-- secret one cannot be handled in Lua, so it goes into the format of
+-- SetFormattedText, which the client fills in (that path answers a function).
 local function Message(db, name)
-	if type(name) ~= "string" or IsSecret(name) then return db.textUnknown end
+	local colour = XUI.ColorHex(db.nameColor)
+	if IsSecret(name) then
+		if not db.text:find("%%s") then return db.text end
+		local template = db.text:gsub("%%s", function() return "|cff" .. colour .. "%s|r" end)
+		return function(fs) fs:SetFormattedText(template, name) end
+	end
+	if type(name) ~= "string" or name == "" then return db.textUnknown end
 	if not db.text:find("%%s") then return db.text end
-	local colored = CreateColor(XUI.UnpackColor(db.nameColor)):WrapTextInColorCode(name)
-	return (db.text:gsub("%%s", function() return colored end))
+	return (db.text:gsub("%%s", function() return "|cff" .. colour .. name .. "|r" end))
 end
 
 function M:Show(name, icon, hold)
 	local d, db = Display(), self.db
 	d.anim:Stop()
 	d:ApplyStyle(db.font)
-	d:SetText(Message(db, name))
+	local text = Message(db, name)
+	if type(text) == "function" then
+		-- a secret name: the client fills it in, and the width cannot be measured
+		d.text:SetText("")
+		if not pcall(text, d.text) then
+			d.text:SetText(db.textUnknown)
+		end
+		if not pcall(d.Fit, d) then d:SetSize(360, 30) end
+	else
+		d:SetText(text)
+	end
 	if db.showIcon and icon then
 		d.icon:SetSize(db.iconSize, db.iconSize)
 		d.icon:SetTexture(icon)
@@ -245,8 +300,6 @@ end
 --------------------------------------------------------------------------------
 -- Detection
 --------------------------------------------------------------------------------
-local seen = { sent = 0, auraEvents = 0, matched = 0, removals = 0, shown = 0, byList = 0, assumed = 0, secretPayload = 0 }
-local last = "nothing yet"
 
 local function Finish(mine)
 	if pending ~= mine then return end
@@ -340,21 +393,13 @@ local NEEDS_PROOF = { [32375] = true, [115310] = true, [388615] = true }
 -- What the unit has now, by instance id; nil when the list cannot be read.
 local function CurrentIds(unit)
 	local ids, any = {}, false
-	local function Visit(a)
-		if not a then return end
+	local _, ran = Collect(unit, function(a)
 		local id = a.auraInstanceID
 		if id ~= nil and not IsSecret(id) then
 			ids[id] = true
 			any = true
 		end
-	end
-	local AU = AuraUtil
-	local ran = false
-	if AU and AU.ForEachAura then
-		local a = pcall(AU.ForEachAura, unit, "HELPFUL", nil, Visit, true)
-		local b = pcall(AU.ForEachAura, unit, "HARMFUL", nil, Visit, true)
-		ran = a and b
-	end
+	end)
 	if not any then return ran and ids or nil end
 	return ids
 end
@@ -437,6 +482,7 @@ function M:DebugInfo()
 		"tracked dispel spells: " .. n,
 		"watching a cast right now: " .. tostring(pending ~= nil),
 		("your dispels seen: %d, aura events on a watched unit: %d (of %d seen), auras removed: %d, alerts shown: %d"):format(seen.sent, seen.matched, seen.auraEvents, seen.removals, seen.shown),
+		("auras read at the last casts: %d (%d with a secret name), read through: %s"):format(seen.auras, seen.secretNames, tostring(seen.route)),
 		("payload secret: %d times, found by list comparison: %d, taken from the cast alone: %d"):format(seen.secretPayload, seen.byList, seen.assumed),
 		"last cast: " .. last,
 	}
