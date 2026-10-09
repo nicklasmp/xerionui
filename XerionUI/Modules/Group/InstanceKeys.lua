@@ -259,11 +259,13 @@ end
 -- reads too short and the client cuts the text off with "...". So it is shown
 -- first, measured again a frame later, and given its width outright.
 local function Refit(d)
+	-- The string is never given a width of its own: a bounded string is the only
+	-- kind the client cuts off with "...", so a width measured too short would
+	-- show up as exactly that. Only the frame (the mover outline) follows it.
 	d.text:SetWidth(0)
 	local ok, w = pcall(d.text.GetUnboundedStringWidth, d.text)
 	local h = d.text:GetStringHeight()
 	if not ok or IsSecret(w) or not w or w <= 0 then return end
-	d.text:SetWidth(w + 8)
 	d:SetSize(w + 8, math.max(1, h or 1))
 end
 
@@ -290,7 +292,9 @@ function M:OnRefresh()
 	d:Show()
 	d:SetText(table.concat(lines, "\n"))
 	Refit(d)
-	self:After(0, function() if display and display:IsShown() then Refit(display) end end)
+	for _, delay in ipairs({ 0, 0.5 }) do
+		self:After(delay, function() if display and display:IsShown() then Refit(display) end end)
+	end
 end
 
 --------------------------------------------------------------------------------
