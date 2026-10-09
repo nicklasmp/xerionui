@@ -262,7 +262,12 @@ local function Refit(d)
 	-- The string is never given a width of its own: a bounded string is the only
 	-- kind the client cuts off with "...", so a width measured too short would
 	-- show up as exactly that. Only the frame (the mover outline) follows it.
-	d.text:SetWidth(0)
+	-- Left to size itself the client still cut the text off, so the string gets
+	-- far more room than any line needs and sits at the frame's own edge.
+	local align = M.db.align or "LEFT"
+	d.text:ClearAllPoints()
+	d.text:SetPoint(align, d, align)
+	d.text:SetWidth(1000)
 	local ok, w = pcall(d.text.GetUnboundedStringWidth, d.text)
 	local h = d.text:GetStringHeight()
 	if not ok or IsSecret(w) or not w or w <= 0 then return end
