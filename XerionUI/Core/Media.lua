@@ -12,6 +12,7 @@ XUI.Media = Media
 local WHITE = [[Interface\Buttons\WHITE8X8]]
 
 LSM:Register("statusbar", "Xerion Flat", WHITE)
+LSM:Register("statusbar", "Xerion Gloss", XUI.MEDIA_PATH .. [[bar-gloss.tga]])
 LSM:Register("background", "Xerion Solid", WHITE)
 LSM:Register("border", "Xerion Pixel", WHITE)
 LSM:Register("sound", "Xerion: Stun", XUI.MEDIA_PATH .. [[Sounds\stun.mp3]])
