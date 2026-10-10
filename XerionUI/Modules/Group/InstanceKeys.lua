@@ -268,6 +268,9 @@ local function Refit(d)
 	d.text:ClearAllPoints()
 	d.text:SetPoint(align, d, align)
 	d.text:SetWidth(1000)
+	-- a line that does not fit wraps instead of ending in "..."
+	d.text:SetWordWrap(true)
+	d.text:SetMaxLines(0)
 	local ok, w = pcall(d.text.GetUnboundedStringWidth, d.text)
 	local h = d.text:GetStringHeight()
 	if not ok or IsSecret(w) or not w or w <= 0 then return end
@@ -395,6 +398,9 @@ function M:DebugInfo()
 	return {
 		("channel: %s, listing: %s, this dungeon: %s"):format(tostring(Channel()), tostring(active), tostring(instanceID)),
 		("your key: %s"):format(level > 0 and ("+%d %s"):format(level, info and info.name or ("map " .. map)) or "none"),
+		display and ("text: %s, box %.0f, string %.0f, frame %.0f"):format(
+			((display.text:GetText() or ""):gsub("|", "||")), display.text:GetWidth(),
+			display.text:GetUnboundedStringWidth(), display:GetWidth()) or "text: not made",
 		("reports kept: %d (received %d, requests sent %d, own reports sent %d)"):format(known, counts.got, counts.asked, counts.sent),
 		("LibKeystone loaded (answers for us): %s"):format(tostring(LibStub("LibKeystone", true) ~= nil)),
 		("hidden for combat: %s (%d of %d)"):format(tostring(combatHidden), combatHides, COMBAT_HIDES),
